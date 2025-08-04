@@ -13,7 +13,7 @@ This project is a monorepo containing both the backend API and the frontend clie
   - Bar Charts
   - Line Charts
   - Donut Charts
-<!-- - **Customizable Charts**: Easily map data columns to chart axes and labels. -->
+  <!-- - **Customizable Charts**: Easily map data columns to chart axes and labels. -->
 - **Dashboarding**: Create interactive, drag-and-drop dashboards to display multiple saved questions (charts).
 - **CRUD Operations**: Full create, read, update, and delete functionality for both database connections and saved questions.
 
@@ -73,6 +73,78 @@ Next, open the `.env` file and fill in the required environment variables:
 
 Finally, set up the application database by running the necessary SQL scripts to create the tables (`database_connections`, `questions`, `dashboards`, etc.).
 
+#### Environment Variables (`.env`)
+
+Open the `.env` file and fill in the required environment variables. This file stores sensitive credentials and should **never** be committed to Git.
+
+```ini
+# Credentials for the application's own PostgreSQL database
+APP_DB_USER=postgres
+APP_DB_HOST=localhost
+APP_DB_DATABASE=dayabase_app
+APP_DB_PASSWORD=your_postgres_password
+APP_DB_PORT=5432
+
+# Secret keys for encrypting database connection passwords
+# MUST be 32 characters
+ENCRYPTION_KEY=iniKunciRahasiaSuperAmanAnda123!
+# MUST be 16 characters
+IV=IniVectorAman123!
+```
+
+#### Database Setup
+
+Before starting the server, you need to set up the application's database.
+
+1.  Create a new PostgreSQL database. For example, using `psql`:
+    ```sql
+    CREATE DATABASE dayabase_app;
+    ```
+2.  Connect to your new database and run the following SQL script to create the necessary tables:
+
+    ```sql
+    -- Table to store encrypted connection details for target databases
+    CREATE TABLE database_connections (
+        id SERIAL PRIMARY KEY,
+        connection_name VARCHAR(255) NOT NULL,
+        db_type VARCHAR(50) NOT NULL,
+        host VARCHAR(255) NOT NULL,
+        port INT NOT NULL,
+        db_user VARCHAR(255) NOT NULL,
+        password_encrypted TEXT NOT NULL,
+        database_name VARCHAR(255) NOT NULL,
+        created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+    );
+
+    -- Table to store saved questions (queries and chart configurations)
+    CREATE TABLE questions (
+        id SERIAL PRIMARY KEY,
+        name VARCHAR(255) NOT NULL,
+        sql_query TEXT NOT NULL,
+        chart_type VARCHAR(50) NOT NULL,
+        chart_config JSONB NOT NULL,
+        connection_id INT REFERENCES database_connections(id) ON DELETE SET NULL,
+        created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+    );
+
+    -- Table to store dashboards
+    CREATE TABLE dashboards (
+        id SERIAL PRIMARY KEY,
+        name VARCHAR(255) NOT NULL,
+        description TEXT,
+        created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+        updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+    );
+
+    -- Junction table to link questions to dashboards and store their layout
+    CREATE TABLE dashboard_questions (
+        dashboard_id INT NOT NULL REFERENCES dashboards(id) ON DELETE CASCADE,
+        question_id INT NOT NULL REFERENCES questions(id) ON DELETE CASCADE,
+        layout_config JSONB NOT NULL,
+        PRIMARY KEY (dashboard_id, question_id)
+    );
+    ```
+
 ### 3. Frontend Setup
 
 The frontend is a React application built with Vite.
@@ -97,7 +169,7 @@ You'll need to run both the backend and frontend servers simultaneously in separ
 
 ```bash
 # From the /backend directory
-npm run dev
+node app.js
 ```
 
 The API server will start, typically on `http://localhost:4000`.

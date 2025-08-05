@@ -7,6 +7,8 @@ import ChartWidget from "./ChartWidget";
 const ResponsiveGridLayout = WidthProvider(Responsive);
 
 export default function DashboardViewPage() {
+  const isEmbedMode = location.pathname.includes("/embed/");
+
   const { id } = useParams();
   const [dashboard, setDashboard] = useState(null);
   const [layout, setLayout] = useState([]);
@@ -96,13 +98,17 @@ export default function DashboardViewPage() {
 
   return (
     <div>
-      <input
-        type="text"
-        value={dashboardName}
-        onChange={(e) => setDashboardName(e.target.value)}
-        onBlur={handleRenameDashboard}
-        className="text-3xl font-bold mb-6 bg-transparent focus:outline-none focus:ring-2 focus:ring-indigo-200 rounded-md p-1 -m-1 w-full"
-      />
+      {isEmbedMode ? (
+        <h1 className="text-3xl font-bold mb-6">{dashboard.name}</h1>
+      ) : (
+        <input
+          type="text"
+          value={dashboardName}
+          onChange={(e) => setDashboardName(e.target.value)}
+          onBlur={handleRenameDashboard}
+          className="text-3xl font-bold mb-6 bg-transparent focus:outline-none focus:ring-2 focus:ring-indigo-200 rounded-md p-1 -m-1 w-full"
+        />
+      )}
       <ResponsiveGridLayout
         className="layout"
         layouts={{ lg: layout }}
@@ -110,12 +116,15 @@ export default function DashboardViewPage() {
         cols={{ lg: 12, md: 10, sm: 6, xs: 4, xxs: 2 }}
         rowHeight={30}
         onLayoutChange={(layout) => handleLayoutChange(layout)}
+        isDraggable={!isEmbedMode}
+        isResizable={!isEmbedMode}
       >
         {dashboard.questions.map((q) => (
           <div key={q.id.toString()}>
             <ChartWidget
               questionId={q.id}
               onRemove={() => handleRemoveWidget(q.id)}
+              isEmbedMode={isEmbedMode}
             />
           </div>
         ))}

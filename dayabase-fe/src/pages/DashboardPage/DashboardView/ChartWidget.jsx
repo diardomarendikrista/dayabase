@@ -8,8 +8,9 @@ import BarChart from "components/organisms/charts/BarChart";
 import LineChart from "components/organisms/charts/LineChart";
 import DonutChart from "components/organisms/charts/DonutChart";
 import ResultsTable from "components/organisms/charts/ResultsTable";
+import { cn } from "lib/utils";
 
-export default function ChartWidget({ questionId, onRemove }) {
+export default function ChartWidget({ questionId, onRemove, isEmbedMode }) {
   const [question, setQuestion] = useState(null);
   const [results, setResults] = useState([]);
   const [columns, setColumns] = useState([]);
@@ -158,19 +159,28 @@ export default function ChartWidget({ questionId, onRemove }) {
   return (
     <div className="bg-white rounded-lg shadow-md border border-gray-200 h-full w-full flex flex-col relative group overflow-hidden">
       {/* HEADER - Area yang bisa didrag - Fixed height */}
-      <div className="widget-drag-handle flex items-center justify-between px-3 py-2 cursor-move bg-gradient-to-r from-gray-50 to-gray-100 rounded-t-lg border-b border-gray-100 flex-shrink-0">
+      <div
+        className={cn(
+          "flex items-center justify-between px-3 py-2 flex-shrink-0 widget-drag-handle",
+          "rounded-t-lg border-b border-gray-100",
+          {
+            "cursor-move bg-gradient-to-r from-gray-50 to-gray-100":
+              !isEmbedMode,
+            "bg-gray-100": isEmbedMode,
+          }
+        )}
+      >
         <h3 className="font-bold text-sm truncate flex-1 pointer-events-none select-none">
           {question?.name || "Memuat..."}
         </h3>
 
-        {/* Icon drag untuk visual cue */}
-        <div className="flex items-center space-x-2">
-          <div className="text-gray-400 pointer-events-none">
-            <MdDragIndicator />
-          </div>
+        {/* Icon drag & remove */}
+        {!isEmbedMode && onRemove && (
+          <div className="flex items-center space-x-2">
+            <div className="text-gray-400 pointer-events-none">
+              <MdDragIndicator />
+            </div>
 
-          {/* Tombol hapus - dengan pointer-events: auto untuk override drag */}
-          {onRemove && (
             <button
               onClick={(e) => {
                 e.stopPropagation();
@@ -182,12 +192,12 @@ export default function ChartWidget({ questionId, onRemove }) {
               }}
               className="p-1 bg-gray-200 rounded-full text-gray-600 hover:bg-red-500 hover:text-white transition-all pointer-events-auto cursor-pointer"
               title="Hapus dari Dashboard"
-              style={{ pointerEvents: "auto" }} // Force clickable
+              style={{ pointerEvents: "auto" }}
             >
               <IoMdClose />
             </button>
-          )}
-        </div>
+          </div>
+        )}
       </div>
 
       {/* CONTENT AREA - Area yang bisa diklik untuk interaksi chart */}

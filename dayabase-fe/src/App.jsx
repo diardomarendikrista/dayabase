@@ -61,6 +61,13 @@ function App() {
             element={<DashboardViewPage />}
           />
         </Route>
+
+        <Route>
+          <Route
+            path="/embed/dashboards/:id"
+            element={<DashboardViewPage />}
+          />
+        </Route>
       </Routes>
     </BrowserRouter>
   );

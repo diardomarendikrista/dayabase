@@ -1,0 +1,6 @@
+{
+  "scripts": {
+    "start:be": "npm --prefix dayabase-be run dev",
+    "start:fe": "yarn --cwd dayabase-fe dev"
+  }
+}

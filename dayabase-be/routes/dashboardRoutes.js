@@ -10,12 +10,15 @@ router.post("/", DashboardController.createDashboard);
 router.put("/:id", DashboardController.updateDashboard);
 router.delete("/:id", DashboardController.deleteDashboard);
 
-// kelola isi dashboard
+// Manage Dasboard content
 router.post("/:id/questions", DashboardController.addQuestionToDashboard);
 router.put("/:id/layout", DashboardController.updateDashboardLayout);
 router.delete(
   "/:id/questions/:questionId",
   DashboardController.removeQuestionFromDashboard
 );
+
+// Embed & Share
+router.put("/:id/sharing", DashboardController.updateSharingStatus);
 
 module.exports = router;

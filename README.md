@@ -124,7 +124,10 @@ Before starting the server, you need to set up the application's database.
         chart_type VARCHAR(50) NOT NULL,
         chart_config JSONB NOT NULL,
         connection_id INT REFERENCES database_connections(id) ON DELETE SET NULL,
-        created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+        created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+        -- Columns for public sharing
+        public_sharing_enabled BOOLEAN DEFAULT FALSE,
+        public_token UUID UNIQUE DEFAULT gen_random_uuid()
     );
 
     -- Table to store dashboards
@@ -133,7 +136,10 @@ Before starting the server, you need to set up the application's database.
         name VARCHAR(255) NOT NULL,
         description TEXT,
         created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
-        updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+        updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+        -- Columns for public sharing
+        public_sharing_enabled BOOLEAN DEFAULT FALSE,
+        public_token UUID UNIQUE DEFAULT gen_random_uuid()
     );
 
     -- Junction table to link questions to dashboards and store their layout

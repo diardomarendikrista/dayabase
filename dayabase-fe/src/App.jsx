@@ -64,7 +64,7 @@ function App() {
 
         <Route>
           <Route
-            path="/embed/dashboards/:id"
+            path="/embed/dashboards/:token"
             element={<DashboardViewPage />}
           />
         </Route>

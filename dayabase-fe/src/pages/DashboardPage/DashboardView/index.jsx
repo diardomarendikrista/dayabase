@@ -1,57 +1,65 @@
 import { useState, useEffect } from "react";
-import { useParams } from "react-router-dom";
+import { useLocation, useParams } from "react-router-dom";
 import { API } from "axios/axios";
 import { Responsive, WidthProvider } from "react-grid-layout";
 import ChartWidget from "./ChartWidget";
+import DashboardShareModal from "./DashboardShareModal";
 
 const ResponsiveGridLayout = WidthProvider(Responsive);
 
 export default function DashboardViewPage() {
+  const { id, token } = useParams();
+  const location = useLocation();
   const isEmbedMode = location.pathname.includes("/embed/");
+  const dashboardIdentifier = id || token;
 
-  const { id } = useParams();
   const [dashboard, setDashboard] = useState(null);
   const [layout, setLayout] = useState([]);
   const [dashboardName, setDashboardName] = useState("");
   const [isLoading, setIsLoading] = useState(true);
+  const [isShareModalOpen, setIsShareModalOpen] = useState(false);
 
   useEffect(() => {
     const fetchDashboardData = async () => {
-      if (!id) return;
+      if (!dashboardIdentifier) return;
       setIsLoading(true);
+
+      // URL API berdasarkan mode
+      const apiUrl = isEmbedMode
+        ? `/api/public/dashboards/${dashboardIdentifier}`
+        : `/api/dashboards/${dashboardIdentifier}`;
+
       try {
-        const response = await API.get(`/api/dashboards/${id}`);
+        const response = await API.get(apiUrl);
         const data = response.data;
         setDashboard(data);
         setDashboardName(data.name);
 
-        // Ubah format layout dari backend agar sesuai dengan react-grid-layout
         const initialLayout = data.questions.map((q) => ({
           ...q.layout,
-          i: q.id.toString(), // Pastikan 'i' adalah string
+          i: q.id.toString(),
         }));
         setLayout(initialLayout);
       } catch (error) {
         console.error("Gagal mengambil data dashboard", error);
+        setDashboard(null); // Set ke null jika error
       } finally {
         setIsLoading(false);
       }
     };
     fetchDashboardData();
-  }, [id]);
+  }, [dashboardIdentifier, isEmbedMode]);
 
   const handleRenameDashboard = async () => {
+    if (isEmbedMode) return; // Tidak bisa rename di mode embed
     if (dashboard && dashboardName && dashboardName !== dashboard.name) {
       try {
         await API.put(`/api/dashboards/${id}`, {
           name: dashboardName,
           description: dashboard.description,
         });
-        // Perbarui state utama setelah berhasil
         setDashboard((prev) => ({ ...prev, name: dashboardName }));
       } catch (error) {
-        console.error("Gagal mengganti nama dashboard", error);
-        // Kembalikan ke nama semula jika gagal
         setDashboardName(dashboard.name);
         alert("Gagal menyimpan nama baru.");
       }
@@ -59,6 +67,7 @@ export default function DashboardViewPage() {
   };
 
   const handleLayoutChange = async (newLayout) => {
+    if (isEmbedMode) return;
     setLayout(newLayout);
     try {
       await API.put(`/api/dashboards/${id}/layout`, newLayout);
@@ -68,6 +77,7 @@ export default function DashboardViewPage() {
   };
 
   const handleRemoveWidget = async (questionIdToRemove) => {
+    if (isEmbedMode) return;
     if (
       window.confirm(
         "Apakah Anda yakin ingin menghapus chart ini dari dashboard?"
@@ -77,8 +87,6 @@ export default function DashboardViewPage() {
         await API.delete(
           `/api/dashboards/${id}/questions/${questionIdToRemove}`
         );
-
-        // Update state di frontend untuk UI yang instan
         setDashboard((prev) => ({
           ...prev,
           questions: prev.questions.filter((q) => q.id !== questionIdToRemove),
@@ -87,27 +95,32 @@ export default function DashboardViewPage() {
           prev.filter((l) => l.i !== questionIdToRemove.toString())
         );
       } catch (error) {
-        console.error("Gagal menghapus widget dari dashboard", error);
         alert("Gagal menghapus widget.");
       }
     }
   };
 
-  if (isLoading) return <p>Memuat dashboard...</p>;
-  if (!dashboard) return <p>Dashboard tidak ditemukan.</p>;
+  if (isLoading) return <p>Loading dashboard...</p>;
+  if (!dashboard) return <p>Dashboard not found.</p>;
 
   return (
     <div>
-      {isEmbedMode ? (
-        <h1 className="text-3xl font-bold mb-6">{dashboard.name}</h1>
-      ) : (
-        <input
-          type="text"
-          value={dashboardName}
-          onChange={(e) => setDashboardName(e.target.value)}
-          onBlur={handleRenameDashboard}
-          className="text-3xl font-bold mb-6 bg-transparent focus:outline-none focus:ring-2 focus:ring-indigo-200 rounded-md p-1 -m-1 w-full"
-        />
+      {!isEmbedMode && (
+        <div className="flex justify-between items-center mb-6">
+          <input
+            type="text"
+            value={dashboardName}
+            onChange={(e) => setDashboardName(e.target.value)}
+            onBlur={handleRenameDashboard}
+            className="text-3xl font-bold bg-transparent focus:outline-none focus:ring-2 focus:ring-indigo-200 rounded-md p-1 -m-1 w-1/2"
+          />
+          <button
+            onClick={() => setIsShareModalOpen(true)}
+            className="px-5 py-2 bg-blue-500 text-white font-semibold rounded-md hover:bg-blue-600"
+          >
+            Share
+          </button>
+        </div>
       )}
       <ResponsiveGridLayout
         className="layout"
@@ -129,6 +142,13 @@ export default function DashboardViewPage() {
           </div>
         ))}
       </ResponsiveGridLayout>
+
+      {isShareModalOpen && (
+        <DashboardShareModal
+          dashboardId={id}
+          onClose={() => setIsShareModalOpen(false)}
+        />
+      )}
     </div>
   );
 }

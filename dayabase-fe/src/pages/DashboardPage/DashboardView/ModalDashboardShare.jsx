@@ -2,7 +2,11 @@ import { useState, useEffect } from "react";
 import { API } from "axios/axios";
 import Modal from "components/molecules/Modal";
 
-export default function DashboardShareModal({ dashboardId, onClose }) {
+export default function DashboardShareModal({
+  dashboardId,
+  showModal,
+  setShowModal,
+}) {
   const [dashboardData, setDashboardData] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
 
@@ -55,14 +59,15 @@ export default function DashboardShareModal({ dashboardId, onClose }) {
   return (
     <Modal
       title="Sharing & Embedding"
-      onClose={onClose}
+      showModal={showModal}
+      setShowModal={setShowModal}
     >
       {isLoading ? (
         <p>Memuat...</p>
       ) : dashboardData ? (
         <div>
           <div className="flex items-center justify-between p-4 border rounded-md">
-            <p className="font-medium">Aktifkan Link Publik</p>
+            <p className="font-medium">Activate Public Link</p>
             <button
               onClick={() =>
                 handleToggleSharing(!dashboardData.public_sharing_enabled)
@@ -73,9 +78,7 @@ export default function DashboardShareModal({ dashboardId, onClose }) {
                   : "bg-green-500 hover:bg-green-600"
               }`}
             >
-              {dashboardData.public_sharing_enabled
-                ? "Nonaktifkan"
-                : "Aktifkan"}
+              {dashboardData.public_sharing_enabled ? "Deactivate" : "Activate"}
             </button>
           </div>
 
@@ -83,7 +86,7 @@ export default function DashboardShareModal({ dashboardId, onClose }) {
             <div className="mt-4 space-y-4">
               <div>
                 <label className="block text-sm font-medium text-gray-700">
-                  Kode Iframe untuk Embed
+                  Embed Iframe Code
                 </label>
                 <textarea
                   readOnly
@@ -94,7 +97,7 @@ export default function DashboardShareModal({ dashboardId, onClose }) {
                   onClick={() => copyToClipboard(getIframeCode())}
                   className="mt-2 px-4 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700"
                 >
-                  Salin Kode
+                  Copy Code
                 </button>
               </div>
             </div>

@@ -1,7 +1,5 @@
 import { API } from "axios/axios";
 import { useState, useEffect } from "react";
-import GridLayout from "react-grid-layout";
-import ChartWidget from "./DashboardView/ChartWidget";
 import { Link, useNavigate } from "react-router-dom";
 
 export default function DashboardPage() {
@@ -57,7 +55,7 @@ export default function DashboardPage() {
           onClick={handleCreateDashboard}
           className="px-5 py-2 bg-indigo-600 text-white font-semibold rounded-md hover:bg-indigo-700"
         >
-          Buat Dashboard Baru
+          Create New Dashboard
         </button>
       </div>
       <div className="bg-white p-4 rounded-lg shadow-md border border-gray-200">
@@ -80,13 +78,13 @@ export default function DashboardPage() {
                 onClick={() => handleDelete(d.id)}
                 className="text-red-500 hover:text-red-700 font-semibold"
               >
-                Hapus
+                Delete
               </button>
             </li>
           ))}
         </ul>
         {dashboards.length === 0 && (
-          <p className="text-center text-gray-500 py-4">Belum ada dashboard.</p>
+          <p className="text-center text-gray-500 py-4">You don't have any dashboards yet.</p>
         )}
       </div>
     </div>

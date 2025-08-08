@@ -79,7 +79,7 @@ class QueryController {
     }
   }
 
-  // ini nanti dihapus, pake yang atas
+  // ini nanti dihapus, pake yang atas (Ini untuk test menu MVP aja)
   static async testRunQuery(req, res) {
     const { sql, dbConfig } = req.body;
 

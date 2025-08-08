@@ -30,3 +30,9 @@ JOIN jobs j ON ap.job_id = j.id
 JOIN test_results tr ON ap.id = tr.application_id
 JOIN tests t ON tr.test_id = t.id
 WHERE j.title = 'Backend Developer';
+
+
+Next?
+- Auth dulu
+- Tambah model chart dulu
+- Filter Dashboard (major, karena ubah fullstack + cara tulis query)

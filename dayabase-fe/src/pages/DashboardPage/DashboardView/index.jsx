@@ -3,7 +3,9 @@ import { useLocation, useParams } from "react-router-dom";
 import { API } from "axios/axios";
 import { Responsive, WidthProvider } from "react-grid-layout";
 import ChartWidget from "./ChartWidget";
-import DashboardShareModal from "./DashboardShareModal";
+import ModalDashboardShare from "./ModalDashboardShare";
+import ModalAddQuestion from "./ModalAddQuestion";
+import { MdOutlineShare } from "react-icons/md";
 
 const ResponsiveGridLayout = WidthProvider(Responsive);
 
@@ -17,38 +19,37 @@ export default function DashboardViewPage() {
   const [layout, setLayout] = useState([]);
   const [dashboardName, setDashboardName] = useState("");
   const [isLoading, setIsLoading] = useState(true);
-  const [isShareModalOpen, setIsShareModalOpen] = useState(false);
 
-  useEffect(() => {
-    const fetchDashboardData = async () => {
-      if (!dashboardIdentifier) return;
-      setIsLoading(true);
+  const [showModalShare, setShowModalShare] = useState(false);
+  const [showModalAdd, setShowModalAdd] = useState(false);
 
-      // URL API berdasarkan mode
-      const apiUrl = isEmbedMode
-        ? `/api/public/dashboards/${dashboardIdentifier}`
-        : `/api/dashboards/${dashboardIdentifier}`;
+  const fetchDashboardData = async () => {
+    if (!dashboardIdentifier) return;
+    setIsLoading(true);
 
-      try {
-        const response = await API.get(apiUrl);
-        const data = response.data;
-        setDashboard(data);
-        setDashboardName(data.name);
+    // URL API berdasarkan mode
+    const apiUrl = isEmbedMode
+      ? `/api/public/dashboards/${dashboardIdentifier}`
+      : `/api/dashboards/${dashboardIdentifier}`;
 
-        const initialLayout = data.questions.map((q) => ({
-          ...q.layout,
-          i: q.id.toString(),
-        }));
-        setLayout(initialLayout);
-      } catch (error) {
-        console.error("Gagal mengambil data dashboard", error);
-        setDashboard(null); // Set ke null jika error
-      } finally {
-        setIsLoading(false);
-      }
-    };
-    fetchDashboardData();
-  }, [dashboardIdentifier, isEmbedMode]);
+    try {
+      const response = await API.get(apiUrl);
+      const data = response.data;
+      setDashboard(data);
+      setDashboardName(data.name);
+
+      const initialLayout = data.questions.map((q) => ({
+        ...q.layout,
+        i: q.id.toString(),
+      }));
+      setLayout(initialLayout);
+    } catch (error) {
+      console.error("Gagal mengambil data dashboard", error);
+      setDashboard(null); // Set ke null jika error
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   const handleRenameDashboard = async () => {
     if (isEmbedMode) return; // Tidak bisa rename di mode embed
@@ -100,8 +101,18 @@ export default function DashboardViewPage() {
     }
   };
 
+  const handleQuestionAdded = () => {
+    fetchDashboardData();
+  };
+
+  useEffect(() => {
+    fetchDashboardData();
+  }, [dashboardIdentifier, isEmbedMode]);
+
   if (isLoading) return <p>Loading dashboard...</p>;
   if (!dashboard) return <p>Dashboard not found.</p>;
+
+  const existingQuestionIds = dashboard.questions.map((q) => q.id); // show only unadded questions
 
   return (
     <div>
@@ -114,12 +125,22 @@ export default function DashboardViewPage() {
             onBlur={handleRenameDashboard}
             className="text-3xl font-bold bg-transparent focus:outline-none focus:ring-2 focus:ring-indigo-200 rounded-md p-1 -m-1 w-1/2"
           />
-          <button
-            onClick={() => setIsShareModalOpen(true)}
-            className="px-5 py-2 bg-blue-500 text-white font-semibold rounded-md hover:bg-blue-600"
-          >
-            Share
-          </button>
+          <div className="flex items-center space-x-4">
+            <button
+              onClick={() => setShowModalAdd(true)}
+              className="cursor-pointer px-5 py-2 bg-green-500 text-white font-semibold rounded-md hover:bg-green-600"
+            >
+              + Add Question
+            </button>
+            <button
+              onClick={() => setShowModalShare(true)}
+              className="cursor-pointer px-5 py-2 bg-blue-500 text-white font-semibold rounded-md hover:bg-blue-600"
+            >
+              <div className="flex items-center gap-1">
+                <MdOutlineShare /> Share
+              </div>
+            </button>
+          </div>
         </div>
       )}
       <ResponsiveGridLayout
@@ -143,12 +164,18 @@ export default function DashboardViewPage() {
         ))}
       </ResponsiveGridLayout>
 
-      {isShareModalOpen && (
-        <DashboardShareModal
-          dashboardId={id}
-          onClose={() => setIsShareModalOpen(false)}
-        />
-      )}
+      <ModalDashboardShare
+        dashboardId={id}
+        showModal={showModalShare}
+        setShowModal={setShowModalShare}
+      />
+      <ModalAddQuestion
+        dashboardId={id}
+        showModal={showModalAdd}
+        setShowModal={setShowModalAdd}
+        onQuestionAdded={handleQuestionAdded}
+        existingQuestionIds={existingQuestionIds}
+      />
     </div>
   );
 }

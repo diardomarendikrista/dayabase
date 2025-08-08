@@ -1,5 +1,5 @@
 import { API } from "axios/axios";
-import ModalAddToDashboard from "components/organisms/ModalAddToDashboard";
+import ModalAddToDashboard from "pages/QuestionsPage/ModalAddToDashboard";
 import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 
@@ -7,12 +7,12 @@ export default function QuestionsListPage() {
   const [questions, setQuestions] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
 
-  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [modalAddToDashboard, setShowModalAddToDashboard] = useState(false);
   const [selectedQuestionId, setSelectedQuestionId] = useState(null);
 
   const openAddToDashboardModal = (id) => {
     setSelectedQuestionId(id);
-    setIsModalOpen(true);
+    setShowModalAddToDashboard(true);
   };
 
   useEffect(() => {
@@ -96,12 +96,11 @@ export default function QuestionsListPage() {
         )}
       </div>
 
-      {isModalOpen && (
-        <ModalAddToDashboard
-          questionId={selectedQuestionId}
-          onClose={() => setIsModalOpen(false)}
-        />
-      )}
+      <ModalAddToDashboard
+        questionId={selectedQuestionId}
+        showModal={modalAddToDashboard}
+        setShowModal={setShowModalAddToDashboard}
+      />
     </div>
   );
 }

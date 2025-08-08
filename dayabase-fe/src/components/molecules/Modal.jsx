@@ -1,15 +1,29 @@
 import ModalPortal from "../atoms/ModalPortal"; // Pastikan path ini benar
 
-export default function Modal({ children, title, onClose }) {
+export default function Modal({
+  children,
+  title,
+  onClose,
+  showModal,
+  setShowModal,
+}) {
+  const handleClose = () => {
+    setShowModal && setShowModal(false);
+    onClose && onClose();
+    console.log("MASUK?");
+  };
+
   // Mencegah klik di dalam modal ikut menutup modal (event bubbling)
   const handleContentClick = (e) => e.stopPropagation();
 
   return (
-    <ModalPortal>
+    <ModalPortal aria-hidden={!showModal}>
       {/* Lapisan Overlay Abu-abu */}
       <div
-        className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50"
-        onClick={onClose} // Menutup modal saat overlay diklik
+        className={`fixed inset-0 bg-black/50 flex justify-center items-center z-50 transition-opacity duration-300 ${
+          showModal ? "" : "opacity-0 pointer-events-none"
+        }`}
+        onClick={handleClose}
       >
         {/* Kontainer Konten Modal */}
         <div
@@ -20,7 +34,7 @@ export default function Modal({ children, title, onClose }) {
           <div className="flex justify-between items-center mb-4 pb-4 border-b">
             <h2 className="text-xl font-bold">{title}</h2>
             <button
-              onClick={onClose}
+              onClick={handleClose}
               className="text-gray-500 hover:text-gray-800"
             >
               <svg

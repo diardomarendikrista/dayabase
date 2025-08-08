@@ -52,7 +52,7 @@ class DashboardController {
       // Query untuk mengambil detail dashboard dan semua question di dalamnya
       const queryText = `
         SELECT 
-          d.id as dashboard_id, d.name, d.description,
+          d.id as dashboard_id, d.name, d.description, d.public_sharing_enabled, d.public_token,
           dq.question_id, q.name as question_name, q.chart_type,
           dq.layout_config
         FROM dashboards d
@@ -71,6 +71,8 @@ class DashboardController {
         id: result.rows[0].dashboard_id,
         name: result.rows[0].name,
         description: result.rows[0].description,
+        public_sharing_enabled: result.rows[0].public_sharing_enabled,
+        public_token: result.rows[0].public_token,
         questions: result.rows[0].question_id
           ? result.rows.map((row) => ({
               id: row.question_id,

@@ -1,6 +1,7 @@
 import QueryEditorForm from "./Components/QueryEditorForm";
 import { useQuestionEditor } from "./Components/useQuestionEditor";
 import VisualizationPanel from "./Components/VisualizationPanel";
+import Input from "components/atoms/Input";
 
 export default function QuestionEditorPage() {
   const {
@@ -15,7 +16,8 @@ export default function QuestionEditorPage() {
     results,
     columns,
     isLoading,
-    error,
+    errors,
+    setErrors,
     chartType,
     setChartType,
     chartConfig,
@@ -28,13 +30,26 @@ export default function QuestionEditorPage() {
   return (
     <div>
       <div className="flex justify-between items-center mb-6">
-        <input
-          type="text"
-          value={pageTitle}
-          onChange={(e) => setPageTitle(e.target.value)}
-          placeholder="Enter question name"
-          className="text-3xl font-bold bg-transparent focus:outline-none focus:ring-2 focus:ring-indigo-200 rounded-md p-1 -m-1 w-1/2"
-        />
+        <div className="w-1/2  -m-1">
+          <Input
+            type="text"
+            value={pageTitle}
+            onChange={(e) => {
+              setPageTitle(e.target.value);
+              if (errors.pageTitle) {
+                const newErrors = { ...errors };
+                delete newErrors.pageTitle;
+                setErrors(newErrors);
+              }
+            }}
+            placeholder="Enter question name"
+            className="text-3xl font-bold bg-transparent focus:outline-none focus:ring-2 focus:ring-indigo-200 rounded-md p-1"
+            error={!!errors.pageTitle} // Kirim status error ke komponen Input
+          />
+          {errors.pageTitle && (
+            <p className="text-red-600 text-sm mt-1">{errors.pageTitle}</p>
+          )}
+        </div>
         <div>
           <button
             onClick={handleSaveQuestion}
@@ -55,13 +70,21 @@ export default function QuestionEditorPage() {
       <QueryEditorForm
         connections={connections}
         selectedConnectionId={selectedConnectionId}
-        onConnectionChange={(e) => setSelectedConnectionId(e.target.value)}
+        onConnectionChange={(e) => {
+          setSelectedConnectionId(e.target.value);
+          if (errors.selectedConnectionId) {
+            const newErrors = { ...errors };
+            delete newErrors.selectedConnectionId;
+            setErrors(newErrors);
+          }
+        }}
         sql={sql}
         onSqlChange={(e) => setSql(e.target.value)}
+        error={errors.selectedConnectionId}
       />
 
       <VisualizationPanel
-        error={error}
+        error={errors.api}
         isLoading={isLoading}
         results={results}
         columns={columns}

@@ -1,11 +1,44 @@
 import { API } from "axios/axios";
 import { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
+import ConfirmationModal from "components/molecules/ConfirmationModal";
+import { PromptModal } from "components/molecules/PromptModal";
 
 export default function DashboardPage() {
   const [dashboards, setDashboards] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const navigate = useNavigate();
+
+  // State untuk mengelola modal
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [showCreateModal, setShowCreateModal] = useState(false);
+  const [itemToDelete, setItemToDelete] = useState(null);
+
+  const openDeleteModal = (dashboard) => {
+    setItemToDelete(dashboard);
+    setShowDeleteModal(true);
+  };
+
+  const handleCreateDashboard = async (name) => {
+    if (name) {
+      try {
+        const response = await API.post("/api/dashboards", { name });
+        navigate(`/dashboards/${response.data.id}`);
+      } catch (error) {
+        alert("Gagal membuat dashboard.");
+      }
+    }
+  };
+
+  const handleDelete = async () => {
+    if (!itemToDelete) return;
+    try {
+      await API.delete(`/api/dashboards/${itemToDelete.id}`);
+      setDashboards((prev) => prev.filter((d) => d.id !== itemToDelete.id));
+    } catch (err) {
+      alert("Gagal menghapus dashboard.");
+    }
+  };
 
   useEffect(() => {
     const fetchDashboards = async () => {
@@ -21,30 +54,6 @@ export default function DashboardPage() {
     fetchDashboards();
   }, []);
 
-  const handleCreateDashboard = async () => {
-    const name = window.prompt("Masukkan nama untuk dashboard baru:");
-    if (name) {
-      try {
-        const response = await API.post("/api/dashboards", { name });
-        // Langsung arahkan ke halaman dashboard yang baru dibuat
-        navigate(`/dashboards/${response.data.id}`);
-      } catch (error) {
-        alert("Gagal membuat dashboard.");
-      }
-    }
-  };
-
-  const handleDelete = async (id) => {
-    if (window.confirm("Apakah Anda yakin ingin menghapus dashboard ini?")) {
-      try {
-        await API.delete(`/api/dashboards/${id}`);
-        setDashboards((prev) => prev.filter((d) => d.id !== id));
-      } catch (err) {
-        alert("Gagal menghapus dashboard.");
-      }
-    }
-  };
-
   if (isLoading) return <p>Memuat dashboards...</p>;
 
   return (
@@ -52,7 +61,7 @@ export default function DashboardPage() {
       <div className="flex justify-between items-center mb-6">
         <h1 className="text-3xl font-bold">Dashboards</h1>
         <button
-          onClick={handleCreateDashboard}
+          onClick={() => setShowCreateModal(true)}
           className="px-5 py-2 bg-indigo-600 text-white font-semibold rounded-md hover:bg-indigo-700"
         >
           Create New Dashboard
@@ -60,7 +69,7 @@ export default function DashboardPage() {
       </div>
       <div className="bg-white p-4 rounded-lg shadow-md border border-gray-200">
         <ul className="divide-y divide-gray-200">
-          {dashboards.map((d) => (
+          {dashboards?.map((d) => (
             <li
               key={d.id}
               className="py-4 flex justify-between items-center"
@@ -75,7 +84,7 @@ export default function DashboardPage() {
                 </p>
               </Link>
               <button
-                onClick={() => handleDelete(d.id)}
+                onClick={() => openDeleteModal(d)}
                 className="text-red-500 hover:text-red-700 font-semibold"
               >
                 Delete
@@ -84,9 +93,30 @@ export default function DashboardPage() {
           ))}
         </ul>
         {dashboards.length === 0 && (
-          <p className="text-center text-gray-500 py-4">You don't have any dashboards yet.</p>
+          <p className="text-center text-gray-500 py-4">
+            You don't have any dashboards yet.
+          </p>
         )}
       </div>
+
+      <ConfirmationModal
+        showModal={showDeleteModal}
+        setShowModal={setShowDeleteModal}
+        title="Hapus Dashboard"
+        message={`Apakah Anda yakin ingin menghapus dashboard "${itemToDelete?.name}"? Aksi ini tidak dapat dibatalkan.`}
+        onConfirm={handleDelete}
+        confirmText="Ya, Hapus"
+        isDestructive={true}
+      />
+
+      <PromptModal
+        showModal={showCreateModal}
+        setShowModal={setShowCreateModal}
+        title="Buat Dashboard Baru"
+        message="Masukkan nama untuk dashboard baru Anda:"
+        onConfirm={handleCreateDashboard}
+        closeOnOverlayClick={false}
+      />
     </div>
   );
 }

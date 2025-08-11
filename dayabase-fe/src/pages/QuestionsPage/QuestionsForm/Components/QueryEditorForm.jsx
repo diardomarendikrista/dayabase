@@ -4,6 +4,7 @@ export default function QueryEditorForm({
   onConnectionChange,
   sql,
   onSqlChange,
+  error,
 }) {
   return (
     <div className="bg-white p-6 rounded-lg shadow-md border border-gray-200">
@@ -14,7 +15,7 @@ export default function QueryEditorForm({
         <select
           value={selectedConnectionId}
           onChange={onConnectionChange}
-          className="w-full md:w-1/2 rounded-md border-gray-300"
+          className={`w-full md:w-1/2 rounded-md border-gray-300 shadow-sm transition duration-150 ${error ? "border-red-500 ring-red-500 border-1" : "focus:border-indigo-500 focus:ring-indigo-500"}`}
         >
           <option
             value=""
@@ -31,6 +32,7 @@ export default function QueryEditorForm({
             </option>
           ))}
         </select>
+        {error && <p className="text-red-600 text-sm mt-1">{error}</p>}
       </div>
       <h2 className="text-xl font-semibold mb-2">SQL Query</h2>
       <textarea

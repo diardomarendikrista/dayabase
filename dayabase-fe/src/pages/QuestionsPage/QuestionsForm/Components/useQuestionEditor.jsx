@@ -6,15 +6,14 @@ export function useQuestionEditor() {
   const { id } = useParams();
   const navigate = useNavigate();
 
-  // State
-  const [pageTitle, setPageTitle] = useState("New Question");
+  const [pageTitle, setPageTitle] = useState("");
   const [connections, setConnections] = useState([]);
   const [selectedConnectionId, setSelectedConnectionId] = useState("");
   const [sql, setSql] = useState("");
   const [results, setResults] = useState([]);
   const [columns, setColumns] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState(null);
+  const [errors, setErrors] = useState({});
   const [chartType, setChartType] = useState("table");
   const [chartConfig, setChartConfig] = useState({ category: "", value: "" });
 
@@ -33,7 +32,7 @@ export function useQuestionEditor() {
   // Effect untuk mengambil data pertanyaan JIKA ada 'id' di URL
   useEffect(() => {
     const resetState = () => {
-      setPageTitle("New Question");
+      setPageTitle("");
       setSql("");
       setResults([]);
       setColumns([]);
@@ -87,7 +86,6 @@ export function useQuestionEditor() {
       return alert("Please select a database connection.");
 
     setIsLoading(true);
-    setError(null);
     setResults([]);
     try {
       const response = await API.post("/api/query/run", {
@@ -112,42 +110,54 @@ export function useQuestionEditor() {
         setResults([]);
       }
     } catch (err) {
-      setError(err.response?.data?.message || "An unknown error occurred.");
+      setErrors({
+        api: err.response?.data?.message || "An unknown error occurred.",
+      });
     } finally {
       setIsLoading(false);
     }
   };
 
   const handleSaveQuestion = async () => {
-    const name = id
-      ? pageTitle
-      : window.prompt("Enter a name for this question:");
+    const newErrors = {};
 
-    if (name && selectedConnectionId) {
-      const payload = {
-        name,
-        sql_query: sql,
-        chart_type: chartType,
-        chart_config: chartConfig,
-        connection_id: selectedConnectionId,
-      };
+    // validation
+    if (!pageTitle.trim()) {
+      newErrors.pageTitle = "Nama pertanyaan tidak boleh kosong.";
+    }
+    if (!selectedConnectionId) {
+      newErrors.selectedConnectionId =
+        "Pilih koneksi database terlebih dahulu.";
+    }
+    if (Object.keys(newErrors).length > 0) {
+      setErrors(newErrors);
+      return;
+    }
 
-      try {
-        if (id) {
-          // Mode UPDATE
-          await API.put(`api/questions/${id}`, payload);
-          alert("Question updated successfully!");
-        } else {
-          // Mode CREATE
-          await API.post("api/questions", payload);
-          alert("Question saved successfully!");
-        }
-        // Setelah berhasil, kembali ke halaman daftar
-        navigate("/questions");
-      } catch (error) {
-        console.error("Failed to save/update question:", error);
-        alert("Operation failed. Please check the console.");
+    // validated, do next line
+    setErrors({});
+
+    const payload = {
+      name: pageTitle,
+      sql_query: sql,
+      chart_type: chartType,
+      chart_config: chartConfig,
+      connection_id: selectedConnectionId,
+    };
+
+    try {
+      if (id) {
+        await API.put(`/api/questions/${id}`, payload);
+        // nanti ada notifikasi "toast" di sini
+      } else {
+        await API.post("/api/questions", payload);
       }
+      navigate("/questions");
+    } catch (err) {
+      console.error("Failed to save/update question:", err);
+      setErrors({
+        api: err.response?.data?.message || "Operasi gagal. Silakan coba lagi.",
+      });
     }
   };
 
@@ -180,7 +190,8 @@ export function useQuestionEditor() {
     results,
     columns,
     isLoading,
-    error,
+    errors,
+    setErrors,
     chartType,
     setChartType,
     chartConfig,

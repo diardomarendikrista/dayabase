@@ -6,11 +6,11 @@ export default function Modal({
   onClose,
   showModal,
   setShowModal,
+  closeOnOverlayClick = true,
 }) {
   const handleClose = () => {
     setShowModal && setShowModal(false);
     onClose && onClose();
-    console.log("MASUK?");
   };
 
   // Mencegah klik di dalam modal ikut menutup modal (event bubbling)
@@ -23,7 +23,7 @@ export default function Modal({
         className={`fixed inset-0 bg-black/50 flex justify-center items-center z-50 transition-opacity duration-300 ${
           showModal ? "" : "opacity-0 pointer-events-none"
         }`}
-        onClick={handleClose}
+        onClick={closeOnOverlayClick ? handleClose : undefined}
       >
         {/* Kontainer Konten Modal */}
         <div

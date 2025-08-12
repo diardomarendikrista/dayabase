@@ -17,16 +17,14 @@ export default function LoginPage() {
       navigate("/"); // Arahkan ke dashboard setelah login
       // window.location.reload(); // Paksa reload untuk update state
     } catch (err) {
-      setError("Email atau password salah.");
+      setError("Incorrect email or password.");
     }
   };
 
   return (
     <div className="flex items-center justify-center min-h-screen bg-gray-100">
       <div className="p-8 bg-white rounded-lg shadow-md w-full max-w-sm">
-        <h1 className="text-2xl font-bold mb-6 text-center">
-          Login ke DayaBase
-        </h1>
+        <h1 className="text-2xl font-bold mb-6 text-center">Dayabase Login</h1>
         <form
           onSubmit={handleLogin}
           className="space-y-4"

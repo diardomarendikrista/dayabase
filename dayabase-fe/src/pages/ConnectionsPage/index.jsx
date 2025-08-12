@@ -34,7 +34,7 @@ export default function ConnectionsListPage() {
     }
   };
 
-  if (isLoading) return <p>Memuat koneksi...</p>;
+  if (isLoading) return <p>Loading Connections...</p>;
   if (error) return <p className="text-red-500">{error}</p>;
 
   return (
@@ -83,7 +83,7 @@ export default function ConnectionsListPage() {
         </ul>
         {connections.length === 0 && (
           <p className="text-center text-gray-500 py-4">
-            Belum ada koneksi. Tambahkan satu untuk memulai.
+            No connections yet. Add one to get started.
           </p>
         )}
       </div>

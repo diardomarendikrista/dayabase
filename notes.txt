@@ -1,15 +1,22 @@
-# Analisis Lowongan Kerja
+# Statistik Pelamar - Bar
+SELECT education, COUNT(*) FROM applicants GROUP BY education;
+
+# Analisis Lowongan Kerja - Donut
 SELECT j.title, COUNT(a.id) AS total_applicants
 FROM jobs j
 LEFT JOIN applications a ON j.id = a.job_id
 GROUP BY j.title;
 
+# All jobs - Line , Max Salary Bar, Min Salary Bar, 
+SELECT * FROM jobs
 
-# Statistik Pelamar 
-SELECT education, COUNT(*) FROM applicants GROUP BY education;
+# Statistik Pendidikan Pelamar (Table)
+SELECT education, COUNT(*) FROM applicants GROUP BY education
 
-# Status Aplikasi
-SELECT status, COUNT(*) FROM applications GROUP BY status;
+# All Applicants - Table
+SELECT * FROM applicants
+
+# bawah buat nanti
 
 # Evaluasi Tes
 SELECT t.test_name, AVG(tr.score) AS avg_score
@@ -30,6 +37,11 @@ JOIN jobs j ON ap.job_id = j.id
 JOIN test_results tr ON ap.id = tr.application_id
 JOIN tests t ON tr.test_id = t.id
 WHERE j.title = 'Backend Developer';
+
+
+# Status Aplikasi
+SELECT status, COUNT(*) FROM applications GROUP BY status;
+
 
 
 Next?

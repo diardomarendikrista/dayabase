@@ -1,5 +1,5 @@
 import { useState, useMemo } from "react";
-import axios from "axios";
+import { API } from "axios/axios";
 import ResultsTable from "components/organisms/charts/ResultsTable";
 import BarChart from "components/organisms/charts/BarChart";
 import LineChart from "components/organisms/charts/LineChart";
@@ -52,7 +52,7 @@ function MVP() {
     setChartConfig({ category: "", value: "" });
 
     try {
-      const response = await axios.post("http://localhost:4000/api/query/testRun", {
+      const response = await API.post("/api/query/testRun", {
         sql,
         dbConfig,
       });
@@ -288,8 +288,8 @@ function MVP() {
                     <BarChart
                       xAxisData={transformedData.xAxisData}
                       seriesData={transformedData.seriesData}
-                      xAxisName={chartConfig.category}
-                      yAxisName={chartConfig.value}
+                      // xAxisName={chartConfig.category}
+                      // yAxisName={chartConfig.value}
                     />
                   )}
                   {transformedData && chartType === "line" && (

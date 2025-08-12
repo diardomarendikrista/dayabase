@@ -79,13 +79,27 @@ function App() {
             {/* NEED AUTH */}
             <Route element={<ProtectedRoute />}>
               <Route element={<MainLayout />}>
-                {/* <Route path="/" element={<DashboardPage />} /> */}
-
-                {/* Rute untuk Questions */}
+                {/* Rute untuk Dashboards */}
                 <Route
                   path="/"
+                  element={<DashboardPage />}
+                />
+                <Route
+                  path="/dashboards"
+                  element={<DashboardPage />}
+                />
+                <Route
+                  path="/dashboards/:id"
+                  element={<DashboardViewPage />}
+                />
+
+                {/* Route MVP, nanti dihapus, untuk demo aja */}
+                <Route
+                  path="/mvp"
                   element={<MVP />}
                 />
+
+                {/* Rute untuk Questions */}
                 <Route
                   path="/questions"
                   element={<QuestionsListPage />}
@@ -111,14 +125,6 @@ function App() {
                 <Route
                   path="/settings/connections/:id/edit"
                   element={<ConnectionFormPage />}
-                />
-                <Route
-                  path="/dashboards"
-                  element={<DashboardPage />}
-                />
-                <Route
-                  path="/dashboards/:id"
-                  element={<DashboardViewPage />}
                 />
               </Route>
             </Route>

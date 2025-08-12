@@ -11,6 +11,16 @@ const isProduction = process.env.NODE_ENV === "production";
 // Set the base URLs based on the environment
 const baseUrl = isProduction ? serviceProduction : serviceLocal;
 
-export const API = axios.create({
+const API = axios.create({
   baseURL: baseUrl,
 });
+
+API.interceptors.request.use((req) => {
+  const token = localStorage.getItem("authToken");
+  if (token) {
+    req.headers.Authorization = `Bearer ${token}`;
+  }
+  return req;
+});
+
+export { API };

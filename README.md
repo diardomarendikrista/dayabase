@@ -6,16 +6,14 @@ This project is a monorepo containing both the backend API and the frontend clie
 
 ## ✨ Features
 
+- **User Authentication**: Secure login system with a "first-user-is-admin" setup, followed by an invitation-only model.
+- **Role-Based Access**: Manage users with different roles (Admin, Editor, Viewer).
 - **Multiple Database Connections**: Securely connect to various SQL databases like PostgreSQL, MySQL, and more.
 - **Powerful SQL Editor**: A clean interface to write and execute raw SQL queries directly against your data.
-- **Dynamic Visualizations**: Instantly transform your query results into various chart types:
-  - Data Tables
-  - Bar Charts
-  - Line Charts
-  - Donut Charts
-  <!-- - **Customizable Charts**: Easily map data columns to chart axes and labels. -->
-- **Dashboarding**: Create interactive, drag-and-drop dashboards to display multiple saved questions (charts).
-- **CRUD Operations**: Full create, read, update, and delete functionality for both database connections and saved questions.
+- **Dynamic Visualizations**: Instantly transform your query results into various chart types like Tables, Bar, Line, and Donut charts.
+- **Interactive Dashboards**: Create, manage, and share drag-and-drop dashboards.
+- **Public Sharing**: Securely share dashboards with a public link via an `<iframe>` embed.
+- **Full CRUD Operations**: Manage all your connections, questions, and dashboards.
 
 ---
 
@@ -23,7 +21,7 @@ This project is a monorepo containing both the backend API and the frontend clie
 
 - **Backend**: Node.js with Express.js
 - **Frontend**: React with Vite for a blazing-fast development experience.
-- **Database (Application)**: PostgreSQL to store connections, questions, and dashboards.
+- **Database (Application)**: PostgreSQL to store users, connections, questions, and dashboards.
 - **Charting Library**: ECharts for rich and interactive visualizations.
 - **Dashboard Grid**: `react-grid-layout` for draggable and resizable widgets.
 - **Styling**: Tailwind CSS for a modern, utility-first design.
@@ -47,7 +45,7 @@ Follow these steps to get the project up and running on your local machine.
 ### 1. Clone the Repository
 
 ```bash
-git clone https://github.com/your-username/dayabase.git
+git clone [https://github.com/your-username/dayabase.git](https://github.com/your-username/dayabase.git)
 cd dayabase
 ```
 
@@ -66,13 +64,6 @@ npm install
 cp .env.example .env
 ```
 
-Next, open the `.env` file and fill in the required environment variables:
-
-- `APP_DB_*`: Credentials for the application's own PostgreSQL database (where it stores questions and dashboards).
-- `ENCRYPTION_KEY` and `IV`: Secret keys for encrypting database connection passwords.
-
-Finally, set up the application database by running the necessary SQL scripts to create the tables (`database_connections`, `questions`, `dashboards`, etc.).
-
 #### Environment Variables (`.env`)
 
 Open the `.env` file and fill in the required environment variables. This file stores sensitive credentials and should **never** be committed to Git.
@@ -85,11 +76,14 @@ APP_DB_DATABASE=dayabase_app
 APP_DB_PASSWORD=your_postgres_password
 APP_DB_PORT=5432
 
+# Secret key for signing JSON Web Tokens (JWT)
+JWT_SECRET=your_super_secret_jwt_key_that_is_long_and_random
+
 # Secret keys for encrypting database connection passwords
 # MUST be 32 characters
-ENCRYPTION_KEY=iniKunciRahasiaSuperAmanAnda123!
+ENCRYPTION_KEY=a_very_secure_32_character_key!!
 # MUST be 16 characters
-IV=IniVectorAman123!
+IV=a_secure_16_char_iv
 ```
 
 #### Database Setup
@@ -103,6 +97,18 @@ Before starting the server, you need to set up the application's database.
 2.  Connect to your new database and run the following SQL script to create the necessary tables:
 
     ```sql
+    -- Table for users and roles
+    CREATE TABLE users (
+        id SERIAL PRIMARY KEY,
+        email VARCHAR(255) UNIQUE NOT NULL,
+        password_hash TEXT NOT NULL,
+        full_name VARCHAR(255),
+        role VARCHAR(50) NOT NULL DEFAULT 'VIEWER',
+        is_active BOOLEAN DEFAULT TRUE,
+        created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+        updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+    );
+
     -- Table to store encrypted connection details for target databases
     CREATE TABLE database_connections (
         id SERIAL PRIMARY KEY,
@@ -113,7 +119,8 @@ Before starting the server, you need to set up the application's database.
         db_user VARCHAR(255) NOT NULL,
         password_encrypted TEXT NOT NULL,
         database_name VARCHAR(255) NOT NULL,
-        created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+        created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+        user_id INT REFERENCES users(id) ON DELETE CASCADE
     );
 
     -- Table to store saved questions (queries and chart configurations)
@@ -125,9 +132,9 @@ Before starting the server, you need to set up the application's database.
         chart_config JSONB NOT NULL,
         connection_id INT REFERENCES database_connections(id) ON DELETE SET NULL,
         created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
-        -- Columns for public sharing
         public_sharing_enabled BOOLEAN DEFAULT FALSE,
-        public_token UUID UNIQUE DEFAULT gen_random_uuid()
+        public_token UUID UNIQUE DEFAULT gen_random_uuid(),
+        user_id INT REFERENCES users(id) ON DELETE CASCADE
     );
 
     -- Table to store dashboards
@@ -137,9 +144,9 @@ Before starting the server, you need to set up the application's database.
         description TEXT,
         created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
         updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
-        -- Columns for public sharing
         public_sharing_enabled BOOLEAN DEFAULT FALSE,
-        public_token UUID UNIQUE DEFAULT gen_random_uuid()
+        public_token UUID UNIQUE DEFAULT gen_random_uuid(),
+        user_id INT REFERENCES users(id) ON DELETE CASCADE
     );
 
     -- Junction table to link questions to dashboards and store their layout
@@ -163,7 +170,7 @@ cd frontend
 npm install
 ```
 
-The frontend is configured to connect to the backend server at `http://localhost:3000` by default.
+The frontend is configured to connect to the backend server at `http://localhost:4000` by default.
 
 ---
 
@@ -175,7 +182,7 @@ You'll need to run both the backend and frontend servers simultaneously in separ
 
 ```bash
 # From the /backend directory
-node app.js
+npm run dev
 ```
 
 The API server will start, typically on `http://localhost:4000`.
@@ -187,4 +194,4 @@ The API server will start, typically on `http://localhost:4000`.
 npm run dev
 ```
 
-The React application will start, and you can access it in your browser, usually at `http://localhost:3000`.
+The React application will start, and you can access it in your browser, based at our vite.config.js, it will run at `http://localhost:3000`.

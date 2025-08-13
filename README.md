@@ -45,7 +45,7 @@ Follow these steps to get the project up and running on your local machine.
 ### 1. Clone the Repository
 
 ```bash
-git clone [https://github.com/your-username/dayabase.git](https://github.com/your-username/dayabase.git)
+git clone https://github.com/diardomarendikrista/dayabase.git
 cd dayabase
 ```
 
@@ -181,7 +181,7 @@ You'll need to run both the backend and frontend servers simultaneously in separ
 **Terminal 1: Start the Backend Server**
 
 ```bash
-# From the /backend directory
+# From the /dayabase-be directory
 npm run dev
 ```
 
@@ -190,7 +190,7 @@ The API server will start, typically on `http://localhost:4000`.
 **Terminal 2: Start the Frontend Development Server**
 
 ```bash
-# From the /frontend directory
+# From the /dayabase-fe directory
 npm run dev
 ```
 

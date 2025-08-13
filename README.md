@@ -49,18 +49,24 @@ git clone https://github.com/diardomarendikrista/dayabase.git
 cd dayabase
 ```
 
-### 2. Backend Setup
+### 2. Install Dependencies
+
+Since this is a monorepo, install dependencies from the root:
+
+```
+# Install frontend dependencies
+yarn --cwd dayabase-fe install
+
+# Install backend dependencies
+yarn --cwd dayabase-be install
+```
+
+### 3. Backend Setup
 
 The backend server handles all API requests, database connections, and query execution.
 
 ```bash
-# Navigate to the backend directory
-cd backend
-
-# Install dependencies
-npm install
-
-# Create a .env file by copying the example
+# Copy .env.example to .env in the backend folder and fill in the required values:
 cp .env.example .env
 ```
 
@@ -158,22 +164,6 @@ Before starting the server, you need to set up the application's database.
     );
     ```
 
-### 3. Frontend Setup
-
-The frontend is a React application built with Vite.
-
-```bash
-# Navigate to the frontend directory from the root
-cd frontend
-
-# Install dependencies
-npm install
-```
-
-The frontend is configured to connect to the backend server at `http://localhost:4000` by default.
-
----
-
 ## ▶️ Running the Application
 
 You'll need to run both the backend and frontend servers simultaneously in separate terminal windows.
@@ -181,8 +171,9 @@ You'll need to run both the backend and frontend servers simultaneously in separ
 **Terminal 1: Start the Backend Server**
 
 ```bash
-# From the /dayabase-be directory
-npm run dev
+yarn start:be
+# or
+npm run start:be
 ```
 
 The API server will start, typically on `http://localhost:4000`.
@@ -190,8 +181,23 @@ The API server will start, typically on `http://localhost:4000`.
 **Terminal 2: Start the Frontend Development Server**
 
 ```bash
-# From the /dayabase-fe directory
-npm run dev
+yarn start:fe
+# or
+npm run start:fe
 ```
 
 The React application will start, and you can access it in your browser, based at our vite.config.js, it will run at `http://localhost:3000`.
+
+## 🧩 Notes
+You can also run the backend directly from its folder:
+```
+cd dayabase-be
+node app.js
+# or
+nodemon app.js
+```
+And the frontend directly from its folder:
+```
+cd dayabase-fe
+yarn dev
+```

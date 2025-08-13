@@ -75,9 +75,12 @@ export default function UserManagementPage() {
               <th className="p-4 text-left">Actions</th>
             </tr>
           </thead>
-          <tbody className="divide-y">
+          <tbody>
             {users.map((user) => (
-              <tr key={user.id}>
+              <tr
+                key={user.id}
+                className="border-b border-gray-200 last:border-b-0"
+              >
                 <td className="p-4">{user.full_name}</td>
                 <td className="p-4">{user.email}</td>
                 <td className="p-4">{user.role}</td>

@@ -8,7 +8,8 @@ export function PromptModal({
   title,
   message,
   onConfirm,
-  confirmText = "Simpan",
+  inputPlaceholder,
+  confirmText = "Save",
   initialValue = "",
   closeOnOverlayClick = true,
 }) {
@@ -41,6 +42,7 @@ export function PromptModal({
       <p className="text-gray-600 mb-2">{message}</p>
       <Input
         type="text"
+        placeholder={inputPlaceholder}
         value={inputValue}
         onChange={(e) => {
           setInputValue(e.target.value);
@@ -59,7 +61,7 @@ export function PromptModal({
           onClick={() => setShowModal(false)}
           className="px-4 py-2 bg-gray-200 rounded-md font-semibold text-gray-700 hover:bg-gray-300"
         >
-          Batal
+          Cancel
         </button>
         <button
           onClick={handleConfirm}

@@ -8,6 +8,7 @@ router.get("/", Controller.getRootHandler);
 
 const authRoutes = require("./authRoutes");
 const userRoutes = require("./userRoutes");
+const accountRoutes = require("./accountRoutes");
 
 const queryRoutes = require("./queryRoutes");
 const questionRoutes = require("./questionRoutes");
@@ -19,6 +20,8 @@ router.use("/auth", authRoutes);
 router.use("/public", publicRoutes);
 
 router.use("/users", verifyToken, isAdmin, userRoutes); // Hanya admin
+
+router.use('/account', verifyToken, accountRoutes);
 router.use("/questions", verifyToken, questionRoutes);
 router.use("/dashboards", verifyToken, dashboardRoutes);
 router.use("/connections", verifyToken, connectionRoutes);

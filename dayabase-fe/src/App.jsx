@@ -14,6 +14,7 @@ import LoginPage from "pages/LoginPage";
 import ProtectedRoute from "components/atoms/ProtectedRoute";
 import { API } from "axios/axios";
 import RegisterAdminPage from "pages/RegisterAdminPage";
+import UserManagementPage from "pages/UserManagementPage";
 
 function App() {
   const [isLoading, setIsLoading] = useState(true);
@@ -125,6 +126,12 @@ function App() {
                 <Route
                   path="/settings/connections/:id/edit"
                   element={<ConnectionFormPage />}
+                />
+
+                {/* Rute untuk Users */}
+                <Route
+                  path="/settings/users"
+                  element={<UserManagementPage />}
                 />
               </Route>
             </Route>

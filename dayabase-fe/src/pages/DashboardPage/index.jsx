@@ -112,10 +112,11 @@ export default function DashboardPage() {
       <PromptModal
         showModal={showCreateModal}
         setShowModal={setShowCreateModal}
-        title="Buat Dashboard Baru"
+        title="Create New Dashboard"
         message="Masukkan nama untuk dashboard baru Anda:"
         onConfirm={handleCreateDashboard}
         closeOnOverlayClick={false}
+        inputPlaceholder={"Dashboard Name"}
       />
     </div>
   );

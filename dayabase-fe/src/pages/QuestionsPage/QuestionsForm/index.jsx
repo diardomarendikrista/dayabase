@@ -43,7 +43,7 @@ export default function QuestionEditorPage() {
               }
             }}
             placeholder="Enter question name"
-            className="text-3xl font-bold bg-transparent focus:outline-none focus:ring-2 focus:ring-indigo-200 rounded-md p-1"
+            className="text-3xl font-bold bg-transparent focus:outline-none focus:ring-2 focus:ring-indigo-200 rounded-md p-1 border-none"
             error={!!errors.pageTitle} // Kirim status error ke komponen Input
           />
           {errors.pageTitle && (

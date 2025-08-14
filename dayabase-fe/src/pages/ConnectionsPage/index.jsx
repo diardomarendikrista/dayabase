@@ -1,11 +1,24 @@
 import { API } from "axios/axios";
 import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
+import ConfirmationModal from "components/molecules/ConfirmationModal";
+import { useDispatch } from "react-redux";
+import { addToast } from "store/slices/toastSlice";
 
 export default function ConnectionsListPage() {
   const [connections, setConnections] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
+
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [itemToDelete, setItemToDelete] = useState(null);
+
+  const dispatch = useDispatch();
+
+  const openDeleteModal = (item) => {
+    setItemToDelete(item);
+    setShowDeleteModal(true);
+  };
 
   useEffect(() => {
     fetchConnections();
@@ -22,14 +35,27 @@ export default function ConnectionsListPage() {
     }
   };
 
-  const handleDelete = async (id) => {
-    if (window.confirm("Are you sure you want to delete this connection?")) {
-      try {
-        await API.delete(`/api/connections/${id}`);
-        setConnections((prev) => prev.filter((conn) => conn.id !== id));
-      } catch (err) {
-        alert(err.response?.data?.message || "Failed to delete connection.");
-      }
+  const handleDelete = async () => {
+    if (!itemToDelete) return;
+    try {
+      await API.delete(`/api/connections/${itemToDelete.id}`);
+      setConnections((prev) =>
+        prev.filter((conn) => conn.id !== itemToDelete.id)
+      );
+      dispatch(
+        addToast({
+          message: "Connection deleted successfully.",
+          type: "success",
+        })
+      );
+    } catch (err) {
+      dispatch(
+        addToast({
+          message:
+            err.response?.data?.message || "Failed to delete connection.",
+          type: "error",
+        })
+      );
     }
   };
 
@@ -71,7 +97,7 @@ export default function ConnectionsListPage() {
               </Link>
               <div className="space-x-4">
                 <button
-                  onClick={() => handleDelete(conn.id)}
+                  onClick={() => openDeleteModal(conn)}
                   className="text-red-500 hover:text-red-700 font-semibold"
                 >
                   Delete
@@ -86,6 +112,16 @@ export default function ConnectionsListPage() {
           </p>
         )}
       </div>
+
+      <ConfirmationModal
+        showModal={showDeleteModal}
+        setShowModal={setShowDeleteModal}
+        title="Delete Dashboard"
+        message={`Are you sure you want to delete the dashboard "${itemToDelete?.connection_name}"? This action cannot be undone.`}
+        onConfirm={handleDelete}
+        confirmText="Yes, Delete"
+        isDestructive={true}
+      />
     </div>
   );
 }

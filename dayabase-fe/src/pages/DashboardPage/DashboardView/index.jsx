@@ -6,12 +6,16 @@ import ChartWidget from "./ChartWidget";
 import ModalDashboardShare from "./ModalDashboardShare";
 import ModalAddQuestion from "./ModalAddQuestion";
 import { MdOutlineShare } from "react-icons/md";
+import { addToast } from "store/slices/toastSlice";
+import { useDispatch } from "react-redux";
+import Input from "components/atoms/Input";
 
 const ResponsiveGridLayout = WidthProvider(Responsive);
 
 export default function DashboardViewPage() {
   const { id, token } = useParams();
   const location = useLocation();
+  const dispatch = useDispatch();
   const isEmbedMode = location.pathname.includes("/embed/");
   const dashboardIdentifier = id || token;
 
@@ -61,7 +65,9 @@ export default function DashboardViewPage() {
         setDashboard((prev) => ({ ...prev, name: dashboardName }));
       } catch (error) {
         setDashboardName(dashboard.name);
-        alert("Failed to save new name.");
+        dispatch(
+          addToast({ message: "Failed to save new name.", type: "error" })
+        );
       }
     }
   };
@@ -94,8 +100,17 @@ export default function DashboardViewPage() {
         setLayout((prev) =>
           prev.filter((l) => l.i !== questionIdToRemove.toString())
         );
+
+        dispatch(
+          addToast({
+            message: "Question successfully removed from the dashboard.",
+            type: "success",
+          })
+        );
       } catch (error) {
-        alert("Failed to delete widget.");
+        dispatch(
+          addToast({ message: "Failed to delete widget.", type: "error" })
+        );
       }
     }
   };
@@ -117,13 +132,18 @@ export default function DashboardViewPage() {
     <div>
       {!isEmbedMode && (
         <div className="flex justify-between items-center mb-6">
-          <input
-            type="text"
-            value={dashboardName}
-            onChange={(e) => setDashboardName(e.target.value)}
-            onBlur={handleRenameDashboard}
-            className="text-3xl font-bold bg-transparent focus:outline-none focus:ring-2 focus:ring-indigo-200 rounded-md p-1 -m-1 w-1/2"
-          />
+          <form
+            className="w-1/2"
+            onSubmit={(e) => e.preventDefault()}
+          >
+            <Input
+              type="text"
+              value={dashboardName}
+              onChange={(e) => setDashboardName(e.target.value)}
+              onBlur={handleRenameDashboard}
+              className="text-3xl font-bold bg-transparent focus:outline-none focus:ring-2 focus:ring-indigo-200 rounded-md p-1 -m-1"
+            />
+          </form>
           <div className="flex items-center space-x-4">
             <button
               onClick={() => setShowModalAdd(true)}

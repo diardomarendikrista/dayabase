@@ -3,11 +3,14 @@ import { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import ConfirmationModal from "components/molecules/ConfirmationModal";
 import { PromptModal } from "components/molecules/PromptModal";
+import { useDispatch } from "react-redux";
+import { addToast } from "store/slices/toastSlice";
 
 export default function DashboardPage() {
   const [dashboards, setDashboards] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const navigate = useNavigate();
+  const dispatch = useDispatch();
 
   // State untuk mengelola modal
   const [showDeleteModal, setShowDeleteModal] = useState(false);
@@ -24,7 +27,9 @@ export default function DashboardPage() {
         const response = await API.post("/api/dashboards", { name });
         navigate(`/dashboards/${response.data.id}`);
       } catch (error) {
-        alert("Failed to create dashboard.");
+        dispatch(
+          addToast({ message: "Failed to create dashboard", type: "error" })
+        );
       }
     }
   };
@@ -34,8 +39,16 @@ export default function DashboardPage() {
     try {
       await API.delete(`/api/dashboards/${itemToDelete.id}`);
       setDashboards((prev) => prev.filter((d) => d.id !== itemToDelete.id));
+      dispatch(
+        addToast({
+          message: "Dashboard deleted successfully.",
+          type: "success",
+        })
+      );
     } catch (err) {
-      alert("Failed to delete dashboard.");
+      dispatch(
+        addToast({ message: "Failed to delete dashboard.", type: "error" })
+      );
     }
   };
 

@@ -1,10 +1,13 @@
 import { API } from "axios/axios";
 import { useState, useEffect, useMemo } from "react";
+import { useDispatch } from "react-redux";
 import { useParams, useNavigate } from "react-router-dom";
+import { addToast } from "store/slices/toastSlice";
 
 export function useQuestionEditor() {
   const { id } = useParams();
   const navigate = useNavigate();
+  const dispatch = useDispatch();
 
   const [pageTitle, setPageTitle] = useState("");
   const [connections, setConnections] = useState([]);
@@ -16,6 +19,115 @@ export function useQuestionEditor() {
   const [errors, setErrors] = useState({});
   const [chartType, setChartType] = useState("table");
   const [chartConfig, setChartConfig] = useState({ category: "", value: "" });
+
+  const handleRunQuery = async (options = {}) => {
+    const { newSql, newConnectionId, isInitialLoad = false } = options;
+
+    const finalSql = newSql || sql;
+    const finalConnectionId = newConnectionId || selectedConnectionId;
+
+    if (!finalConnectionId)
+      return alert("Please select a database connection.");
+
+    setIsLoading(true);
+    setResults([]);
+    try {
+      const response = await API.post("/api/query/run", {
+        sql: finalSql,
+        connectionId: finalConnectionId,
+      });
+
+      if (response.data && response.data.length > 0) {
+        const data = response.data;
+        const dataColumns = Object.keys(data[0]);
+        setResults(data);
+        setColumns(dataColumns);
+
+        // HANYA reset chart config jika ini BUKAN load awal
+        if (!isInitialLoad) {
+          setChartConfig({
+            category: dataColumns[0] || "",
+            value: dataColumns[1] || "",
+          });
+        }
+      } else {
+        setResults([]);
+      }
+    } catch (err) {
+      setErrors({
+        api: err.response?.data?.message || "An unknown error occurred.",
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleSaveQuestion = async () => {
+    const newErrors = {};
+
+    // validation
+    if (!pageTitle.trim()) {
+      newErrors.pageTitle = "Question title is required.";
+    }
+    if (!selectedConnectionId) {
+      newErrors.selectedConnectionId =
+        "Select a database connection to use for this question.";
+    }
+    if (Object.keys(newErrors).length > 0) {
+      setErrors(newErrors);
+      return;
+    }
+
+    // validated, do next line
+    setErrors({});
+
+    const payload = {
+      name: pageTitle,
+      sql_query: sql,
+      chart_type: chartType,
+      chart_config: chartConfig,
+      connection_id: selectedConnectionId,
+    };
+
+    try {
+      if (id) {
+        await API.put(`/api/questions/${id}`, payload);
+        // nanti ada notifikasi "toast" di sini
+      } else {
+        await API.post("/api/questions", payload);
+      }
+      navigate("/questions");
+      dispatch(
+        addToast({
+          message: id
+            ? "Question updated successfully."
+            : "Question saved successfully.",
+          type: "success",
+        })
+      );
+    } catch (err) {
+      console.error("Failed to save/update question:", err);
+      setErrors({
+        api: err.response?.data?.message || "Operation failed.",
+      });
+    }
+  };
+
+  const transformedData = useMemo(() => {
+    if (!chartConfig.category || !chartConfig.value || results.length === 0)
+      return null;
+    if (chartType === "pie")
+      return {
+        seriesData: results.map((row) => ({
+          name: row[chartConfig.category],
+          value: row[chartConfig.value],
+        })),
+      };
+    return {
+      xAxisData: results.map((row) => row[chartConfig.category]),
+      seriesData: results.map((row) => row[chartConfig.value]),
+    };
+  }, [results, chartConfig, chartType]);
 
   useEffect(() => {
     const fetchConnections = async () => {
@@ -75,107 +187,6 @@ export function useQuestionEditor() {
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [id, connections]);
-
-  const handleRunQuery = async (options = {}) => {
-    const { newSql, newConnectionId, isInitialLoad = false } = options;
-
-    const finalSql = newSql || sql;
-    const finalConnectionId = newConnectionId || selectedConnectionId;
-
-    if (!finalConnectionId)
-      return alert("Please select a database connection.");
-
-    setIsLoading(true);
-    setResults([]);
-    try {
-      const response = await API.post("/api/query/run", {
-        sql: finalSql,
-        connectionId: finalConnectionId,
-      });
-
-      if (response.data && response.data.length > 0) {
-        const data = response.data;
-        const dataColumns = Object.keys(data[0]);
-        setResults(data);
-        setColumns(dataColumns);
-
-        // HANYA reset chart config jika ini BUKAN load awal
-        if (!isInitialLoad) {
-          setChartConfig({
-            category: dataColumns[0] || "",
-            value: dataColumns[1] || "",
-          });
-        }
-      } else {
-        setResults([]);
-      }
-    } catch (err) {
-      setErrors({
-        api: err.response?.data?.message || "An unknown error occurred.",
-      });
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  const handleSaveQuestion = async () => {
-    const newErrors = {};
-
-    // validation
-    if (!pageTitle.trim()) {
-      newErrors.pageTitle = "Nama pertanyaan tidak boleh kosong.";
-    }
-    if (!selectedConnectionId) {
-      newErrors.selectedConnectionId =
-        "Pilih koneksi database terlebih dahulu.";
-    }
-    if (Object.keys(newErrors).length > 0) {
-      setErrors(newErrors);
-      return;
-    }
-
-    // validated, do next line
-    setErrors({});
-
-    const payload = {
-      name: pageTitle,
-      sql_query: sql,
-      chart_type: chartType,
-      chart_config: chartConfig,
-      connection_id: selectedConnectionId,
-    };
-
-    try {
-      if (id) {
-        await API.put(`/api/questions/${id}`, payload);
-        // nanti ada notifikasi "toast" di sini
-      } else {
-        await API.post("/api/questions", payload);
-      }
-      navigate("/questions");
-    } catch (err) {
-      console.error("Failed to save/update question:", err);
-      setErrors({
-        api: err.response?.data?.message || "Operasi gagal. Silakan coba lagi.",
-      });
-    }
-  };
-
-  const transformedData = useMemo(() => {
-    if (!chartConfig.category || !chartConfig.value || results.length === 0)
-      return null;
-    if (chartType === "pie")
-      return {
-        seriesData: results.map((row) => ({
-          name: row[chartConfig.category],
-          value: row[chartConfig.value],
-        })),
-      };
-    return {
-      xAxisData: results.map((row) => row[chartConfig.category]),
-      seriesData: results.map((row) => row[chartConfig.value]),
-    };
-  }, [results, chartConfig, chartType]);
 
   // Kembalikan semua state dan handler yang dibutuhkan oleh UI
   return {

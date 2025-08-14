@@ -1,3 +1,4 @@
+import { cn } from "lib/utils";
 import QueryEditorForm from "./Components/QueryEditorForm";
 import { useQuestionEditor } from "./Components/useQuestionEditor";
 import VisualizationPanel from "./Components/VisualizationPanel";
@@ -31,21 +32,30 @@ export default function QuestionEditorPage() {
     <div>
       <div className="flex justify-between items-center mb-6">
         <div className="w-1/2  -m-1">
-          <Input
-            type="text"
-            value={pageTitle}
-            onChange={(e) => {
-              setPageTitle(e.target.value);
-              if (errors.pageTitle) {
-                const newErrors = { ...errors };
-                delete newErrors.pageTitle;
-                setErrors(newErrors);
-              }
-            }}
-            placeholder="Enter question name"
-            className="text-3xl font-bold bg-transparent focus:outline-none focus:ring-2 focus:ring-indigo-200 rounded-md p-1 border-none"
-            error={!!errors.pageTitle} // Kirim status error ke komponen Input
-          />
+          <form
+            autoComplete="off" // hardcode disable autocomplete
+            onSubmit={(e) => e.preventDefault()}
+          >
+            <Input
+              name="question-title"
+              id="question-title-input"
+              value={pageTitle}
+              onChange={(e) => {
+                setPageTitle(e.target.value);
+                if (errors.pageTitle) {
+                  const newErrors = { ...errors };
+                  delete newErrors.pageTitle;
+                  setErrors(newErrors);
+                }
+              }}
+              placeholder="Enter question title"
+              className={cn(
+                "text-3xl font-bold bg-transparent focus:outline-none focus:ring-2 focus:ring-indigo-200 rounded-md p-1",
+                { "border-none": !errors.pageTitle }
+              )}
+              error={!!errors.pageTitle}
+            />
+          </form>
           {errors.pageTitle && (
             <p className="text-red-600 text-sm mt-1">{errors.pageTitle}</p>
           )}

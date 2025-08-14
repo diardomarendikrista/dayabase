@@ -1,6 +1,8 @@
 import { useState, useEffect } from "react";
 import { API } from "axios/axios";
 import Modal from "components/molecules/Modal";
+import { useDispatch } from "react-redux";
+import { addToast } from "store/slices/toastSlice";
 
 export default function ModalAddToDashboard({
   questionId,
@@ -10,6 +12,8 @@ export default function ModalAddToDashboard({
   const [dashboards, setDashboards] = useState([]);
   const [selectedDashboardId, setSelectedDashboardId] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  const dispatch = useDispatch();
 
   useEffect(() => {
     const fetchDashboards = async () => {
@@ -24,7 +28,9 @@ export default function ModalAddToDashboard({
 
   const handleSubmit = async () => {
     if (!selectedDashboardId) {
-      alert("Please select a dashboard first.");
+      dispatch(
+        addToast({ message: "Please select a dashboard first.", type: "error" })
+      );
       return;
     }
     setIsSubmitting(true);
@@ -32,10 +38,15 @@ export default function ModalAddToDashboard({
       await API.post(`/api/dashboards/${selectedDashboardId}/questions`, {
         question_id: questionId,
       });
-      alert("Question has been successfully added to the dashboard!");
+      dispatch(
+        addToast({
+          message: "Question has been successfully added to the dashboard!",
+          type: "success",
+        })
+      );
       setShowModal(false);
     } catch (error) {
-      alert("Failed to add the question.");
+      dispatch(addToast({ message: "Failed to add question.", type: "error" }));
     } finally {
       setIsSubmitting(false);
     }

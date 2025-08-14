@@ -3,6 +3,8 @@ import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import ModalAddToDashboard from "pages/QuestionsPage/ModalAddToDashboard";
 import ConfirmationModal from "components/molecules/ConfirmationModal";
+import { useDispatch } from "react-redux";
+import { addToast } from "store/slices/toastSlice";
 
 export default function QuestionsListPage() {
   const [questions, setQuestions] = useState([]);
@@ -13,6 +15,8 @@ export default function QuestionsListPage() {
 
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [itemToDelete, setItemToDelete] = useState(null);
+
+  const dispatch = useDispatch();
 
   const openAddToDashboardModal = (id) => {
     setSelectedQuestionId(id);
@@ -44,8 +48,16 @@ export default function QuestionsListPage() {
     try {
       await API.delete(`/api/questions/${itemToDelete.id}`);
       setQuestions((prev) => prev.filter((q) => q.id !== itemToDelete.id));
+      dispatch(
+        addToast({
+          message: "Question deleted successfully.",
+          type: "success",
+        })
+      );
     } catch (err) {
-      alert("Failed to delete question.");
+      dispatch(
+        addToast({ message: "Failed to delete question.", type: "error" })
+      );
     }
   };
   if (isLoading) return <p>Loading questions...</p>;

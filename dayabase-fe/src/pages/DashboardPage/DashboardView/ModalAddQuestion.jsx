@@ -1,6 +1,8 @@
 import { useState, useEffect, useMemo } from "react";
 import { API } from "axios/axios";
 import Modal from "components/molecules/Modal";
+import { useDispatch } from "react-redux";
+import { addToast } from "store/slices/toastSlice";
 
 export default function ModalAddQuestion({
   dashboardId,
@@ -14,13 +16,17 @@ export default function ModalAddQuestion({
   const [isLoading, setIsLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
+  const dispatch = useDispatch();
+
   const availableQuestions = useMemo(() => {
     return allQuestions.filter((q) => !existingQuestionIds.includes(q.id));
   }, [allQuestions, existingQuestionIds]);
 
   const handleSubmit = async () => {
     if (!selectedQuestionId) {
-      alert("Please select a question first.");
+      dispatch(
+        addToast({ message: "Please select a question first.", type: "error" })
+      );
       return;
     }
     setIsSubmitting(true);
@@ -28,11 +34,16 @@ export default function ModalAddQuestion({
       await API.post(`/api/dashboards/${dashboardId}/questions`, {
         question_id: selectedQuestionId,
       });
-      alert("Question successfully added to dashboard!");
+      dispatch(
+        addToast({
+          message: "Question successfully added to dashboard!",
+          type: "success",
+        })
+      );
       onQuestionAdded(); // Notify parent to refresh data
       setShowModal(false);
     } catch (error) {
-      alert("Failed to add question.");
+      dispatch(addToast({ message: "Failed to add question.", type: "error" }));
     } finally {
       setIsSubmitting(false);
     }

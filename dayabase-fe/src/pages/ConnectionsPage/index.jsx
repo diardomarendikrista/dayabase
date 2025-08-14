@@ -10,26 +10,25 @@ export default function ConnectionsListPage() {
   useEffect(() => {
     fetchConnections();
   }, []);
-
   const fetchConnections = async () => {
     try {
       setIsLoading(true);
       const response = await API.get("/api/connections");
       setConnections(response.data);
     } catch (err) {
-      setError("Gagal mengambil data koneksi.");
+      setError("Failed to fetch connection data.");
     } finally {
       setIsLoading(false);
     }
   };
 
   const handleDelete = async (id) => {
-    if (window.confirm("Apakah Anda yakin ingin menghapus koneksi ini?")) {
+    if (window.confirm("Are you sure you want to delete this connection?")) {
       try {
         await API.delete(`/api/connections/${id}`);
         setConnections((prev) => prev.filter((conn) => conn.id !== id));
       } catch (err) {
-        alert(err.response?.data?.message || "Gagal menghapus koneksi.");
+        alert(err.response?.data?.message || "Failed to delete connection.");
       }
     }
   };

@@ -109,10 +109,10 @@ export default function QuestionsListPage() {
       <ConfirmationModal
         showModal={showDeleteModal}
         setShowModal={setShowDeleteModal}
-        title="Hapus Pertanyaan"
-        message={`Apakah Anda yakin ingin menghapus pertanyaan "${itemToDelete?.name}"?`}
+        title="Delete Question"
+        message={`Are you sure you want to delete the question "${itemToDelete?.name}"?`}
         onConfirm={handleDelete}
-        confirmText="Ya, Hapus"
+        confirmText="Yes, Delete"
         isDestructive={true}
       />
     </div>

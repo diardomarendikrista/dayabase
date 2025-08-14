@@ -40,7 +40,7 @@ export default function ChartWidget({ questionId, onRemove, isEmbedMode }) {
           setResults([]);
         }
       } catch (err) {
-        setError("Gagal memuat data widget.");
+        setError("Failed to load widget data.");
       } finally {
         setIsLoading(false);
       }
@@ -73,7 +73,7 @@ export default function ChartWidget({ questionId, onRemove, isEmbedMode }) {
     if (isLoading)
       return (
         <div className="flex items-center justify-center h-full">
-          <p className="text-center text-gray-500">Memuat...</p>
+          <p className="text-center text-gray-500">Loading...</p>
         </div>
       );
     if (error)
@@ -86,7 +86,7 @@ export default function ChartWidget({ questionId, onRemove, isEmbedMode }) {
       return (
         <div className="flex items-center justify-center h-full">
           <p className="text-center text-gray-500">
-            Tidak ada data pertanyaan.
+            No question data available.
           </p>
         </div>
       );
@@ -94,21 +94,19 @@ export default function ChartWidget({ questionId, onRemove, isEmbedMode }) {
     if (width < 50 || height < 50) {
       return (
         <div className="flex items-center justify-center h-full">
-          <p className="text-center text-gray-400 text-sm">
-            Menyesuaikan ukuran...
-          </p>
+          <p className="text-center text-gray-400 text-sm">Adjusting size...</p>
         </div>
       );
     }
 
-    // Hitung tinggi header yang sebenarnya (py-2 + border + text = sekitar 40px)
+    // Header height ≈ 40px (py-2 + border + text)
     const headerHeight = 40;
     const padding = 24; // inset-3 = 12px * 2
 
     const chartProps = {
       ...transformedData,
       width: width - padding,
-      height: height - headerHeight - padding, // Kurangi tinggi header yang sebenarnya
+      height: height - headerHeight - padding,
     };
 
     const containerStyle = {
@@ -158,7 +156,7 @@ export default function ChartWidget({ questionId, onRemove, isEmbedMode }) {
 
   return (
     <div className="bg-white rounded-lg shadow-md border border-gray-200 h-full w-full flex flex-col relative group overflow-hidden">
-      {/* HEADER - Area yang bisa didrag - Fixed height */}
+      {/* HEADER - Draggable area - Fixed height */}
       <div
         className={cn(
           "flex items-center justify-between px-3 py-2 flex-shrink-0 widget-drag-handle",
@@ -171,10 +169,10 @@ export default function ChartWidget({ questionId, onRemove, isEmbedMode }) {
         )}
       >
         <h3 className="font-bold text-sm truncate flex-1 pointer-events-none select-none">
-          {question?.name || "Memuat..."}
+          {question?.name || "Loading..."}
         </h3>
 
-        {/* Icon drag & remove */}
+        {/* Drag & remove icons */}
         {!isEmbedMode && onRemove && (
           <div className="flex items-center space-x-2">
             <div className="text-gray-400 pointer-events-none">
@@ -191,7 +189,7 @@ export default function ChartWidget({ questionId, onRemove, isEmbedMode }) {
                 e.stopPropagation(); // Prevent drag initiation
               }}
               className="p-1 bg-gray-200 rounded-full text-gray-600 hover:bg-red-500 hover:text-white transition-all pointer-events-auto cursor-pointer"
-              title="Hapus dari Dashboard"
+              title="Remove from Dashboard"
               style={{ pointerEvents: "auto" }}
             >
               <IoMdClose />
@@ -200,7 +198,7 @@ export default function ChartWidget({ questionId, onRemove, isEmbedMode }) {
         )}
       </div>
 
-      {/* CONTENT AREA - Area yang bisa diklik untuk interaksi chart */}
+      {/* CONTENT AREA - Clickable for chart interaction */}
       <div
         ref={ref}
         className="flex-1 min-h-0 w-full relative"
@@ -209,7 +207,7 @@ export default function ChartWidget({ questionId, onRemove, isEmbedMode }) {
           userSelect: "auto",
         }}
         onMouseDown={(e) => {
-          // Prevent drag initiation ketika klik di area chart
+          // Prevent drag initiation when clicking on the chart area
           e.stopPropagation();
         }}
       >

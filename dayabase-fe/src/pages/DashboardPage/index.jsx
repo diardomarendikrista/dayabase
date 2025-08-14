@@ -18,14 +18,13 @@ export default function DashboardPage() {
     setItemToDelete(dashboard);
     setShowDeleteModal(true);
   };
-
   const handleCreateDashboard = async (name) => {
     if (name) {
       try {
         const response = await API.post("/api/dashboards", { name });
         navigate(`/dashboards/${response.data.id}`);
       } catch (error) {
-        alert("Gagal membuat dashboard.");
+        alert("Failed to create dashboard.");
       }
     }
   };
@@ -36,7 +35,7 @@ export default function DashboardPage() {
       await API.delete(`/api/dashboards/${itemToDelete.id}`);
       setDashboards((prev) => prev.filter((d) => d.id !== itemToDelete.id));
     } catch (err) {
-      alert("Gagal menghapus dashboard.");
+      alert("Failed to delete dashboard.");
     }
   };
 
@@ -46,7 +45,7 @@ export default function DashboardPage() {
         const response = await API.get("/api/dashboards");
         setDashboards(response.data);
       } catch (error) {
-        console.error("Gagal mengambil dashboards", error);
+        console.error("Failed to fetch dashboards", error);
       } finally {
         setIsLoading(false);
       }
@@ -54,7 +53,7 @@ export default function DashboardPage() {
     fetchDashboards();
   }, []);
 
-  if (isLoading) return <p>Memuat dashboards...</p>;
+  if (isLoading) return <p>Loading dashboards...</p>;
 
   return (
     <div>
@@ -80,7 +79,7 @@ export default function DashboardPage() {
               >
                 <p className="font-bold text-lg">{d.name}</p>
                 <p className="text-sm text-gray-500">
-                  {d.description || "Tidak ada deskripsi"}
+                  {d.description || "No description"}
                 </p>
               </Link>
               <button
@@ -102,10 +101,10 @@ export default function DashboardPage() {
       <ConfirmationModal
         showModal={showDeleteModal}
         setShowModal={setShowDeleteModal}
-        title="Hapus Dashboard"
-        message={`Apakah Anda yakin ingin menghapus dashboard "${itemToDelete?.name}"? Aksi ini tidak dapat dibatalkan.`}
+        title="Delete Dashboard"
+        message={`Are you sure you want to delete the dashboard "${itemToDelete?.name}"? This action cannot be undone.`}
         onConfirm={handleDelete}
-        confirmText="Ya, Hapus"
+        confirmText="Yes, Delete"
         isDestructive={true}
       />
 
@@ -113,10 +112,10 @@ export default function DashboardPage() {
         showModal={showCreateModal}
         setShowModal={setShowCreateModal}
         title="Create New Dashboard"
-        message="Masukkan nama untuk dashboard baru Anda:"
+        message="Enter a name for your new dashboard:"
         onConfirm={handleCreateDashboard}
         closeOnOverlayClick={false}
-        inputPlaceholder={"Dashboard Name"}
+        inputPlaceholder="Dashboard Name"
       />
     </div>
   );

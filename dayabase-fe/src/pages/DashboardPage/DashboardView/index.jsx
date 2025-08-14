@@ -50,9 +50,8 @@ export default function DashboardViewPage() {
       setIsLoading(false);
     }
   };
-
   const handleRenameDashboard = async () => {
-    if (isEmbedMode) return; // Tidak bisa rename di mode embed
+    if (isEmbedMode) return; // Cannot rename in embed mode
     if (dashboard && dashboardName && dashboardName !== dashboard.name) {
       try {
         await API.put(`/api/dashboards/${id}`, {
@@ -62,7 +61,7 @@ export default function DashboardViewPage() {
         setDashboard((prev) => ({ ...prev, name: dashboardName }));
       } catch (error) {
         setDashboardName(dashboard.name);
-        alert("Gagal menyimpan nama baru.");
+        alert("Failed to save new name.");
       }
     }
   };
@@ -73,7 +72,7 @@ export default function DashboardViewPage() {
     try {
       await API.put(`/api/dashboards/${id}/layout`, newLayout);
     } catch (error) {
-      console.error("Gagal menyimpan layout", error);
+      console.error("Failed to save layout", error);
     }
   };
 
@@ -81,7 +80,7 @@ export default function DashboardViewPage() {
     if (isEmbedMode) return;
     if (
       window.confirm(
-        "Apakah Anda yakin ingin menghapus chart ini dari dashboard?"
+        "Are you sure you want to remove this chart from the dashboard?"
       )
     ) {
       try {
@@ -96,7 +95,7 @@ export default function DashboardViewPage() {
           prev.filter((l) => l.i !== questionIdToRemove.toString())
         );
       } catch (error) {
-        alert("Gagal menghapus widget.");
+        alert("Failed to delete widget.");
       }
     }
   };

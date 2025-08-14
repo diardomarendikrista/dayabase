@@ -13,11 +13,11 @@ export default function DashboardShareModal({
   useEffect(() => {
     const fetchDashboardDetails = async () => {
       try {
-        // Endpoint GET /api/dashboards/:id harus mengembalikan public_token dan public_sharing_enabled
+        // Endpoint GET /api/dashboards/:id must return public_token and public_sharing_enabled
         const response = await API.get(`/api/dashboards/${dashboardId}`);
         setDashboardData(response.data);
       } catch (error) {
-        console.error("Gagal mengambil detail dashboard", error);
+        console.error("Failed to fetch dashboard details", error);
       } finally {
         setIsLoading(false);
       }
@@ -32,7 +32,7 @@ export default function DashboardShareModal({
       });
       setDashboardData((prev) => ({ ...prev, ...response.data }));
     } catch (error) {
-      alert("Gagal mengubah status sharing.");
+      alert("Failed to change sharing status.");
     }
   };
 
@@ -49,10 +49,10 @@ export default function DashboardShareModal({
     navigator.clipboard
       .writeText(text)
       .then(() => {
-        alert("Kode Iframe berhasil disalin!");
+        alert("Iframe code copied successfully!");
       })
       .catch((err) => {
-        console.error("Gagal menyalin: ", err);
+        console.error("Failed to copy: ", err);
       });
   };
 
@@ -63,7 +63,7 @@ export default function DashboardShareModal({
       setShowModal={setShowModal}
     >
       {isLoading ? (
-        <p>Memuat...</p>
+        <p>Loading...</p>
       ) : dashboardData ? (
         <div>
           <div className="flex items-center justify-between p-4 border rounded-md">
@@ -104,7 +104,7 @@ export default function DashboardShareModal({
           )}
         </div>
       ) : (
-        <p>Gagal memuat data.</p>
+        <p>Failed to load data.</p>
       )}
     </Modal>
   );

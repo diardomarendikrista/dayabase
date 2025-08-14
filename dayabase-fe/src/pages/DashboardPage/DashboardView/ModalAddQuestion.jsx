@@ -20,7 +20,7 @@ export default function ModalAddQuestion({
 
   const handleSubmit = async () => {
     if (!selectedQuestionId) {
-      alert("Pilih pertanyaan terlebih dahulu.");
+      alert("Please select a question first.");
       return;
     }
     setIsSubmitting(true);
@@ -28,11 +28,11 @@ export default function ModalAddQuestion({
       await API.post(`/api/dashboards/${dashboardId}/questions`, {
         question_id: selectedQuestionId,
       });
-      alert("Pertanyaan berhasil ditambahkan ke dashboard!");
-      onQuestionAdded(); // Beri tahu parent untuk me-refresh data
+      alert("Question successfully added to dashboard!");
+      onQuestionAdded(); // Notify parent to refresh data
       setShowModal(false);
     } catch (error) {
-      alert("Gagal menambahkan pertanyaan.");
+      alert("Failed to add question.");
     } finally {
       setIsSubmitting(false);
     }
@@ -42,7 +42,7 @@ export default function ModalAddQuestion({
     if (availableQuestions.length > 0) {
       setSelectedQuestionId(availableQuestions[0].id);
     } else {
-      setSelectedQuestionId(""); // Kosongkan jika tidak ada pilihan
+      setSelectedQuestionId(""); // Empty if no options
     }
   }, [availableQuestions]);
 
@@ -52,7 +52,7 @@ export default function ModalAddQuestion({
         const response = await API.get("/api/questions");
         setAllQuestions(response.data);
       } catch (error) {
-        console.error("Gagal mengambil daftar pertanyaan", error);
+        console.error("Failed to fetch questions list", error);
       } finally {
         setIsLoading(false);
       }
@@ -62,17 +62,17 @@ export default function ModalAddQuestion({
 
   return (
     <Modal
-      title="Tambah Pertanyaan ke Dashboard"
+      title="Add Question to Dashboard"
       showModal={showModal}
       setShowModal={setShowModal}
     >
       {isLoading ? (
-        <p>Memuat daftar pertanyaan...</p>
+        <p>Loading questions list...</p>
       ) : availableQuestions.length > 0 ? (
         <div>
           <div className="mb-4">
             <label className="block text-sm font-medium text-gray-700 mb-1">
-              Pilih Pertanyaan
+              Select Question
             </label>
             <select
               value={selectedQuestionId}
@@ -94,19 +94,19 @@ export default function ModalAddQuestion({
               onClick={() => setShowModal(false)}
               className="px-4 py-2 bg-gray-200 rounded-md font-semibold text-gray-700 hover:bg-gray-300"
             >
-              Batal
+              Cancel
             </button>
             <button
               onClick={handleSubmit}
               disabled={isSubmitting}
               className="px-4 py-2 bg-indigo-600 text-white font-semibold rounded-md disabled:bg-indigo-300 hover:bg-indigo-700"
             >
-              {isSubmitting ? "Menambahkan..." : "Tambah"}
+              {isSubmitting ? "Adding..." : "Add"}
             </button>
           </div>
         </div>
       ) : (
-        <p>Tidak ada pertanyaan yang bisa ditambahkan.</p>
+        <p>No questions available to add.</p>
       )}
     </Modal>
   );

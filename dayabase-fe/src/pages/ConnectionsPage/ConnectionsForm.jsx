@@ -3,7 +3,7 @@ import { useState, useEffect } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 
 export default function ConnectionFormPage() {
-  const { id } = useParams(); // Ambil ID dari URL jika ada
+  const { id } = useParams();
   const navigate = useNavigate();
   const isEditMode = !!id;
 
@@ -31,11 +31,11 @@ export default function ConnectionFormPage() {
             host: conn.host,
             port: conn.port,
             db_user: conn.db_user,
-            password: "", // Selalu kosongkan password demi keamanan
+            password: "",
             database_name: conn.database_name,
           });
         } catch (err) {
-          alert("Gagal memuat detail koneksi.");
+          alert("Failed to load connection details.");
           navigate("/settings/connections");
         }
       };
@@ -58,9 +58,9 @@ export default function ConnectionFormPage() {
       } else {
         await API.post("/api/connections", formData);
       }
-      navigate("/settings/connections"); // Kembali ke daftar setelah berhasil
+      navigate("/settings/connections");
     } catch (err) {
-      setError(err.response?.data?.message || "Operasi gagal.");
+      setError(err.response?.data?.message || "Operation failed.");
     } finally {
       setIsSubmitting(false);
     }
@@ -69,7 +69,7 @@ export default function ConnectionFormPage() {
   return (
     <div>
       <h1 className="text-3xl font-bold mb-6">
-        {isEditMode ? "Edit Koneksi" : "Tambah Koneksi Baru"}
+        {isEditMode ? "Edit Connection" : "Add New Connection"}
       </h1>
       <div className="bg-white p-6 rounded-lg shadow-md border border-gray-200">
         <form
@@ -81,7 +81,7 @@ export default function ConnectionFormPage() {
               name="connection_name"
               value={formData.connection_name}
               onChange={handleChange}
-              placeholder="Nama Koneksi (cth: DB Produksi)"
+              placeholder="Connection Name (e.g., Production DB)"
               required
               className="w-full rounded-md border-gray-300"
             />
@@ -125,7 +125,7 @@ export default function ConnectionFormPage() {
               onChange={handleChange}
               type="password"
               placeholder={
-                isEditMode ? "Biarkan kosong agar tidak berubah" : "Password"
+                isEditMode ? "Leave empty to keep unchanged" : "Password"
               }
               className="w-full rounded-md border-gray-300"
             />
@@ -133,7 +133,7 @@ export default function ConnectionFormPage() {
               name="database_name"
               value={formData.database_name}
               onChange={handleChange}
-              placeholder="Nama Database"
+              placeholder="Database Name"
               required
               className="w-full rounded-md border-gray-300"
             />
@@ -146,17 +146,17 @@ export default function ConnectionFormPage() {
               className="px-5 py-2 bg-indigo-600 text-white font-semibold rounded-md hover:bg-indigo-700 disabled:bg-indigo-300"
             >
               {isSubmitting
-                ? "Menyimpan..."
+                ? "Saving..."
                 : isEditMode
-                  ? "Perbarui Koneksi"
-                  : "Simpan Koneksi"}
+                  ? "Update Connection"
+                  : "Save Connection"}
             </button>
             <button
               type="button"
               onClick={() => navigate(-1)}
               className="px-5 py-2 bg-gray-200 text-gray-700 font-semibold rounded-md hover:bg-gray-300"
             >
-              Batal
+              Cancel
             </button>
           </div>
         </form>

@@ -27,7 +27,7 @@ function App() {
         const response = await API.get("/api/auth/setup-status");
         setNeedsSetup(response.data.needsSetup);
       } catch (error) {
-        console.error("Gagal mengecek status setup:", error);
+        console.error("Failed to check setup status:", error);
         // Jika API error, anggap saja setup tidak diperlukan agar tidak macet
         setNeedsSetup(false);
       } finally {

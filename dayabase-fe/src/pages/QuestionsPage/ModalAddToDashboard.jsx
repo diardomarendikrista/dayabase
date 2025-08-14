@@ -24,7 +24,7 @@ export default function ModalAddToDashboard({
 
   const handleSubmit = async () => {
     if (!selectedDashboardId) {
-      alert("Pilih dashboard terlebih dahulu.");
+      alert("Please select a dashboard first.");
       return;
     }
     setIsSubmitting(true);
@@ -32,10 +32,10 @@ export default function ModalAddToDashboard({
       await API.post(`/api/dashboards/${selectedDashboardId}/questions`, {
         question_id: questionId,
       });
-      alert("Pertanyaan berhasil ditambahkan ke dashboard!");
+      alert("Question has been successfully added to the dashboard!");
       setShowModal(false);
     } catch (error) {
-      alert("Gagal menambahkan pertanyaan.");
+      alert("Failed to add the question.");
     } finally {
       setIsSubmitting(false);
     }

@@ -17,17 +17,25 @@ export function useQuestionEditor() {
   const [columns, setColumns] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
   const [errors, setErrors] = useState({});
-  const [chartType, setChartType] = useState("table");
-  const [chartConfig, setChartConfig] = useState({ category: "", value: "" });
+  const [chartType, setChartType] = useState("pivot"); // Default ke pivot
+  const [chartConfig, setChartConfig] = useState({});
+
+  console.log(chartConfig, "chartConfig");
 
   const handleRunQuery = async (options = {}) => {
     const { newSql, newConnectionId, isInitialLoad = false } = options;
-
     const finalSql = newSql || sql;
     const finalConnectionId = newConnectionId || selectedConnectionId;
 
-    if (!finalConnectionId)
-      return alert("Please select a database connection.");
+    if (!finalConnectionId) {
+      dispatch(
+        addToast({
+          message: "Please select a database connection.",
+          type: "error",
+        })
+      );
+      return;
+    }
 
     setIsLoading(true);
     setResults([]);
@@ -36,16 +44,14 @@ export function useQuestionEditor() {
         sql: finalSql,
         connectionId: finalConnectionId,
       });
-
       if (response.data && response.data.length > 0) {
         const data = response.data;
         const dataColumns = Object.keys(data[0]);
         setResults(data);
         setColumns(dataColumns);
-
-        // HANYA reset chart config jika ini BUKAN load awal
         if (!isInitialLoad) {
           setChartConfig({
+            ...chartConfig, // Pertahankan state pivot yang mungkin sudah ada
             category: dataColumns[0] || "",
             value: dataColumns[1] || "",
           });
@@ -64,35 +70,34 @@ export function useQuestionEditor() {
 
   const handleSaveQuestion = async () => {
     const newErrors = {};
-
-    // validation
-    if (!pageTitle.trim()) {
-      newErrors.pageTitle = "Question title is required.";
-    }
-    if (!selectedConnectionId) {
+    if (!pageTitle.trim()) newErrors.pageTitle = "Question title is required.";
+    if (!selectedConnectionId)
       newErrors.selectedConnectionId =
         "Select a database connection to use for this question.";
-    }
     if (Object.keys(newErrors).length > 0) {
       setErrors(newErrors);
       return;
     }
-
-    // validated, do next line
     setErrors({});
+
+    // Saat menyimpan, jika bukan pivot, hapus state pivot agar tidak membingungkan
+    let finalChartConfig = { ...chartConfig };
+    if (chartType !== "pivot" && chartType !== "table") {
+      delete finalChartConfig.colState;
+      delete finalChartConfig.groupState;
+      delete finalChartConfig.filterState;
+    }
 
     const payload = {
       name: pageTitle,
       sql_query: sql,
       chart_type: chartType,
-      chart_config: chartConfig,
+      chart_config: finalChartConfig,
       connection_id: selectedConnectionId,
     };
-
     try {
       if (id) {
         await API.put(`/api/questions/${id}`, payload);
-        // nanti ada notifikasi "toast" di sini
       } else {
         await API.post("/api/questions", payload);
       }
@@ -107,14 +112,12 @@ export function useQuestionEditor() {
       );
     } catch (err) {
       console.error("Failed to save/update question:", err);
-      setErrors({
-        api: err.response?.data?.message || "Operation failed.",
-      });
+      setErrors({ api: err.response?.data?.message || "Operation failed." });
     }
   };
 
   const transformedData = useMemo(() => {
-    if (!chartConfig.category || !chartConfig.value || results.length === 0)
+    if (!chartConfig?.category || !chartConfig?.value || results.length === 0)
       return null;
     if (chartType === "pie")
       return {
@@ -141,18 +144,15 @@ export function useQuestionEditor() {
     fetchConnections();
   }, []);
 
-  // Effect untuk mengambil data pertanyaan JIKA ada 'id' di URL
   useEffect(() => {
     const resetState = () => {
       setPageTitle("");
       setSql("");
       setResults([]);
       setColumns([]);
-      setChartType("table");
-      setChartConfig({ category: "", value: "" });
-      if (connections.length > 0) {
-        setSelectedConnectionId(connections[0].id);
-      }
+      setChartType("pivot");
+      setChartConfig({}); // Default ke pivot
+      if (connections.length > 0) setSelectedConnectionId(connections[0].id);
     };
 
     if (id) {
@@ -161,34 +161,29 @@ export function useQuestionEditor() {
         try {
           const response = await API.get(`/api/questions/${id}`);
           const q = response.data;
-
-          // Set semua state dari data yang ada
           setPageTitle(q.name);
           setSql(q.sql_query);
           setSelectedConnectionId(q.connection_id);
           setChartType(q.chart_type);
           setChartConfig(q.chart_config);
-
-          // Langsung load query dengan flag isInitialLoad
           handleRunQuery({
             newSql: q.sql_query,
             newConnectionId: q.connection_id,
             isInitialLoad: true,
           });
         } catch (err) {
-          alert("Could not find the question.");
+          dispatch(
+            addToast({ message: "Could not find the question.", type: "error" })
+          );
           navigate("/questions");
         }
-        // setIsLoading(false) di-handle oleh handleRunQuery
       };
       fetchQuestionData();
     } else {
       resetState();
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [id, connections]);
+  }, [id, connections, dispatch, navigate]);
 
-  // Kembalikan semua state dan handler yang dibutuhkan oleh UI
   return {
     id,
     pageTitle,

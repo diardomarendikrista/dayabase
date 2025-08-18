@@ -1,22 +1,23 @@
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, useRef } from "react";
 import { API } from "axios/axios";
 import useMeasure from "react-use-measure";
 import { MdDragIndicator } from "react-icons/md";
 import { IoMdClose } from "react-icons/io";
+import { FaFileExcel } from "react-icons/fa";
 
 import BarChart from "components/organisms/charts/BarChart";
 import LineChart from "components/organisms/charts/LineChart";
 import DonutChart from "components/organisms/charts/DonutChart";
-import ResultsTable from "components/organisms/charts/ResultsTable";
 import { cn } from "lib/utils";
+import PivotTable from "components/organisms/charts/PivotTable";
 
 export default function ChartWidget({ questionId, onRemove, isEmbedMode }) {
   const [question, setQuestion] = useState(null);
   const [results, setResults] = useState([]);
-  const [columns, setColumns] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
 
+  const pivotTableRef = useRef(null);
   const [ref, { width, height }] = useMeasure();
 
   useEffect(() => {
@@ -35,7 +36,6 @@ export default function ChartWidget({ questionId, onRemove, isEmbedMode }) {
 
         if (queryResponse.data && queryResponse.data.length > 0) {
           setResults(queryResponse.data);
-          setColumns(Object.keys(queryResponse.data[0]));
         } else {
           setResults([]);
         }
@@ -45,7 +45,6 @@ export default function ChartWidget({ questionId, onRemove, isEmbedMode }) {
         setIsLoading(false);
       }
     };
-
     loadAndRunQuestion();
   }, [questionId]);
 
@@ -141,13 +140,15 @@ export default function ChartWidget({ questionId, onRemove, isEmbedMode }) {
             {transformedData && <DonutChart {...chartProps} />}
           </div>
         );
-      case "table":
+      case "pivot":
       default:
         return (
-          <div style={{ width: "100%", height: "100%", overflow: "auto" }}>
-            <ResultsTable
-              columns={columns}
+          <div style={{ width: "100%", height: "100%" }}>
+            <PivotTable
+              ref={pivotTableRef}
               data={results}
+              savedState={question.chart_config}
+              isDashboard={true}
             />
           </div>
         );
@@ -171,6 +172,26 @@ export default function ChartWidget({ questionId, onRemove, isEmbedMode }) {
         <h3 className="font-bold text-sm truncate flex-1 pointer-events-none select-none">
           {question?.name || "Loading..."}
         </h3>
+
+        {/* export pivot table sementara taruh sini, nanti harusnya di titik tiga menu */}
+        {(question?.chart_type === "pivot" ||
+          question?.chart_type === "table") && (
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              e.preventDefault();
+              pivotTableRef.current?.exportToExcel();
+            }}
+            onMouseDown={(e) => {
+              e.stopPropagation(); // Prevent drag initiation
+            }}
+            className="p-1 rounded-full text-gray-500 hover:bg-green-100 hover:text-green-700 pointer-events-auto"
+            title="Export to Excel"
+            style={{ pointerEvents: "auto" }}
+          >
+            <FaFileExcel />
+          </button>
+        )}
 
         {/* Drag & remove icons */}
         {!isEmbedMode && onRemove && (

@@ -28,6 +28,10 @@ export default function QuestionEditorPage() {
     handleSaveQuestion,
   } = useQuestionEditor();
 
+  const setChartConfig2 = (props) => {
+    console.log(props);
+  };
+
   return (
     <div>
       <div className="flex justify-between items-center mb-6">
@@ -101,12 +105,10 @@ export default function QuestionEditorPage() {
         chartType={chartType}
         onChartTypeChange={setChartType}
         chartConfig={chartConfig}
-        onChartConfigChange={(e) =>
-          setChartConfig((prev) => ({
-            ...prev,
-            [e.target.name]: e.target.value,
-          }))
-        }
+        onChartConfigChange={(e) => {
+          const { name, value } = e.target;
+          setChartConfig((prev) => ({ ...prev, [name]: value }));
+        }}
         transformedData={transformedData}
       />
     </div>

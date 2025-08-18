@@ -1,7 +1,9 @@
 import BarChart from "components/organisms/charts/BarChart";
-import ResultsTable from "components/organisms/charts/ResultsTable";
 import LineChart from "components/organisms/charts/LineChart";
 import DonutChart from "components/organisms/charts/DonutChart";
+import PivotTable from "components/organisms/charts/PivotTable";
+import { FaFileExcel } from "react-icons/fa";
+import { useRef } from "react";
 
 export default function VisualizationPanel({
   error,
@@ -23,15 +25,17 @@ export default function VisualizationPanel({
   if (isLoading) return <p className="mt-8 text-center">Loading...</p>;
   if (results.length === 0) return null;
 
+  const pivotTableRef = useRef(null);
+
   return (
     <div className="mt-8 bg-white p-6 rounded-lg shadow-md border">
       <div className="border-b border-gray-200 mb-4">
         <nav className="-mb-px flex space-x-8">
           <button
-            onClick={() => onChartTypeChange("table")}
-            className={`whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm ${chartType === "table" ? "border-indigo-500 text-indigo-600" : "border-transparent text-gray-500 hover:text-gray-700"}`}
+            onClick={() => onChartTypeChange("pivot")}
+            className={`whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm ${chartType === "pivot" ? "border-indigo-500 text-indigo-600" : "border-transparent text-gray-500 hover:text-gray-700"}`}
           >
-            Table
+            Pivot Table
           </button>
           <button
             onClick={() => onChartTypeChange("bar")}
@@ -54,15 +58,25 @@ export default function VisualizationPanel({
         </nav>
       </div>
 
-      {chartType === "table" && (
-        <ResultsTable
-          columns={columns}
-          data={results}
-        />
-      )}
+      {(chartType === "pivot" || chartType === "table") && (
+        <div className="h-96">
+          <button
+            onClick={() => pivotTableRef.current?.exportToExcel()}
+            className="mb-2 px-4 py-2 bg-green-600 text-white font-semibold rounded-md hover:bg-green-700 text-sm flex items-center gap-2"
+          >
+            <FaFileExcel /> Export as Excel
+          </button>
 
-      {chartType !== "table" && (
-        <div>
+          <PivotTable
+            ref={pivotTableRef}
+            data={results}
+            savedState={chartConfig}
+            onStateChange={onChartConfigChange}
+          />
+        </div>
+      )}
+      {chartType !== "table" && chartType !== "pivot" && (
+        <div className="min-h-96">
           <div className="flex space-x-4 mb-4">
             <div>
               <label className="text-sm font-medium">Category / Label</label>
@@ -101,6 +115,7 @@ export default function VisualizationPanel({
               </select>
             </div>
           </div>
+
           {transformedData && chartType === "bar" && (
             <BarChart
               xAxisData={transformedData.xAxisData}

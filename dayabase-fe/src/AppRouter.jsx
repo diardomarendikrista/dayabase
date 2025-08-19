@@ -14,6 +14,7 @@ import ConnectionFormPage from "./pages/ConnectionsPage/ConnectionsForm";
 import UserManagementPage from "./pages/UserManagementPage";
 import MVP from "./pages/MVP";
 import { API } from "axios/axios";
+import HomePage from "pages/Home";
 
 export default function AppRouter() {
   const [isLoading, setIsLoading] = useState(true);
@@ -79,7 +80,7 @@ export default function AppRouter() {
             <Route element={<MainLayout />}>
               <Route
                 path="/"
-                element={<DashboardPage />}
+                element={<HomePage />}
               />
               <Route
                 path="/dashboards"

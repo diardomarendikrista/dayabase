@@ -99,13 +99,15 @@ class DashboardController {
   static async updateDashboard(req, res) {
     const { id } = req.params;
     const { name, description } = req.body;
+    const userId = req.user.id;
+
     if (!name) {
       return res.status(400).json({ message: "Nama dashboard wajib diisi." });
     }
     try {
       const updatedDashboard = await pool.query(
-        "UPDATE dashboards SET name = $1, description = $2, updated_at = NOW() WHERE id = $3 RETURNING *",
-        [name, description, id]
+        "UPDATE dashboards SET name = $1, description = $2, updated_at = NOW(), updated_by_user_id = $3 WHERE id = $4 RETURNING *",
+        [name, description, userId, id]
       );
       if (updatedDashboard.rowCount === 0) {
         return res.status(404).json({ message: "Dashboard tidak ditemukan." });

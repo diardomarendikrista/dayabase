@@ -126,6 +126,7 @@ class QuestionController {
     const { id } = req.params;
     const { name, sql_query, chart_type, chart_config, connection_id } =
       req.body;
+    const userId = req.user.id;
 
     // Validasi input
     if (!name || !sql_query || !chart_type || !chart_config || !connection_id) {
@@ -135,8 +136,15 @@ class QuestionController {
     try {
       const updatedQuestion = await pool.query(
         `UPDATE questions 
-         SET name = $1, sql_query = $2, chart_type = $3, chart_config = $4, connection_id = $5
-         WHERE id = $6 
+         SET 
+           name = $1, 
+           sql_query = $2, 
+           chart_type = $3, 
+           chart_config = $4, 
+           connection_id = $5,
+           updated_at = NOW(),
+           updated_by_user_id = $6
+         WHERE id = $7 
          RETURNING *`,
         [
           name,
@@ -144,6 +152,7 @@ class QuestionController {
           chart_type,
           JSON.stringify(chart_config),
           connection_id,
+          userId,
           id,
         ]
       );

@@ -15,16 +15,18 @@ const questionRoutes = require("./questionRoutes");
 const connectionRoutes = require("./connectionRoutes");
 const dashboardRoutes = require("./dashboardRoutes");
 const publicRoutes = require("./publicRoutes");
+const collectionRoutes = require("./collectionRoutes");
 
 router.use("/auth", authRoutes);
 router.use("/public", publicRoutes);
 
 router.use("/users", verifyToken, isAdmin, userRoutes); // Hanya admin
 
-router.use('/account', verifyToken, accountRoutes);
+router.use("/account", verifyToken, accountRoutes);
 router.use("/questions", verifyToken, questionRoutes);
 router.use("/dashboards", verifyToken, dashboardRoutes);
 router.use("/connections", verifyToken, connectionRoutes);
 router.use("/query", verifyToken, queryRoutes);
+router.use("/collections", verifyToken, collectionRoutes);
 
 module.exports = router;

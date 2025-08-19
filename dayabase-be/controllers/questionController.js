@@ -7,8 +7,14 @@ class QuestionController {
    * @route POST /api/questions
    */
   static async createQuestion(req, res) {
-    const { name, sql_query, chart_type, chart_config, connection_id } =
-      req.body;
+    const {
+      name,
+      sql_query,
+      chart_type,
+      chart_config,
+      connection_id,
+      collection_id,
+    } = req.body;
 
     // Validasi input
     if (!name || !sql_query || !chart_type || !chart_config || !connection_id) {
@@ -20,13 +26,14 @@ class QuestionController {
 
     try {
       const newQuestion = await pool.query(
-        "INSERT INTO questions (name, sql_query, chart_type, chart_config, connection_id) VALUES ($1, $2, $3, $4, $5) RETURNING *",
+        "INSERT INTO questions (name, sql_query, chart_type, chart_config, connection_id, collection_id) VALUES ($1, $2, $3, $4, $5, $6) RETURNING *",
         [
           name,
           sql_query,
           chart_type,
           JSON.stringify(chart_config),
           connection_id,
+          collection_id || null,
         ]
       );
 
@@ -142,7 +149,6 @@ class QuestionController {
            chart_type = $3, 
            chart_config = $4, 
            connection_id = $5,
-           updated_at = NOW(),
            updated_by_user_id = $6
          WHERE id = $7 
          RETURNING *`,

@@ -1,13 +1,14 @@
 import { API } from "axios/axios";
 import { useState, useEffect, useMemo } from "react";
 import { useDispatch } from "react-redux";
-import { useParams, useNavigate } from "react-router-dom";
+import { useParams, useNavigate, useLocation } from "react-router-dom";
 import { addToast } from "store/slices/toastSlice";
 
 export function useQuestionEditor() {
   const { id } = useParams();
   const navigate = useNavigate();
   const dispatch = useDispatch();
+  const location = useLocation();
 
   const [pageTitle, setPageTitle] = useState("");
   const [connections, setConnections] = useState([]);
@@ -80,7 +81,6 @@ export function useQuestionEditor() {
     }
     setErrors({});
 
-    // Saat menyimpan, jika bukan pivot, hapus state pivot agar tidak membingungkan
     let finalChartConfig = { ...chartConfig };
     if (chartType !== "pivot" && chartType !== "table") {
       delete finalChartConfig.colState;
@@ -88,12 +88,17 @@ export function useQuestionEditor() {
       delete finalChartConfig.filterState;
     }
 
+    // get collection Id
+    const queryParams = new URLSearchParams(location.search);
+    const collectionId = queryParams.get("collectionId");
+
     const payload = {
       name: pageTitle,
       sql_query: sql,
       chart_type: chartType,
       chart_config: finalChartConfig,
       connection_id: selectedConnectionId,
+      collection_id: collectionId,
     };
     try {
       if (id) {
@@ -101,7 +106,7 @@ export function useQuestionEditor() {
       } else {
         await API.post("/api/questions", payload);
       }
-      navigate("/questions");
+      navigate(`/collections/${collectionId}`);
       dispatch(
         addToast({
           message: id

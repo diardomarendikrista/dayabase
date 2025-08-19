@@ -2,7 +2,7 @@ import { API } from "axios/axios";
 import { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import ConfirmationModal from "components/molecules/ConfirmationModal";
-import { PromptModal } from "components/molecules/PromptModal";
+import PromptModal from "components/molecules/PromptModal";
 import { useDispatch } from "react-redux";
 import { addToast } from "store/slices/toastSlice";
 

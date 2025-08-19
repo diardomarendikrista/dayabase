@@ -15,6 +15,7 @@ import UserManagementPage from "./pages/UserManagementPage";
 import MVP from "./pages/MVP";
 import { API } from "axios/axios";
 import HomePage from "pages/Home";
+import CollectionPage from "pages/CollectionsPage";
 
 export default function AppRouter() {
   const [isLoading, setIsLoading] = useState(true);
@@ -81,6 +82,10 @@ export default function AppRouter() {
               <Route
                 path="/"
                 element={<HomePage />}
+              />
+              <Route
+                path="/collections/:id"
+                element={<CollectionPage />}
               />
               <Route
                 path="/dashboards"

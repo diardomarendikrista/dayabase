@@ -102,6 +102,16 @@ Before starting the server, you need to set up the application's database.
     ```
 2.  Connect to your new database and run the following SQL script to create the necessary tables:
 
+#### Database Setup
+
+Before starting the server, you need to set up the application's database.
+
+1.  Create a new PostgreSQL database. For example, using `psql`:
+    ```sql
+    CREATE DATABASE dayabase_app;
+    ```
+2.  Connect to your new database and run the following SQL script to create the necessary tables:
+
     ```sql
     -- Table for users and roles
     CREATE TABLE users (
@@ -129,6 +139,17 @@ Before starting the server, you need to set up the application's database.
         user_id INT REFERENCES users(id) ON DELETE CASCADE
     );
 
+    -- Table for collections (folders)
+    CREATE TABLE collections (
+        id SERIAL PRIMARY KEY,
+        name VARCHAR(255) NOT NULL,
+        description TEXT,
+        parent_collection_id INT REFERENCES collections(id) ON DELETE SET NULL,
+        created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+        updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+        user_id INT NOT NULL REFERENCES users(id) ON DELETE CASCADE
+    );
+
     -- Table to store saved questions (queries and chart configurations)
     CREATE TABLE questions (
         id SERIAL PRIMARY KEY,
@@ -140,7 +161,9 @@ Before starting the server, you need to set up the application's database.
         created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
         public_sharing_enabled BOOLEAN DEFAULT FALSE,
         public_token UUID UNIQUE DEFAULT gen_random_uuid(),
-        user_id INT REFERENCES users(id) ON DELETE CASCADE
+        user_id INT REFERENCES users(id) ON DELETE CASCADE,
+        collection_id INT REFERENCES collections(id) ON DELETE CASCADE,
+        updated_by_user_id INT REFERENCES users(id) ON DELETE SET NULL
     );
 
     -- Table to store dashboards
@@ -152,7 +175,9 @@ Before starting the server, you need to set up the application's database.
         updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
         public_sharing_enabled BOOLEAN DEFAULT FALSE,
         public_token UUID UNIQUE DEFAULT gen_random_uuid(),
-        user_id INT REFERENCES users(id) ON DELETE CASCADE
+        user_id INT REFERENCES users(id) ON DELETE CASCADE,
+        collection_id INT REFERENCES collections(id) ON DELETE CASCADE,
+        updated_by_user_id INT REFERENCES users(id) ON DELETE SET NULL
     );
 
     -- Junction table to link questions to dashboards and store their layout
@@ -189,14 +214,18 @@ npm run start:fe
 The React application will start, and you can access it in your browser, based at our vite.config.js, it will run at `http://localhost:3000`.
 
 ## 🧩 Notes
+
 You can also run the backend directly from its folder:
+
 ```
 cd dayabase-be
 node app.js
 # or
 nodemon app.js
 ```
+
 And the frontend directly from its folder:
+
 ```
 cd dayabase-fe
 yarn dev

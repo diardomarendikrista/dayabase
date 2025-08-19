@@ -6,14 +6,14 @@ class DashboardController {
    * @route POST /api/dashboards
    */
   static async createDashboard(req, res) {
-    const { name, description } = req.body;
+    const { name, description, collection_id } = req.body;
     if (!name) {
-      return res.status(400).json({ message: "Nama dashboard wajib diisi." });
+      return res.status(400).json({ message: "Dashboard Name Required" });
     }
     try {
       const newDashboard = await pool.query(
-        "INSERT INTO dashboards (name, description) VALUES ($1, $2) RETURNING *",
-        [name, description || null]
+        "INSERT INTO dashboards (name, description, collection_id) VALUES ($1, $2, $3) RETURNING *",
+        [name, description || null, collection_id || null]
       );
       res.status(201).json(newDashboard.rows[0]);
     } catch (error) {

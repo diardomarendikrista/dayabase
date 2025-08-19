@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import Modal from "./Modal";
 import Input from "components/atoms/Input";
 
-export function PromptModal({
+export default function PromptModal({
   showModal,
   setShowModal,
   title,

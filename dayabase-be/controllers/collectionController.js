@@ -78,8 +78,8 @@ class CollectionController {
         ...collectionRes.rows[0],
         items: [
           ...subCollectionsRes.rows.map((c) => ({ ...c, type: "collection" })),
-          ...questionsRes.rows.map((q) => ({ ...q, type: "question" })),
           ...dashboardsRes.rows.map((d) => ({ ...d, type: "dashboard" })),
+          ...questionsRes.rows.map((q) => ({ ...q, type: "question" })),
         ],
       };
       res.status(200).json(response);

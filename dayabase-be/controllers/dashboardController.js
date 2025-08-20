@@ -7,13 +7,15 @@ class DashboardController {
    */
   static async createDashboard(req, res) {
     const { name, description, collection_id } = req.body;
+    const userId = req.user.id;
+
     if (!name) {
       return res.status(400).json({ message: "Dashboard Name Required" });
     }
     try {
       const newDashboard = await pool.query(
-        "INSERT INTO dashboards (name, description, collection_id) VALUES ($1, $2, $3) RETURNING *",
-        [name, description || null, collection_id || null]
+        "INSERT INTO dashboards (name, description, collection_id, updated_by_user_id) VALUES ($1, $2, $3, $4) RETURNING *",
+        [name, description || null, collection_id || null, userId]
       );
       res.status(201).json(newDashboard.rows[0]);
     } catch (error) {
@@ -29,10 +31,22 @@ class DashboardController {
    * @route GET /api/dashboards
    */
   static async getAllDashboards(req, res) {
+    const { collectionId } = req.query;
+
     try {
-      const allDashboards = await pool.query(
-        "SELECT id, name, description, created_at FROM dashboards ORDER BY created_at DESC"
-      );
+      let queryText =
+        "SELECT id, name, description, created_at FROM dashboards";
+      const queryParams = [];
+
+      // Jika ada collectionId, tambahkan filter WHERE
+      if (collectionId) {
+        queryText += " WHERE collection_id = $1 OR collection_id IS NULL";
+        queryParams.push(collectionId);
+      }
+
+      queryText += " ORDER BY name ASC";
+
+      const allDashboards = await pool.query(queryText, queryParams);
       res.status(200).json(allDashboards.rows);
     } catch (error) {
       console.error("Gagal mengambil dashboards:", error);
@@ -53,6 +67,7 @@ class DashboardController {
       const queryText = `
         SELECT 
           d.id as dashboard_id, d.name, d.description, d.public_sharing_enabled, d.public_token,
+          d.collection_id,
           dq.question_id, q.name as question_name, q.chart_type,
           dq.layout_config
         FROM dashboards d
@@ -71,6 +86,7 @@ class DashboardController {
         id: result.rows[0].dashboard_id,
         name: result.rows[0].name,
         description: result.rows[0].description,
+        collection_id: result.rows[0].collection_id,
         public_sharing_enabled: result.rows[0].public_sharing_enabled,
         public_token: result.rows[0].public_token,
         questions: result.rows[0].question_id
@@ -208,7 +224,9 @@ class DashboardController {
    */
   static async updateDashboardLayout(req, res) {
     const { id: dashboard_id } = req.params;
-    const layout = req.body; // Diharapkan berupa array of layout objects
+    const layout = req.body;
+    const userId = req.user.id;
+
     if (!Array.isArray(layout)) {
       return res
         .status(400)
@@ -218,7 +236,7 @@ class DashboardController {
     const client = await pool.connect();
     try {
       await client.query("BEGIN");
-      // Gunakan Promise.all untuk menjalankan semua query update secara paralel
+
       await Promise.all(
         layout.map((item) => {
           const { i: question_id, ...gridProps } = item;
@@ -228,6 +246,13 @@ class DashboardController {
           );
         })
       );
+
+      // Update timestamp dan user di tabel dashboards
+      await client.query(
+        "UPDATE dashboards SET updated_at = NOW(), updated_by_user_id = $1 WHERE id = $2",
+        [userId, dashboard_id]
+      );
+
       await client.query("COMMIT");
       res
         .status(200)

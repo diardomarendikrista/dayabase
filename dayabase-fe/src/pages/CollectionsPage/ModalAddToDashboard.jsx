@@ -8,6 +8,7 @@ export default function ModalAddToDashboard({
   questionId,
   showModal,
   setShowModal,
+  collectionId,
 }) {
   const [dashboards, setDashboards] = useState([]);
   const [selectedDashboardId, setSelectedDashboardId] = useState("");
@@ -17,7 +18,9 @@ export default function ModalAddToDashboard({
 
   useEffect(() => {
     const fetchDashboards = async () => {
-      const response = await API.get("/api/dashboards");
+      const response = await API.get(
+        `/api/dashboards?collectionId=${collectionId}`
+      );
       setDashboards(response.data);
       if (response.data.length > 0) {
         setSelectedDashboardId(response.data[0].id);

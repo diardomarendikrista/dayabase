@@ -159,6 +159,7 @@ Before starting the server, you need to set up the application's database.
         chart_config JSONB NOT NULL,
         connection_id INT REFERENCES database_connections(id) ON DELETE SET NULL,
         created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+        updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
         public_sharing_enabled BOOLEAN DEFAULT FALSE,
         public_token UUID UNIQUE DEFAULT gen_random_uuid(),
         user_id INT REFERENCES users(id) ON DELETE CASCADE,

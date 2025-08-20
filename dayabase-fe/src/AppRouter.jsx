@@ -5,10 +5,8 @@ import MainLayout from "./layouts/MainLayout";
 import ProtectedRoute from "./components/atoms/ProtectedRoute";
 import LoginPage from "./pages/LoginPage";
 import RegisterAdminPage from "./pages/RegisterAdminPage";
-import DashboardPage from "./pages/DashboardPage";
-import DashboardViewPage from "./pages/DashboardPage/DashboardView";
-import QuestionsListPage from "./pages/QuestionsPage";
-import QuestionEditorPage from "./pages/QuestionsPage/QuestionsForm";
+import DashboardViewPage from "./pages/DashboardEditorPage";
+import QuestionEditorPage from "./pages/QuestionsFormPage";
 import ConnectionsPage from "./pages/ConnectionsPage";
 import ConnectionFormPage from "./pages/ConnectionsPage/ConnectionsForm";
 import UserManagementPage from "./pages/UserManagementPage";
@@ -88,16 +86,8 @@ export default function AppRouter() {
                 element={<CollectionPage />}
               />
               <Route
-                path="/dashboards"
-                element={<DashboardPage />}
-              />
-              <Route
                 path="/dashboards/:id"
                 element={<DashboardViewPage />}
-              />
-              <Route
-                path="/questions"
-                element={<QuestionsListPage />}
               />
               <Route
                 path="/questions/new"

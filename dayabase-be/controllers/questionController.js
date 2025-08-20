@@ -15,6 +15,7 @@ class QuestionController {
       connection_id,
       collection_id,
     } = req.body;
+    const userId = req.user.id;
 
     // Validasi input
     if (!name || !sql_query || !chart_type || !chart_config || !connection_id) {
@@ -26,7 +27,7 @@ class QuestionController {
 
     try {
       const newQuestion = await pool.query(
-        "INSERT INTO questions (name, sql_query, chart_type, chart_config, connection_id, collection_id) VALUES ($1, $2, $3, $4, $5, $6) RETURNING *",
+        "INSERT INTO questions (name, sql_query, chart_type, chart_config, connection_id, collection_id, updated_by_user_id) VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING *",
         [
           name,
           sql_query,
@@ -34,6 +35,7 @@ class QuestionController {
           JSON.stringify(chart_config),
           connection_id,
           collection_id || null,
+          userId,
         ]
       );
 
@@ -51,10 +53,19 @@ class QuestionController {
    * @route GET /api/questions
    */
   static async getAllQuestions(req, res) {
+    const { collectionId } = req.query;
     try {
-      const allQuestions = await pool.query(
-        "SELECT id, name, chart_type, created_at FROM questions ORDER BY created_at DESC"
-      );
+      let queryText = "SELECT id, name, chart_type, created_at FROM questions";
+      const queryParams = [];
+
+      if (collectionId) {
+        queryText += " WHERE collection_id = $1 OR collection_id IS NULL";
+        queryParams.push(collectionId);
+      }
+
+      queryText += " ORDER BY name ASC";
+
+      const allQuestions = await pool.query(queryText, queryParams);
       res.status(200).json(allQuestions.rows);
     } catch (error) {
       console.error("Error fetching questions:", error);
@@ -73,13 +84,13 @@ class QuestionController {
     try {
       // Query ini menggabungkan data pertanyaan dengan data koneksinya
       const queryText = `
-        SELECT 
-          q.id, q.name, q.sql_query, q.chart_type, q.chart_config,
-          c.id as connection_id, c.connection_name, c.db_type, c.host, c.port, c.db_user, c.database_name
-        FROM questions q
-        JOIN database_connections c ON q.connection_id = c.id
-        WHERE q.id = $1;
-      `;
+      SELECT 
+        q.id, q.name, q.sql_query, q.chart_type, q.chart_config, q.updated_at,
+        c.id as connection_id, c.connection_name, c.db_type, c.host, c.port, c.db_user, c.database_name
+      FROM questions q
+      JOIN database_connections c ON q.connection_id = c.id
+      WHERE q.id = $1;
+    `;
       const questionResult = await pool.query(queryText, [id]);
 
       if (questionResult.rows.length === 0) {

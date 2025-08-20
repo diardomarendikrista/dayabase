@@ -63,14 +63,31 @@ class CollectionController {
         "SELECT * FROM collections WHERE parent_collection_id = $1 ORDER BY name ASC",
         [id]
       );
+
       // Get questions in this collection
       const questionsRes = await pool.query(
-        "SELECT id, name, chart_type FROM questions WHERE collection_id = $1 ORDER BY name ASC",
+        `SELECT 
+          q.id, q.name, q.chart_type, q.updated_at,
+          u.full_name AS updated_by_user
+        FROM questions q
+        LEFT JOIN users u ON q.updated_by_user_id = u.id
+        WHERE q.collection_id = $1 
+        ORDER BY q.name ASC`,
         [id]
       );
+
       // Get dashboards in this collection
       const dashboardsRes = await pool.query(
-        "SELECT id, name, description FROM dashboards WHERE collection_id = $1 ORDER BY name ASC",
+        `SELECT 
+          d.id,
+          d.name,
+          d.description,
+          d.updated_at,
+          u.full_name AS updated_by_user
+        FROM dashboards d
+        LEFT JOIN users u ON d.updated_by_user_id = u.id
+        WHERE collection_id = $1
+        ORDER BY d.updated_at DESC, d.created_at DESC`,
         [id]
       );
 

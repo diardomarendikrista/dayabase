@@ -1,67 +1,72 @@
 import { API } from "axios/axios";
 import { useEffect, useState } from "react";
-import {
-  RiAddLine,
-  RiDashboardLine,
-  RiFolderLine,
-  RiQuestionLine,
-} from "react-icons/ri";
-import { Link, useParams } from "react-router-dom";
+import { RiAddLine } from "react-icons/ri";
+import { Link, useNavigate, useParams } from "react-router-dom";
 import ConfirmationModal from "components/molecules/ConfirmationModal";
 import PromptModal from "components/molecules/PromptModal";
+import CollectionItem from "./CollectionItem";
+import { addToast } from "store/slices/toastSlice";
+import { useDispatch } from "react-redux";
+import ModalAddToDashboard from "./ModalAddToDashboard";
 
 export default function CollectionPage() {
-  const { id } = useParams();
   const [collection, setCollection] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
 
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [showCreateModal, setShowCreateModal] = useState(false);
-  const [itemToDelete, setItemToDelete] = useState(null);
+  const [showAddToDashboardModal, setShowAddToDashboardModal] = useState(false);
+  const [selectedItem, setSelectedItem] = useState(null);
 
-  const getItemLink = (item) => {
-    switch (item.type) {
-      case "dashboard":
-        return `/dashboards/${item.id}?collectionId=${id}`;
-      case "question":
-        return `/questions/${item.id}?collectionId=${id}`;
-      case "collection":
-        return `/collections/${item.id}`;
-      default:
-        return "#";
+  const { id } = useParams();
+  const dispatch = useDispatch();
+  const navigate = useNavigate();
+
+  const fetchCollectionData = async () => {
+    setIsLoading(true);
+    setError(null);
+    try {
+      const response = await API.get(`/api/collections/${id}`);
+      setCollection(response.data);
+    } catch (err) {
+      setError("Failed to fetch collection data.");
+      console.error(err);
+    } finally {
+      setIsLoading(false);
     }
   };
 
-  const getItemIcon = (item) => {
-    switch (item.type) {
-      case "dashboard":
-        return <RiDashboardLine className="h-5 w-5 text-blue-500" />;
-      case "question":
-        return <RiQuestionLine className="h-5 w-5 text-green-500" />;
-      case "collection":
-        return <RiFolderLine className="h-5 w-5 text-yellow-500" />;
-      default:
-        return null;
-    }
+  const handleDeleteClick = (item) => {
+    setSelectedItem(item);
+    setShowDeleteModal(true);
   };
 
-  const handleDelete = async () => {
-    if (!itemToDelete) return;
-    // try {
-    //   await API.delete(`/api/dashboards/${itemToDelete.id}`);
-    //   setDashboards((prev) => prev.filter((d) => d.id !== itemToDelete.id));
-    //   dispatch(
-    //     addToast({
-    //       message: "Dashboard deleted successfully.",
-    //       type: "success",
-    //     })
-    //   );
-    // } catch (err) {
-    //   dispatch(
-    //     addToast({ message: "Failed to delete dashboard.", type: "error" })
-    //   );
-    // }
+  const handleAddToDashboardClick = (item) => {
+    setSelectedItem(item);
+    setShowAddToDashboardModal(true);
+  };
+
+  const handleConfirmDelete = async () => {
+    if (!selectedItem) return;
+    try {
+      await API.delete(`/api/${selectedItem.type}s/${selectedItem.id}`);
+      dispatch(
+        addToast({
+          message: `${selectedItem.type} deleted successfully.`,
+          type: "success",
+        })
+      );
+      // Refresh data koleksi setelah delete
+      fetchCollectionData();
+    } catch (err) {
+      dispatch(
+        addToast({
+          message: `Failed to delete ${selectedItem.type}.`,
+          type: "error",
+        })
+      );
+    }
   };
 
   const handleCreateDashboard = async (name) => {
@@ -81,20 +86,6 @@ export default function CollectionPage() {
   };
 
   useEffect(() => {
-    const fetchCollectionData = async () => {
-      setIsLoading(true);
-      setError(null);
-      try {
-        const response = await API.get(`/api/collections/${id}`);
-        setCollection(response.data);
-      } catch (err) {
-        setError("Failed to fetch collection data.");
-        console.error(err);
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
     fetchCollectionData();
   }, [id]);
 
@@ -141,26 +132,13 @@ export default function CollectionPage() {
         <ul className="divide-y divide-gray-200">
           {collection.items && collection.items.length > 0 ? (
             collection.items.map((item) => (
-              <li
+              <CollectionItem
                 key={`${item.type}-${item.id}`}
-                className="py-4 flex justify-between items-center"
-              >
-                <Link
-                  to={getItemLink(item)}
-                  className="flex items-center gap-4 group"
-                >
-                  {getItemIcon(item)}
-                  <div>
-                    <p className="font-bold text-lg text-gray-800 group-hover:text-indigo-600 transition-colors">
-                      {item.name}
-                    </p>
-                    <p className="text-sm text-gray-500 capitalize">
-                      {item.type}
-                    </p>
-                  </div>
-                </Link>
-                {/* Di sini Anda bisa menambahkan tombol aksi seperti Move, Edit, Delete */}
-              </li>
+                item={item}
+                collectionId={id}
+                onDeleteClick={handleDeleteClick}
+                onAddToDashboardClick={handleAddToDashboardClick}
+              />
             ))
           ) : (
             <p className="text-center text-gray-500 py-8">
@@ -174,8 +152,8 @@ export default function CollectionPage() {
         showModal={showDeleteModal}
         setShowModal={setShowDeleteModal}
         title="Delete Dashboard"
-        message={`Are you sure you want to delete the dashboard "${itemToDelete?.name}"? This action cannot be undone.`}
-        onConfirm={handleDelete}
+        message={`Are you sure you want to delete the dashboard "${selectedItem?.name}"? This action cannot be undone.`}
+        onConfirm={handleConfirmDelete}
         confirmText="Yes, Delete"
         isDestructive={true}
       />
@@ -188,6 +166,13 @@ export default function CollectionPage() {
         onConfirm={handleCreateDashboard}
         closeOnOverlayClick={false}
         inputPlaceholder="Dashboard Name"
+      />
+
+      <ModalAddToDashboard
+        showModal={showAddToDashboardModal}
+        setShowModal={setShowAddToDashboardModal}
+        questionId={selectedItem?.id}
+        collectionId={id}
       />
     </div>
   );

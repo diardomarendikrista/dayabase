@@ -10,6 +10,7 @@ export default function ModalAddQuestion({
   setShowModal,
   onQuestionAdded,
   existingQuestionIds = [],
+  collectionId,
 }) {
   const [allQuestions, setAllQuestions] = useState([]);
   const [selectedQuestionId, setSelectedQuestionId] = useState("");
@@ -60,7 +61,9 @@ export default function ModalAddQuestion({
   useEffect(() => {
     const fetchQuestions = async () => {
       try {
-        const response = await API.get("/api/questions");
+        const response = await API.get(
+          `/api/questions?collectionId=${collectionId}`
+        );
         setAllQuestions(response.data);
       } catch (error) {
         console.error("Failed to fetch questions list", error);

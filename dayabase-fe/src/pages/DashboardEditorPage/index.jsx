@@ -54,6 +54,7 @@ export default function DashboardViewPage() {
       setIsLoading(false);
     }
   };
+
   const handleRenameDashboard = async () => {
     if (isEmbedMode) return; // Cannot rename in embed mode
     if (dashboard && dashboardName && dashboardName !== dashboard.name) {
@@ -194,6 +195,7 @@ export default function DashboardViewPage() {
         setShowModal={setShowModalAdd}
         onQuestionAdded={handleQuestionAdded}
         existingQuestionIds={existingQuestionIds}
+        collectionId={dashboard?.collection_id}
       />
     </div>
   );

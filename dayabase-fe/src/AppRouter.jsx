@@ -1,4 +1,3 @@
-import { useState, useEffect } from "react";
 import { Routes, Route, Navigate } from "react-router-dom";
 
 import MainLayout from "./layouts/MainLayout";
@@ -11,41 +10,15 @@ import ConnectionsPage from "./pages/ConnectionsPage";
 import ConnectionFormPage from "./pages/ConnectionsPage/ConnectionsForm";
 import UserManagementPage from "./pages/UserManagementPage";
 import MVP from "./pages/MVP";
-import { API } from "axios/axios";
 import HomePage from "pages/Home";
 import CollectionPage from "pages/CollectionsPage";
 
-export default function AppRouter() {
-  const [isLoading, setIsLoading] = useState(true);
-  const [needsSetup, setNeedsSetup] = useState(false);
-
-  useEffect(() => {
-    const checkSetupStatus = async () => {
-      try {
-        const response = await API.get("/api/auth/setup-status");
-        setNeedsSetup(response.data.needsSetup);
-      } catch (error) {
-        console.error("Failed to check setup status:", error);
-        setNeedsSetup(false);
-      } finally {
-        setIsLoading(false);
-      }
-    };
-    checkSetupStatus();
-  }, []);
-
-  if (isLoading) {
-    return (
-      <div className="flex justify-center items-center min-h-screen">
-        Loading...
-      </div>
-    );
-  }
-
+// AppRouter sekarang menerima `needsSetup` sebagai prop
+export default function AppRouter({ needsSetup }) {
   return (
     <Routes>
       {needsSetup ? (
-        // Setup Mode: Only allow access to the admin registration page
+        // Setup Mode
         <>
           <Route
             path="/setup"

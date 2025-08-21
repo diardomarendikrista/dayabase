@@ -11,8 +11,14 @@ import {
   RiMoreFill,
   RiAddLine,
 } from "react-icons/ri";
-import { API } from "axios/axios";
 import ModalAddCollection from "components/molecules/ModalAddCollection";
+import { useDispatch, useSelector } from "react-redux";
+import {
+  fetchCollections,
+  createCollection,
+} from "store/slices/collectionsSlice";
+import { addToast } from "store/slices/toastSlice";
+import { selectIsAdmin } from "store/slices/authSlice";
 
 // Helper for styling active NavLink
 const getLinkClass = ({ isActive }) =>
@@ -23,36 +29,45 @@ const getLinkClass = ({ isActive }) =>
   }`;
 
 export default function Sidebar() {
-  const [collections, setCollections] = useState([]);
+  const { items: collections, status } = useSelector(
+    (state) => state.collections
+  );
+  const isAdmin = useSelector(selectIsAdmin);
+
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [showModalAddCollection, setShowModalAddCollection] = useState(false); // State untuk modal
 
+  const dispatch = useDispatch();
   const menuRef = useRef(null);
-
-  const user = { role: "ADMIN" }; // Mock user
-  const isAdmin = user?.role === "ADMIN";
 
   const handleOpenModal = () => {
     setIsMenuOpen(false);
     setShowModalAddCollection(true);
   };
 
-  const handleCollectionAdded = (newCollection) => {
-    setCollections((prev) => [...prev, newCollection]);
+  const handleAddCollection = async (name) => {
+    if (!name) return;
+    try {
+      await dispatch(createCollection({ name })).unwrap(); // .unwrap() akan melempar error jika rejected
+      dispatch(
+        addToast({
+          message: "Collection created successfully!",
+          type: "success",
+        })
+      );
+    } catch (error) {
+      dispatch(
+        addToast({ message: "Failed to create collection.", type: "error" })
+      );
+    }
   };
 
   // Fetch collections
   useEffect(() => {
-    const fetchCollections = async () => {
-      try {
-        const response = await API.get("/api/collections");
-        setCollections(response.data);
-      } catch (error) {
-        console.error("Failed to fetch collections:", error);
-      }
-    };
-    fetchCollections();
-  }, []);
+    if (status === "idle") {
+      dispatch(fetchCollections());
+    }
+  }, [status, dispatch]);
 
   // Close dropdown saat klik di luar
   useEffect(() => {
@@ -67,9 +82,9 @@ export default function Sidebar() {
 
   return (
     <>
-      <aside className="w-64 bg-white border-r border-gray-200 p-4 flex flex-col h-full">
-        <nav className="space-y-2">
-          {/* Main Menu */}
+      <aside className="w-64 bg-white border-r border-gray-200 flex flex-col h-full">
+        {/* Main Menu */}
+        <div className="flex-shrink-0 m-4 mb-2">
           <NavLink
             to="/"
             className={getLinkClass}
@@ -78,10 +93,12 @@ export default function Sidebar() {
             <RiHome4Line className="h-5 w-5" />
             <span>Home</span>
           </NavLink>
+        </div>
 
-          {/* Collections */}
-          <div>
-            <div className="relative flex items-center justify-between w-full px-4 py-2 rounded-md text-sm font-medium text-gray-700">
+        {/* Collections */}
+        <div className="flex-1 flex flex-col overflow-hidden border-gray-200">
+          <div className="flex-shrink-0 px-4">
+            <div className="relative flex items-center justify-between w-full px-4 py-2 text-sm font-medium text-gray-700">
               <div className="flex items-center gap-3">
                 <RiFolderLine className="h-5 w-5" />
                 <span>Collections</span>
@@ -96,7 +113,7 @@ export default function Sidebar() {
               {isMenuOpen && (
                 <div
                   ref={menuRef}
-                  className="absolute top-8 right-0 w-48 bg-white border rounded-md shadow-lg z-10"
+                  className="absolute top-8 right-0 w-48 bg-white border border-gray-200 rounded-md shadow-lg z-10"
                 >
                   <button
                     onClick={handleOpenModal}
@@ -108,22 +125,26 @@ export default function Sidebar() {
                 </div>
               )}
             </div>
-            <div className="mt-2 pl-8 space-y-1">
+          </div>
+
+          {/* Daftar Koleksi (Scrollable) */}
+          <div className="flex-1 overflow-y-auto pb-4">
+            <div className="mt-2 pl-12 pr-4 space-y-1">
               {collections.map((collection) => (
                 <NavLink
                   key={collection.id}
                   to={`/collections/${collection.id}`}
                   className={getLinkClass}
                 >
-                  <span>{collection.name}</span>
+                  <span className="truncate">{collection.name}</span>
                 </NavLink>
               ))}
             </div>
           </div>
-        </nav>
+        </div>
 
         {/* Settings Menu at the bottom */}
-        <div className="mt-auto space-y-2">
+        <div className="flex-shrink-0 p-4 border-t border-gray-200">
           <hr className="my-4" />
           <NavLink
             to="/settings/connections"
@@ -155,7 +176,7 @@ export default function Sidebar() {
       <ModalAddCollection
         showModal={showModalAddCollection}
         setShowModal={setShowModalAddCollection}
-        onCollectionAdded={handleCollectionAdded}
+        onConfirm={handleAddCollection}
       />
     </>
   );

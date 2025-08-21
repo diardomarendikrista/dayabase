@@ -1,6 +1,6 @@
 import { API } from "axios/axios";
 import { useEffect, useState } from "react";
-import { RiAddLine } from "react-icons/ri";
+import { RiAddLine, RiDeleteBinLine } from "react-icons/ri";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import ConfirmationModal from "components/molecules/ConfirmationModal";
 import PromptModal from "components/molecules/PromptModal";
@@ -8,6 +8,7 @@ import CollectionItem from "./CollectionItem";
 import { addToast } from "store/slices/toastSlice";
 import { useDispatch } from "react-redux";
 import ModalAddToDashboard from "./ModalAddToDashboard";
+import { deleteCollection } from "store/slices/collectionsSlice";
 
 export default function CollectionPage() {
   const [collection, setCollection] = useState(null);
@@ -28,7 +29,8 @@ export default function CollectionPage() {
     setError(null);
     try {
       const response = await API.get(`/api/collections/${id}`);
-      setCollection(response.data);
+      const newData = { type: "collection", ...response.data };
+      setCollection(newData);
     } catch (err) {
       setError("Failed to fetch collection data.");
       console.error(err);
@@ -50,15 +52,24 @@ export default function CollectionPage() {
   const handleConfirmDelete = async () => {
     if (!selectedItem) return;
     try {
-      await API.delete(`/api/${selectedItem.type}s/${selectedItem.id}`);
+      // Panggil action deleteCollection, .unwrap() akan menangani promise
+      await dispatch(deleteCollection(selectedItem.id)).unwrap();
+
       dispatch(
         addToast({
-          message: `${selectedItem.type} deleted successfully.`,
+          message: `${selectedItem.type} '${selectedItem.name}' deleted.`,
           type: "success",
         })
       );
-      // Refresh data koleksi setelah delete
-      fetchCollectionData();
+
+      if (
+        selectedItem.type === "collection" &&
+        selectedItem.id.toString() === id
+      ) {
+        navigate("/");
+      } else {
+        fetchCollectionData(); // Muat ulang item di dalam koleksi
+      }
     } catch (err) {
       dispatch(
         addToast({
@@ -85,6 +96,26 @@ export default function CollectionPage() {
     }
   };
 
+  const getDeleteModalMessage = () => {
+    if (!selectedItem) return "";
+
+    const baseMessage = `Are you sure you want to delete the ${selectedItem.type} "${selectedItem.name}"?`;
+
+    if (selectedItem.type === "collection") {
+      return (
+        <span>
+          {baseMessage} <br />
+          <strong className="text-red-700">
+            All questions and dashboards within this collection will also be
+            permanently deleted.
+          </strong>
+        </span>
+      );
+    }
+
+    return baseMessage;
+  };
+
   useEffect(() => {
     fetchCollectionData();
   }, [id]);
@@ -92,11 +123,9 @@ export default function CollectionPage() {
   if (isLoading) {
     return <div className="text-center p-8">Loading collection...</div>;
   }
-
   if (error) {
     return <div className="text-center p-8 text-red-500">{error}</div>;
   }
-
   if (!collection) {
     return <div className="text-center p-8">Collection not found.</div>;
   }
@@ -111,7 +140,7 @@ export default function CollectionPage() {
             {collection.description || "No description for this collection."}
           </p>
         </div>
-        <div className="flex gap-4">
+        <div className="flex gap-2">
           <Link
             to={`/questions/new?collectionId=${id}`}
             className="px-4 py-2 bg-green-600 text-white font-semibold
@@ -124,6 +153,14 @@ export default function CollectionPage() {
             className="px-4 py-2 bg-blue-600 text-white font-semibold rounded-md hover:bg-blue-700 flex items-center gap-2"
           >
             <RiAddLine /> New Dashboard
+          </button>
+
+          <button
+            onClick={() => handleDeleteClick(collection)}
+            className="px-3 py-2 text-white bg-red-600 hover:bg-red-700 rounded-md"
+            title="Delete"
+          >
+            <RiDeleteBinLine />
           </button>
         </div>
       </div>
@@ -151,8 +188,8 @@ export default function CollectionPage() {
       <ConfirmationModal
         showModal={showDeleteModal}
         setShowModal={setShowDeleteModal}
-        title="Delete Dashboard"
-        message={`Are you sure you want to delete the dashboard "${selectedItem?.name}"? This action cannot be undone.`}
+        title={`Delete ${selectedItem?.type}`}
+        customMessage={getDeleteModalMessage()}
         onConfirm={handleConfirmDelete}
         confirmText="Yes, Delete"
         isDestructive={true}

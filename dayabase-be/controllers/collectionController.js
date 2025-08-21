@@ -28,11 +28,11 @@ class CollectionController {
    * @route GET /api/collections
    */
   static async getAllCollections(req, res) {
-    const userId = req.user.id;
+    // const userId = req.user.id;
     try {
       const collections = await pool.query(
-        "SELECT * FROM collections WHERE user_id = $1 AND parent_collection_id IS NULL ORDER BY name ASC",
-        [userId]
+        "SELECT * FROM collections WHERE parent_collection_id IS NULL ORDER BY name ASC",
+        []
       );
       res.status(200).json(collections.rows);
     } catch (error) {
@@ -51,8 +51,8 @@ class CollectionController {
     try {
       // Get collection details
       const collectionRes = await pool.query(
-        "SELECT * FROM collections WHERE id = $1 AND user_id = $2",
-        [id, userId]
+        "SELECT * FROM collections WHERE id = $1",
+        [id]
       );
       if (collectionRes.rows.length === 0) {
         return res.status(404).json({ message: "Collection not found." });

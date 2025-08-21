@@ -21,12 +21,12 @@ export function useQuestionEditor() {
   const [chartType, setChartType] = useState("pivot"); // Default ke pivot
   const [chartConfig, setChartConfig] = useState({});
 
-  console.log(chartConfig, "chartConfig");
-
   const handleRunQuery = async (options = {}) => {
     const { newSql, newConnectionId, isInitialLoad = false } = options;
     const finalSql = newSql || sql;
     const finalConnectionId = newConnectionId || selectedConnectionId;
+
+    setErrors(false);
 
     if (!finalConnectionId) {
       dispatch(

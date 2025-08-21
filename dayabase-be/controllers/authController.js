@@ -62,7 +62,7 @@ class AuthController {
 
       const token = jwt.sign(
         { id: user.id, role: user.role },
-        process.env.JWT_SECRET,
+        process.env.JWT_SECRET
         // { expiresIn: "24h" }
       );
       res.json({
@@ -76,6 +76,36 @@ class AuthController {
       });
     } catch (error) {
       res.status(500).json({ message: "Login failed.", error: error.message });
+    }
+  }
+
+  /**
+   * @description check auth for decode token
+   * @route GET /api/auth/me
+   */
+  static async getMe(req, res) {
+    const userId = req.user.id;
+
+    try {
+      const { rows } = await pool.query(
+        "SELECT id, email, full_name, role FROM users WHERE id = $1",
+        [userId]
+      );
+
+      if (rows.length === 0) {
+        return res.status(404).json({ message: "User not found." });
+      }
+
+      res.json({
+        user: {
+          id: rows[0].id,
+          email: rows[0].email,
+          fullName: rows[0].full_name,
+          role: rows[0].role,
+        },
+      });
+    } catch (error) {
+      res.status(500).json({ message: "Server error.", error: error.message });
     }
   }
 }

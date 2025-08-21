@@ -1,21 +1,24 @@
 import { API } from "axios/axios";
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { useDispatch } from "react-redux";
+import { setCredentials } from "store/slices/authSlice";
+import Input from "components/atoms/Input";
 
 export default function LoginPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
+
   const navigate = useNavigate();
+  const dispatch = useDispatch();
 
   const handleLogin = async (e) => {
     e.preventDefault();
     try {
       const response = await API.post("/api/auth/login", { email, password });
-      localStorage.setItem("authToken", response.data.token);
-      localStorage.setItem("user", JSON.stringify(response.data.user));
-      navigate("/"); // Arahkan ke dashboard setelah login
-      // window.location.reload(); // Paksa reload untuk update state
+      dispatch(setCredentials(response.data));
+      navigate("/");
     } catch (err) {
       setError("Incorrect email or password.");
     }
@@ -29,21 +32,19 @@ export default function LoginPage() {
           onSubmit={handleLogin}
           className="space-y-4"
         >
-          <input
+          <Input
             type="email"
             placeholder="Email"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
             required
-            className="w-full p-2 border rounded"
           />
-          <input
+          <Input
             type="password"
             placeholder="Password"
             value={password}
             onChange={(e) => setPassword(e.target.value)}
             required
-            className="w-full p-2 border rounded"
           />
           {error && <p className="text-red-500 text-sm">{error}</p>}
           <button

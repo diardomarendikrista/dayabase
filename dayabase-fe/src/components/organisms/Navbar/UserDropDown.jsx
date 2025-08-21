@@ -5,13 +5,17 @@ import {
   RiLockPasswordLine,
   RiLogoutBoxRLine,
 } from "react-icons/ri";
+import { useDispatch, useSelector } from "react-redux";
+import { selectCurrentUser, logOut } from "store/slices/authSlice";
 
 export default function UserDropdown() {
+  const user = useSelector(selectCurrentUser);
+
   const [isOpen, setIsOpen] = useState(false);
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const user = JSON.parse(localStorage.getItem("user"));
 
   const dropdownRef = useRef(null);
+  const dispatch = useDispatch();
 
   // Menutup dropdown saat klik di luar
   useEffect(() => {
@@ -25,9 +29,8 @@ export default function UserDropdown() {
   }, []);
 
   const handleLogout = () => {
-    localStorage.removeItem("authToken");
-    localStorage.removeItem("user");
-    window.location.href = "/login";
+    dispatch(logOut());
+    navigate("/login");
   };
 
   if (!user) return null;

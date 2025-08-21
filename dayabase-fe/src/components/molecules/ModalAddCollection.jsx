@@ -1,16 +1,15 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useDispatch } from "react-redux";
 import Modal from "components/molecules/Modal";
 import { addToast } from "store/slices/toastSlice";
 import Input from "components/atoms/Input";
-import { API } from "axios/axios";
 
 export default function ModalAddCollection({
   showModal,
   setShowModal,
-  onCollectionAdded,
+  onConfirm,
 }) {
-  const [newCollectionName, setNewCollectionName] = useState("");
+  const [name, setName] = useState("");
   const [isSaving, setIsSaving] = useState(false);
   const dispatch = useDispatch();
 
@@ -19,36 +18,26 @@ export default function ModalAddCollection({
     setNewCollectionName("");
   };
 
-  const handleSaveCollection = async () => {
-    if (!newCollectionName.trim()) {
+  const handleConfirm = async () => {
+    if (!name.trim()) {
       dispatch(
         addToast({ message: "Collection name cannot be empty.", type: "error" })
       );
       return;
     }
     setIsSaving(true);
-    try {
-      const response = await API.post("/api/collections", {
-        name: newCollectionName,
-      });
-      // Panggil fungsi dari parent untuk memberitahu bahwa koleksi baru telah dibuat
-      onCollectionAdded(response.data);
-      dispatch(
-        addToast({
-          message: "Collection created successfully!",
-          type: "success",
-        })
-      );
-      handleCloseModal();
-    } catch (error) {
-      console.error("Failed to create collection:", error);
-      dispatch(
-        addToast({ message: "Failed to create collection.", type: "error" })
-      );
-    } finally {
-      setIsSaving(false);
-    }
+    // Panggil fungsi onConfirm dari parent (Sidebar) dengan NAMA (string)
+    await onConfirm(name);
+    setIsSaving(false);
+    setShowModal(false);
+    setName(""); // Reset input setelah berhasil
   };
+
+  useEffect(() => {
+    if (showModal) {
+      setName("");
+    }
+  }, [showModal]);
 
   return (
     <Modal
@@ -67,9 +56,9 @@ export default function ModalAddCollection({
           <Input
             id="collection-name"
             type="text"
-            value={newCollectionName}
-            onChange={(e) => setNewCollectionName(e.target.value)}
-            onKeyDown={(e) => e.key === "Enter" && handleSaveCollection()}
+            value={name}
+            onChange={(e) => setName(e.target.value)}
+            onKeyDown={(e) => e.key === "Enter" && handleConfirm()}
             placeholder="e.g., Marketing Analytics"
             disabled={isSaving}
             autoFocus
@@ -84,7 +73,7 @@ export default function ModalAddCollection({
             Cancel
           </button>
           <button
-            onClick={handleSaveCollection}
+            onClick={handleConfirm}
             className="px-4 py-2 text-sm font-medium text-white bg-indigo-600 border rounded-md hover:bg-indigo-700 disabled:bg-indigo-300"
             disabled={isSaving}
           >

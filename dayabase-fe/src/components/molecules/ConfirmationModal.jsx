@@ -4,7 +4,8 @@ export default function ConfirmationModal({
   showModal,
   setShowModal,
   title = "Konfirmasi",
-  message = "Apakah Anda yakin ingin melanjutkan?",
+  message,
+  customMessage,
   onConfirm,
   confirmText = "Konfirmasi",
   cancelText = "Batal",
@@ -21,7 +22,15 @@ export default function ConfirmationModal({
       showModal={showModal}
       setShowModal={setShowModal}
     >
-      <p className="text-gray-600 mb-6">{message}</p>
+      {message && (
+        <div
+          className="text-gray-600 mb-6"
+          dangerouslySetInnerHTML={{ __html: message }}
+        />
+      )}
+      {customMessage && (
+        <div className="text-gray-600 mb-6">{customMessage}</div>
+      )}
       <div className="flex justify-end space-x-4">
         <button
           onClick={() => setShowModal(false)}

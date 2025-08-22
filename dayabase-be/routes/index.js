@@ -1,21 +1,19 @@
 // routes/index.js
 const express = require("express");
 const router = express.Router();
-
 const { verifyToken, isAdmin } = require("../middleware/authMiddleware");
 const Controller = require("../controllers");
-router.get("/", Controller.getRootHandler);
-
 const authRoutes = require("./authRoutes");
 const userRoutes = require("./userRoutes");
 const accountRoutes = require("./accountRoutes");
-
 const queryRoutes = require("./queryRoutes");
 const questionRoutes = require("./questionRoutes");
 const connectionRoutes = require("./connectionRoutes");
 const dashboardRoutes = require("./dashboardRoutes");
 const publicRoutes = require("./publicRoutes");
 const collectionRoutes = require("./collectionRoutes");
+
+router.get("/", Controller.getRootHandler);
 
 router.use("/auth", authRoutes);
 router.use("/public", publicRoutes);

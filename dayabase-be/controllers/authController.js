@@ -3,7 +3,10 @@ const jwt = require("jsonwebtoken");
 const pool = require("../config/db");
 
 class AuthController {
-  // Cek apakah sudah ada user di sistem (untuk setup admin pertama)
+  /**
+   * @description Cek apakah sudah ada user di sistem (untuk setup admin pertama)
+   * @route GET /api/auth/setup-status
+   */
   static async getSetupStatus(req, res) {
     try {
       const { rows } = await pool.query("SELECT COUNT(*) FROM users");
@@ -14,7 +17,10 @@ class AuthController {
     }
   }
 
-  // Registrasi admin pertama
+  /**
+   * @description  Registrasi admin pertama
+   * @route POST /api/auth/register-first-admin
+   */
   static async registerFirstAdmin(req, res) {
     const { email, password, fullName } = req.body;
     try {
@@ -38,7 +44,10 @@ class AuthController {
     }
   }
 
-  // Login untuk semua user
+  /**
+   * @description Login untuk semua user
+   * @route POST /api/auth/login
+   */
   static async login(req, res) {
     const { email, password } = req.body;
     try {

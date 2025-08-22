@@ -10,17 +10,17 @@ function App() {
   const { token } = useSelector((state) => state.auth);
   const dispatch = useDispatch();
 
-  // State baru untuk mengelola semua status loading awal
   const [isAppLoading, setIsAppLoading] = useState(true);
   const [needsSetup, setNeedsSetup] = useState(false);
 
   useEffect(() => {
     const initializeApp = async () => {
+      // credential check
       if (token) {
         await dispatch(verifyToken());
         setNeedsSetup(false);
       } else {
-        // Jika tidak ada token, cek apakah setup diperlukan
+        // if no credentials, check for need setup or not
         try {
           const response = await API.get("/api/auth/setup-status");
           setNeedsSetup(response.data.needsSetup);
@@ -35,7 +35,7 @@ function App() {
     initializeApp();
   }, [dispatch, token]);
 
-  // Tampilkan satu layar loading universal
+  // TODO: add loading screen
   if (isAppLoading) {
     return (
       <div className="flex justify-center items-center min-h-screen">

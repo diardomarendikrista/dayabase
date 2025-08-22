@@ -28,7 +28,6 @@ class CollectionController {
    * @route GET /api/collections
    */
   static async getAllCollections(req, res) {
-    // const userId = req.user.id;
     try {
       const collections = await pool.query(
         "SELECT * FROM collections WHERE parent_collection_id IS NULL ORDER BY name ASC",
@@ -47,7 +46,6 @@ class CollectionController {
    */
   static async getCollectionById(req, res) {
     const { id } = req.params;
-    const userId = req.user.id;
     try {
       // Get collection details
       const collectionRes = await pool.query(

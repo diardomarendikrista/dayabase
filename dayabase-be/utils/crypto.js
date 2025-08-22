@@ -1,4 +1,5 @@
 // utils/crypto.js
+// ini untuk enkripsi dan dekripsi password yang ada di conenction, yang di auth/login pakai bcrypt.
 
 const crypto = require("crypto");
 require("dotenv").config();

@@ -39,9 +39,6 @@ class PublicController {
 
       res.status(200).json(processedDashboardData);
     } catch (error) {
-      // ==========================================================
-      // PERBAIKAN: Tambahkan logging yang lebih detail
-      // ==========================================================
       console.error(
         `[PUBLIC_CONTROLLER_ERROR] Gagal mengambil dashboard publik dengan token ${token}:`,
         error

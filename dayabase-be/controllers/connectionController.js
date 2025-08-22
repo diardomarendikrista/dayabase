@@ -110,7 +110,7 @@ class ConnectionController {
   static async deleteConnection(req, res) {
     const { id } = req.params;
     try {
-      // Di aplikasi nyata, Anda mungkin perlu mengecek apakah koneksi ini masih dipakai oleh 'questions'
+      // nanti mungkin perlu cek apakah koneksi ini masih dipakai oleh 'questions'
       // Untuk sekarang, kita langsung hapus.
       const deleteOp = await pool.query(
         "DELETE FROM database_connections WHERE id = $1 RETURNING *",

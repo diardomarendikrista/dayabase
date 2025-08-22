@@ -81,7 +81,7 @@ class DashboardController {
         return res.status(404).json({ message: "Dashboard tidak ditemukan" });
       }
 
-      // Proses hasil query menjadi format yang rapi
+      // dirapikan dulu sebelum kirim ke FE
       const dashboardData = {
         id: result.rows[0].dashboard_id,
         name: result.rows[0].name,
@@ -308,7 +308,7 @@ class DashboardController {
    */
   static async updateSharingStatus(req, res) {
     const { id } = req.params;
-    const { enabled } = req.body; // Menerima { "enabled": true } atau { "enabled": false }
+    const { enabled } = req.body;
 
     try {
       const result = await pool.query(

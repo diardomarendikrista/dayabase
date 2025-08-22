@@ -82,7 +82,6 @@ class QuestionController {
   static async getQuestionById(req, res) {
     const { id } = req.params;
     try {
-      // Query ini menggabungkan data pertanyaan dengan data koneksinya
       const queryText = `
       SELECT 
         q.id, q.name, q.sql_query, q.chart_type, q.chart_config, q.updated_at,

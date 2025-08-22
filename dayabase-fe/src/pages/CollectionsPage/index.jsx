@@ -1,6 +1,6 @@
 import { API } from "axios/axios";
 import { useEffect, useState } from "react";
-import { RiAddLine, RiDeleteBinLine } from "react-icons/ri";
+import { RiAddLine, RiDeleteBinLine, RiPencilLine } from "react-icons/ri";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import ConfirmationModal from "components/molecules/ConfirmationModal";
 import PromptModal from "components/molecules/PromptModal";
@@ -9,16 +9,19 @@ import { addToast } from "store/slices/toastSlice";
 import { useDispatch } from "react-redux";
 import ModalAddToDashboard from "./ModalAddToDashboard";
 import { deleteCollection } from "store/slices/collectionsSlice";
+import ModalEditCollection from "./ModalEditCollection";
 
 export default function CollectionPage() {
   const [collection, setCollection] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
 
+  const [selectedItem, setSelectedItem] = useState(null);
+
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [showAddToDashboardModal, setShowAddToDashboardModal] = useState(false);
-  const [selectedItem, setSelectedItem] = useState(null);
+  const [showEditModal, setShowEditModal] = useState(false);
 
   const { id } = useParams();
   const dispatch = useDispatch();
@@ -47,6 +50,13 @@ export default function CollectionPage() {
   const handleAddToDashboardClick = (item) => {
     setSelectedItem(item);
     setShowAddToDashboardModal(true);
+  };
+
+  const handleCollectionUpdated = (updatedCollection) => {
+    setCollection((prevCollection) => ({
+      ...prevCollection,
+      ...updatedCollection,
+    }));
   };
 
   const handleConfirmDelete = async () => {
@@ -133,18 +143,36 @@ export default function CollectionPage() {
   return (
     <div>
       {/* Header Halaman */}
-      <div className="flex justify-between items-center mb-6">
-        <div>
-          <h1 className="text-3xl font-bold">{collection.name}</h1>
-          <p className="text-gray-500 mt-1">
+      <div className="flex justify-between items-start mb-6 gap-4">
+        <div className="flex-1 min-w-0">
+          <div className="flex items-center gap-3">
+            <h1
+              className="text-3xl font-bold truncate"
+              title={collection.name}
+            >
+              {collection.name}
+            </h1>
+            <button
+              onClick={() => setShowEditModal(true)}
+              className="flex-shrink-0 px-3 py-2 text-gray-700 bg-white border rounded-md hover:bg-gray-50"
+              title="Edit collection details"
+            >
+              <RiPencilLine />
+            </button>
+          </div>
+          <p
+            className="text-gray-500 mt-1 truncate"
+            title={collection.description || ""}
+          >
             {collection.description || "No description for this collection."}
           </p>
         </div>
-        <div className="flex gap-2">
+
+        {/* Grup Kanan: Tombol Aksi */}
+        <div className="flex gap-2 flex-shrink-0">
           <Link
             to={`/questions/new?collectionId=${id}`}
-            className="px-4 py-2 bg-green-600 text-white font-semibold
-            rounded-md hover:bg-green-700 flex items-center gap-2"
+            className="px-4 py-2 bg-green-600 text-white font-semibold rounded-md hover:bg-green-700 flex items-center gap-2"
           >
             <RiAddLine /> New Question
           </Link>
@@ -154,16 +182,18 @@ export default function CollectionPage() {
           >
             <RiAddLine /> New Dashboard
           </button>
-
           <button
-            onClick={() => handleDeleteClick(collection)}
+            onClick={() =>
+              handleDeleteClick({ ...collection, type: "collection" })
+            }
             className="px-3 py-2 text-white bg-red-600 hover:bg-red-700 rounded-md"
-            title="Delete"
+            title="Delete collection"
           >
             <RiDeleteBinLine />
           </button>
         </div>
       </div>
+
       {/* Daftar Item dalam Koleksi */}
       <div className="bg-white p-4 rounded-lg shadow-md border border-gray-200">
         <ul className="divide-y divide-gray-200">
@@ -203,6 +233,13 @@ export default function CollectionPage() {
         onConfirm={handleCreateDashboard}
         closeOnOverlayClick={false}
         inputPlaceholder="Dashboard Name"
+      />
+
+      <ModalEditCollection
+        showModal={showEditModal}
+        setShowModal={setShowEditModal}
+        collection={collection}
+        onCollectionUpdated={handleCollectionUpdated}
       />
 
       <ModalAddToDashboard

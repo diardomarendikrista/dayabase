@@ -9,7 +9,7 @@ export const fetchCollections = createAsyncThunk(
       const response = await API.get("/api/collections");
       return response.data;
     } catch (error) {
-      return rejectWithValue(error.response.data);
+      return rejectWithValue(error.response?.data || error.message);
     }
   }
 );
@@ -22,7 +22,7 @@ export const createCollection = createAsyncThunk(
       const response = await API.post("/api/collections", collectionData);
       return response.data;
     } catch (error) {
-      return rejectWithValue(error.response.data);
+      return rejectWithValue(error.response?.data || error.message);
     }
   }
 );
@@ -35,7 +35,7 @@ export const deleteCollection = createAsyncThunk(
       await API.delete(`/api/collections/${collectionId}`);
       return collectionId; // Kirim kembali ID yang dihapus untuk update state
     } catch (error) {
-      return rejectWithValue(error.response.data);
+      return rejectWithValue(error.response?.data || error.message);
     }
   }
 );

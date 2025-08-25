@@ -25,6 +25,11 @@ export default function VisualizationPanel({
   if (isLoading) return <p className="mt-8 text-center">Loading...</p>;
   if (results.length === 0) return null;
 
+  const handleDropdownChange = (e) => {
+    const { name, value } = e.target;
+    onChartConfigChange((prev) => ({ ...prev, [name]: value }));
+  };
+
   const pivotTableRef = useRef(null);
 
   return (
@@ -83,7 +88,7 @@ export default function VisualizationPanel({
               <select
                 name="category"
                 value={chartConfig.category}
-                onChange={onChartConfigChange}
+                onChange={handleDropdownChange}
                 className="mt-1 block w-full rounded-md border-gray-300"
               >
                 {columns.map((col) => (
@@ -101,7 +106,7 @@ export default function VisualizationPanel({
               <select
                 name="value"
                 value={chartConfig.value}
-                onChange={onChartConfigChange}
+                onChange={handleDropdownChange}
                 className="mt-1 block w-full rounded-md border-gray-300"
               >
                 {columns.map((col) => (

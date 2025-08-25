@@ -101,10 +101,7 @@ export default function QuestionEditorPage() {
         chartType={chartType}
         onChartTypeChange={setChartType}
         chartConfig={chartConfig}
-        onChartConfigChange={(e) => {
-          const { name, value } = e.target;
-          setChartConfig((prev) => ({ ...prev, [name]: value }));
-        }}
+        onChartConfigChange={setChartConfig}
         transformedData={transformedData}
       />
     </div>

@@ -62,12 +62,24 @@ export default function CollectionPage() {
   const handleConfirmDelete = async () => {
     if (!selectedItem) return;
     try {
-      // Panggil action deleteCollection, .unwrap() akan menangani promise
-      await dispatch(deleteCollection(selectedItem.id)).unwrap();
+      // ada 3 tipe yang bisa di hapus di halaman ini
+      switch (selectedItem.type) {
+        case "collection":
+          await dispatch(deleteCollection(selectedItem.id)).unwrap();
+          break;
+        case "dashboard":
+          await API.delete(`/api/dashboards/${selectedItem.id}`);
+          break;
+        case "question":
+          await API.delete(`/api/questions/${selectedItem.id}`);
+          break;
+        default:
+          throw new Error("Invalid item type to delete");
+      }
 
       dispatch(
         addToast({
-          message: `${selectedItem.type} '${selectedItem.name}' deleted.`,
+          message: `${selectedItem.type} '${selectedItem.name}' deleted successfully.`,
           type: "success",
         })
       );

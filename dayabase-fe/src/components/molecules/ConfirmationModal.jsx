@@ -3,12 +3,12 @@ import Modal from "./Modal"; // Impor Modal reusable Anda
 export default function ConfirmationModal({
   showModal,
   setShowModal,
-  title = "Konfirmasi",
+  title = "Confirm",
   message,
   customMessage,
   onConfirm,
-  confirmText = "Konfirmasi",
-  cancelText = "Batal",
+  confirmText = "Confirm",
+  cancelText = "Cancel",
   isDestructive = false, // Untuk memberi warna merah pada tombol konfirmasi
 }) {
   const handleConfirm = () => {

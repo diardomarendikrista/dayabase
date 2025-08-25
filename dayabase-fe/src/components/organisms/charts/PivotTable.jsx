@@ -30,26 +30,27 @@ const PivotTable = forwardRef(
         headerName:
           key.charAt(0).toUpperCase() + key.slice(1).replace(/_/g, " "),
         field: key,
-        enableRowGroup: true,
-        enablePivot: true,
-        enableValue: true,
       }));
     }, [data]);
 
     const getGridState = useCallback(() => {
       if (gridRef.current?.api) {
         const colState = gridRef.current.api.getColumnState();
-        const groupState = gridRef.current.api.getColumnGroupState();
         const filterState = gridRef.current.api.getFilterModel();
-        return { colState, groupState, filterState };
+        return { colState, filterState };
       }
       return null;
     }, []);
 
     const handleStateChange = useCallback(() => {
       if (onStateChange) {
-        const currentState = getGridState();
-        if (currentState) onStateChange(currentState);
+        const gridState = getGridState();
+        if (gridState) {
+          onStateChange((prevConfig) => ({
+            ...prevConfig,
+            ...gridState,
+          }));
+        }
       }
     }, [getGridState, onStateChange]);
 
@@ -121,7 +122,6 @@ const PivotTable = forwardRef(
     }));
 
     return (
-      // Container dibuat fleksibel untuk mengisi ruang yang diberikan oleh parent
       <div className="h-full w-full flex flex-col">
         <div className="ag-theme-alpine flex-grow">
           <AgGridReact
@@ -129,9 +129,6 @@ const PivotTable = forwardRef(
             rowData={data}
             columnDefs={columnDefs}
             defaultColDef={defaultColDef}
-            sideBar={!isDashboard}
-            rowGroupPanelShow="always"
-            pivotPanelShow="always"
             onGridReady={onGridReady}
             onFilterChanged={onStateChange ? handleStateChange : undefined}
             onSortChanged={onStateChange ? handleStateChange : undefined}

@@ -73,7 +73,7 @@ export default function CollectionItem({
           </div>
         </div>
       </Link>
-      <div className="flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+      <div className="flex items-center gap-2">
         {item.type === "question" && (
           <button
             onClick={() => onAddToDashboardClick(item)}
@@ -85,7 +85,7 @@ export default function CollectionItem({
         )}
         <button
           onClick={() => onDeleteClick(item)}
-          className="p-2 text-gray-500 hover:bg-red-100 hover:text-red-600 rounded-md"
+          className="p-2 text-red-500 hover:bg-red-200 hover:text-red-600 rounded-md"
           title="Delete"
         >
           <RiDeleteBinLine />

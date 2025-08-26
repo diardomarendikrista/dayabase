@@ -27,6 +27,22 @@ export const createCollection = createAsyncThunk(
   }
 );
 
+// Thunk untuk edit koleksi
+export const updateCollection = createAsyncThunk(
+  "collections/updateCollection",
+  async ({ id, name, description }, { rejectWithValue }) => {
+    try {
+      const response = await API.put(`/api/collections/${id}`, {
+        name,
+        description,
+      });
+      return response.data;
+    } catch (error) {
+      return rejectWithValue(error.response?.data || error.message);
+    }
+  }
+);
+
 // Thunk untuk menghapus koleksi
 export const deleteCollection = createAsyncThunk(
   "collections/deleteCollection",
@@ -66,7 +82,18 @@ const collectionsSlice = createSlice({
       })
       // Create Collection
       .addCase(createCollection.fulfilled, (state, action) => {
-        state.items.push(action.payload); // Tambahkan koleksi baru ke state
+        state.items.push(action.payload);
+        state.items.sort((a, b) => a.name.localeCompare(b.name));
+      })
+      // Update Collection
+      .addCase(updateCollection.fulfilled, (state, action) => {
+        const index = state.items.findIndex(
+          (item) => item.id === action.payload.id
+        );
+        if (index !== -1) {
+          state.items[index] = action.payload;
+          state.items.sort((a, b) => a.name.localeCompare(b.name));
+        }
       })
       // Delete Collection
       .addCase(deleteCollection.fulfilled, (state, action) => {

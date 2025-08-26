@@ -1,20 +1,16 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import Modal from "./Modal";
 import Input from "components/atoms/Input";
 
-export default function PromptModal({
+export default function ModalAddDashboard({
   showModal,
   setShowModal,
-  title,
-  message,
   onConfirm,
-  inputPlaceholder,
-  confirmText = "Save",
-  initialValue = "",
-  closeOnOverlayClick = true,
 }) {
-  const [inputValue, setInputValue] = useState(initialValue);
+  const [inputValue, setInputValue] = useState("");
   const [error, setError] = useState(null);
+
+  const inputRef = useRef(null);
 
   const handleConfirm = () => {
     if (inputValue.trim()) {
@@ -27,28 +23,30 @@ export default function PromptModal({
 
   useEffect(() => {
     if (showModal) {
-      setInputValue(initialValue);
       setError(null);
+      setInputValue("");
+      inputRef.current?.focus();
     }
-  }, [showModal, initialValue]);
+  }, [showModal]);
 
   return (
     <Modal
-      title={title}
+      title="Create New Dashboard"
       showModal={showModal}
       setShowModal={setShowModal}
-      closeOnOverlayClick={closeOnOverlayClick}
+      closeOnOverlayClick={false}
     >
-      <p className="text-gray-600 mb-2">{message}</p>
+      <p className="text-gray-600 mb-2">Enter a name for your new dashboard:</p>
       <Input
+        ref={inputRef}
         type="text"
-        placeholder={inputPlaceholder}
+        placeholder={"Dashboard Name"}
         value={inputValue}
         onChange={(e) => {
           setInputValue(e.target.value);
-          if (error) setError(null); // Hapus error saat pengguna mulai mengetik
+          if (error) setError(null);
         }}
-        error={!!error} // Kirim status error ke komponen Input
+        error={!!error}
         autoFocus
         onKeyDown={(e) => {
           if (e.key === "Enter") handleConfirm();
@@ -67,7 +65,7 @@ export default function PromptModal({
           onClick={handleConfirm}
           className="px-4 py-2 bg-indigo-600 text-white font-semibold rounded-md hover:bg-indigo-700"
         >
-          {confirmText}
+          Save
         </button>
       </div>
     </Modal>

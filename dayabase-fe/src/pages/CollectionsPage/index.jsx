@@ -3,7 +3,7 @@ import { useEffect, useState } from "react";
 import { RiAddLine, RiDeleteBinLine, RiPencilLine } from "react-icons/ri";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import ConfirmationModal from "components/molecules/ConfirmationModal";
-import PromptModal from "components/molecules/PromptModal";
+import ModalAddDashboard from "components/molecules/ModalAddDashboard";
 import CollectionItem from "./CollectionItem";
 import { addToast } from "store/slices/toastSlice";
 import { useDispatch } from "react-redux";
@@ -237,14 +237,10 @@ export default function CollectionPage() {
         isDestructive={true}
       />
 
-      <PromptModal
+      <ModalAddDashboard
         showModal={showCreateModal}
         setShowModal={setShowCreateModal}
-        title="Create New Dashboard"
-        message="Enter a name for your new dashboard:"
         onConfirm={handleCreateDashboard}
-        closeOnOverlayClick={false}
-        inputPlaceholder="Dashboard Name"
       />
 
       <ModalEditCollection

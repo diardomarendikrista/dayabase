@@ -1,5 +1,3 @@
-// File: src/components/organisms/Sidebar.jsx
-
 import { useState, useEffect, useRef } from "react";
 import { NavLink } from "react-router-dom";
 import {

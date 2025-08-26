@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useDispatch } from "react-redux";
 import Modal from "components/molecules/Modal";
 import { addToast } from "store/slices/toastSlice";
@@ -11,11 +11,12 @@ export default function ModalAddCollection({
 }) {
   const [name, setName] = useState("");
   const [isSaving, setIsSaving] = useState(false);
+
   const dispatch = useDispatch();
+  const inputRef = useRef(null);
 
   const handleCloseModal = () => {
     setShowModal(false);
-    setNewCollectionName("");
   };
 
   const handleConfirm = async () => {
@@ -26,16 +27,15 @@ export default function ModalAddCollection({
       return;
     }
     setIsSaving(true);
-    // Panggil fungsi onConfirm dari parent (Sidebar) dengan NAMA (string)
     await onConfirm(name);
     setIsSaving(false);
     setShowModal(false);
-    setName(""); // Reset input setelah berhasil
   };
 
   useEffect(() => {
     if (showModal) {
       setName("");
+      inputRef.current?.focus();
     }
   }, [showModal]);
 
@@ -44,6 +44,7 @@ export default function ModalAddCollection({
       title="Create a new collection"
       showModal={showModal}
       setShowModal={setShowModal}
+      closeOnOverlayClick={false}
     >
       <div className="space-y-4">
         <div>
@@ -54,6 +55,7 @@ export default function ModalAddCollection({
             Name
           </label>
           <Input
+            ref={inputRef}
             id="collection-name"
             type="text"
             value={name}

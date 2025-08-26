@@ -1,8 +1,8 @@
-import { API } from "axios/axios";
 import Input from "components/atoms/Input";
 import Modal from "components/molecules/Modal";
 import { useEffect, useState } from "react";
 import { useDispatch } from "react-redux";
+import { updateCollection } from "store/slices/collectionsSlice";
 import { addToast } from "store/slices/toastSlice";
 
 export default function ModalEditCollection({
@@ -34,12 +34,10 @@ export default function ModalEditCollection({
     }
     setIsSaving(true);
     try {
-      const response = await API.put(`/api/collections/${collection.id}`, {
-        name,
-        description,
-      });
-      // Panggil callback untuk memberitahu parent bahwa data telah diperbarui
-      onCollectionUpdated(response.data);
+      const newData = await dispatch(
+        updateCollection({ id: collection.id, name, description })
+      ).unwrap();
+      onCollectionUpdated(newData);
       dispatch(
         addToast({
           message: "Collection updated successfully!",

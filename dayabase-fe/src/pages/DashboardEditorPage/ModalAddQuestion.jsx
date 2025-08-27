@@ -32,16 +32,28 @@ export default function ModalAddQuestion({
     }
     setIsSubmitting(true);
     try {
-      await API.post(`/api/dashboards/${dashboardId}/questions`, {
-        question_id: selectedQuestionId,
-      });
+      const response = await API.post(
+        `/api/dashboards/${dashboardId}/questions`,
+        {
+          question_id: selectedQuestionId,
+        }
+      );
+      const fullQuestionDetails = allQuestions.find(
+        (q) => q.id === parseInt(selectedQuestionId, 10)
+      );
+
+      const newQuestionDataForDashboard = {
+        ...fullQuestionDetails,
+        id: response.data.question_id,
+        layout: response.data.layout_config, // Gunakan layout_config dari backend
+      };
       dispatch(
         addToast({
           message: "Question successfully added to dashboard!",
           type: "success",
         })
       );
-      onQuestionAdded(); // Notify parent to refresh data
+      onQuestionAdded(newQuestionDataForDashboard);
       setShowModal(false);
     } catch (error) {
       dispatch(addToast({ message: "Failed to add question.", type: "error" }));
@@ -51,28 +63,33 @@ export default function ModalAddQuestion({
   };
 
   useEffect(() => {
+    if (showModal) {
+      setIsLoading(true);
+      const fetchQuestions = async () => {
+        try {
+          let apiUrl = "/api/questions";
+          if (collectionId) {
+            apiUrl += `?collectionId=${collectionId}`;
+          }
+          const response = await API.get(apiUrl);
+          setAllQuestions(response.data);
+        } catch (error) {
+          console.error("Failed to fetch questions list", error);
+        } finally {
+          setIsLoading(false);
+        }
+      };
+      fetchQuestions();
+    }
+  }, [showModal, collectionId]);
+
+  useEffect(() => {
     if (availableQuestions.length > 0) {
       setSelectedQuestionId(availableQuestions[0].id);
     } else {
-      setSelectedQuestionId(""); // Empty if no options
+      setSelectedQuestionId("");
     }
   }, [availableQuestions]);
-
-  useEffect(() => {
-    const fetchQuestions = async () => {
-      try {
-        const response = await API.get(
-          `/api/questions?collectionId=${collectionId}`
-        );
-        setAllQuestions(response.data);
-      } catch (error) {
-        console.error("Failed to fetch questions list", error);
-      } finally {
-        setIsLoading(false);
-      }
-    };
-    fetchQuestions();
-  }, []);
 
   return (
     <Modal

@@ -29,7 +29,7 @@ export default function CollectionItem({
   const getItemLink = (item) => {
     switch (item.type) {
       case "dashboard":
-        return `/dashboards/${item.id}?collectionId=${collectionId}`;
+        return `/dashboards/${item.id}`;
       case "question":
         return `/questions/${item.id}?collectionId=${collectionId}`;
       case "collection":

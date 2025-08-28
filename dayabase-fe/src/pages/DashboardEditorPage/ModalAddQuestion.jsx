@@ -5,7 +5,6 @@ import { useDispatch } from "react-redux";
 import { addToast } from "store/slices/toastSlice";
 
 export default function ModalAddQuestion({
-  dashboardId,
   showModal,
   setShowModal,
   onQuestionAdded,
@@ -22,45 +21,6 @@ export default function ModalAddQuestion({
   const availableQuestions = useMemo(() => {
     return allQuestions.filter((q) => !existingQuestionIds.includes(q.id));
   }, [allQuestions, existingQuestionIds]);
-
-  const handleSubmit = async () => {
-    if (!selectedQuestionId) {
-      dispatch(
-        addToast({ message: "Please select a question first.", type: "error" })
-      );
-      return;
-    }
-    setIsSubmitting(true);
-    try {
-      const response = await API.post(
-        `/api/dashboards/${dashboardId}/questions`,
-        {
-          question_id: selectedQuestionId,
-        }
-      );
-      const fullQuestionDetails = allQuestions.find(
-        (q) => q.id === parseInt(selectedQuestionId, 10)
-      );
-
-      const newQuestionDataForDashboard = {
-        ...fullQuestionDetails,
-        id: response.data.question_id,
-        layout: response.data.layout_config, // Gunakan layout_config dari backend
-      };
-      dispatch(
-        addToast({
-          message: "Question successfully added to dashboard!",
-          type: "success",
-        })
-      );
-      onQuestionAdded(newQuestionDataForDashboard);
-      setShowModal(false);
-    } catch (error) {
-      dispatch(addToast({ message: "Failed to add question.", type: "error" }));
-    } finally {
-      setIsSubmitting(false);
-    }
-  };
 
   useEffect(() => {
     if (showModal) {
@@ -91,6 +51,27 @@ export default function ModalAddQuestion({
     }
   }, [availableQuestions]);
 
+  const handleSubmit = async () => {
+    if (!selectedQuestionId) {
+      dispatch(
+        addToast({ message: "Please select a question first.", type: "error" })
+      );
+      return;
+    }
+    setIsSubmitting(true);
+    try {
+      const fullQuestionDetails = allQuestions.find(
+        (q) => q.id === parseInt(selectedQuestionId, 10)
+      );
+      onQuestionAdded(fullQuestionDetails);
+      setShowModal(false);
+    } catch (error) {
+      dispatch(addToast({ message: "Failed to add question.", type: "error" }));
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
   return (
     <Modal
       title="Add Question to Dashboard"
@@ -98,7 +79,7 @@ export default function ModalAddQuestion({
       setShowModal={setShowModal}
     >
       {isLoading ? (
-        <p>Loading questions list...</p>
+        <p>Loading questions...</p>
       ) : availableQuestions.length > 0 ? (
         <div>
           <div className="mb-4">
@@ -123,21 +104,21 @@ export default function ModalAddQuestion({
           <div className="flex justify-end space-x-4 pt-4">
             <button
               onClick={() => setShowModal(false)}
-              className="px-4 py-2 bg-gray-200 rounded-md font-semibold text-gray-700 hover:bg-gray-300"
+              className="px-4 py-2 bg-gray-200 rounded-md"
             >
               Cancel
             </button>
             <button
               onClick={handleSubmit}
               disabled={isSubmitting}
-              className="px-4 py-2 bg-indigo-600 text-white font-semibold rounded-md disabled:bg-indigo-300 hover:bg-indigo-700"
+              className="px-4 py-2 bg-indigo-600 text-white rounded-md"
             >
               {isSubmitting ? "Adding..." : "Add"}
             </button>
           </div>
         </div>
       ) : (
-        <p>No questions available to add.</p>
+        <p>No new questions available to add.</p>
       )}
     </Modal>
   );

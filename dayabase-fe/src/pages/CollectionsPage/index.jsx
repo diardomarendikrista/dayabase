@@ -10,6 +10,7 @@ import { useDispatch } from "react-redux";
 import ModalAddToDashboard from "./ModalAddToDashboard";
 import { deleteCollection } from "store/slices/collectionsSlice";
 import ModalEditCollection from "./ModalEditCollection";
+import Button from "components/atoms/Button";
 
 export default function CollectionPage() {
   const [collection, setCollection] = useState(null);
@@ -164,13 +165,13 @@ export default function CollectionPage() {
             >
               {collection.name}
             </h1>
-            <button
+            <Button
+              variant="outline"
+              size="icon"
               onClick={() => setShowEditModal(true)}
-              className="flex-shrink-0 px-3 py-2 text-gray-700 bg-white border rounded-md hover:bg-gray-50"
-              title="Edit collection details"
             >
               <RiPencilLine />
-            </button>
+            </Button>
           </div>
           <p
             className="text-gray-500 mt-1 truncate"
@@ -182,27 +183,28 @@ export default function CollectionPage() {
 
         {/* Grup Kanan: Tombol Aksi */}
         <div className="flex gap-2 flex-shrink-0">
-          <Link
-            to={`/questions/new?collectionId=${id}`}
-            className="px-4 py-2 bg-green-600 text-white font-semibold rounded-md hover:bg-green-700 flex items-center gap-2"
-          >
-            <RiAddLine /> New Question
+          <Link to={`/questions/new?collectionId=${id}`}>
+            <Button
+              variant="success"
+              size="sm"
+            >
+              <RiAddLine className="mr-2 h-4 w-4" /> New Question
+            </Button>
           </Link>
-          <button
+          <Button
             onClick={() => setShowCreateModal(true)}
-            className="px-4 py-2 bg-blue-600 text-white font-semibold rounded-md hover:bg-blue-700 flex items-center gap-2"
+            variant="info"
+            size="sm"
           >
-            <RiAddLine /> New Dashboard
-          </button>
-          <button
-            onClick={() =>
-              handleDeleteClick({ ...collection, type: "collection" })
-            }
-            className="px-3 py-2 text-white bg-red-600 hover:bg-red-700 rounded-md"
-            title="Delete collection"
+            <RiAddLine className="mr-2 h-4 w-4" /> New Dashboard
+          </Button>
+          <Button
+            onClick={() => handleDeleteClick(collection)}
+            variant="destructive"
+            size="icon"
           >
             <RiDeleteBinLine />
-          </button>
+          </Button>
         </div>
       </div>
 

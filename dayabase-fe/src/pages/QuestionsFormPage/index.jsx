@@ -3,6 +3,7 @@ import QueryEditorForm from "./Components/QueryEditorForm";
 import { useQuestionEditor } from "./Components/useQuestionEditor";
 import VisualizationPanel from "./Components/VisualizationPanel";
 import Input from "components/atoms/Input";
+import Button from "components/atoms/Button";
 
 export default function QuestionEditorPage() {
   const {
@@ -60,20 +61,19 @@ export default function QuestionEditorPage() {
             <p className="text-red-600 text-sm mt-1">{errors.pageTitle}</p>
           )}
         </div>
-        <div>
-          <button
+        <div className="flex items-center gap-4">
+          <Button
             onClick={handleSaveQuestion}
-            className="px-5 py-2 mr-4 bg-gray-600 text-white font-semibold rounded-md hover:bg-gray-700"
           >
             {id ? "Update Question" : "Save Question"}
-          </button>
-          <button
+          </Button>
+          <Button
+            variant="success"
             onClick={handleRunQuery}
             disabled={isLoading}
-            className="px-5 py-2 bg-indigo-600 text-white font-semibold rounded-md hover:bg-indigo-700 disabled:bg-indigo-300"
           >
             {isLoading ? "Running..." : "Run Query"}
-          </button>
+          </Button>
         </div>
       </div>
 

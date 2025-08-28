@@ -1,14 +1,16 @@
 import { useState, useEffect, useCallback } from "react";
 import { useLocation, useParams } from "react-router-dom";
+import { useDispatch } from "react-redux";
 import { API } from "axios/axios";
 import { Responsive, WidthProvider } from "react-grid-layout";
 import ChartWidget from "./ChartWidget";
 import ModalDashboardShare from "./ModalDashboardShare";
 import ModalAddQuestion from "./ModalAddQuestion";
 import { MdOutlineShare, MdRedo, MdSave, MdUndo } from "react-icons/md";
+import { RiAddLine } from "react-icons/ri";
 import { addToast } from "store/slices/toastSlice";
-import { useDispatch } from "react-redux";
 import Input from "components/atoms/Input";
+import Button from "components/atoms/Button";
 
 const ResponsiveGridLayout = WidthProvider(Responsive);
 
@@ -19,18 +21,23 @@ export default function DashboardViewPage() {
   const isEmbedMode = location.pathname.includes("/embed/");
   const dashboardIdentifier = id || token;
 
-  const [dashboard, setDashboard] = useState(null);
+  const [originalDashboard, setOriginalDashboard] = useState(null);
   const [dashboardName, setDashboardName] = useState("");
-
-  const [layoutHistory, setLayoutHistory] = useState([]);
-  const [currentLayoutIndex, setCurrentLayoutIndex] = useState(-1);
-  const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
-
   const [isLoading, setIsLoading] = useState(true);
-  const [isSaving, setIsSaving] = useState(false);
 
+  const [history, setHistory] = useState([]);
+  const [currentIndex, setCurrentIndex] = useState(-1);
+
+  const [isSaving, setIsSaving] = useState(false);
   const [showModalShare, setShowModalShare] = useState(false);
   const [showModalAdd, setShowModalAdd] = useState(false);
+
+  const pushStateToHistory = (newState) => {
+    const newHistory = history.slice(0, currentIndex + 1);
+    newHistory.push(newState);
+    setHistory(newHistory);
+    setCurrentIndex(newHistory.length - 1);
+  };
 
   const fetchDashboardData = useCallback(async () => {
     if (!dashboardIdentifier) return;
@@ -41,19 +48,20 @@ export default function DashboardViewPage() {
     try {
       const response = await API.get(apiUrl);
       const data = response.data;
-      setDashboard(data);
+
+      setOriginalDashboard(data);
       setDashboardName(data.name);
 
       const initialLayout = data.questions.map((q) => ({
         ...q.layout,
         i: q.id.toString(),
       }));
-      setLayoutHistory([initialLayout]);
-      setCurrentLayoutIndex(0);
-      setHasUnsavedChanges(false);
+
+      setHistory([{ questions: data.questions, layout: initialLayout }]);
+      setCurrentIndex(0);
     } catch (error) {
       console.error("Gagal mengambil data dashboard", error);
-      setDashboard(null);
+      setHistory([]);
     } finally {
       setIsLoading(false);
     }
@@ -78,90 +86,109 @@ export default function DashboardViewPage() {
     }
   };
 
-  const pushToHistory = (newLayout, newQuestions) => {
-    const newHistory = layoutHistory.slice(0, currentLayoutIndex + 1);
-    newHistory.push(newLayout);
+  const handleLayoutChange = (newLayout) => {
+    if (isEmbedMode) return;
+    const currentState = history[currentIndex];
+    pushStateToHistory({ ...currentState, layout: newLayout });
+  };
 
-    setLayoutHistory(newHistory);
-    setCurrentLayoutIndex(newHistory.length - 1);
-    setHasUnsavedChanges(true);
-
-    if (newQuestions) {
-      setDashboard((prev) => ({ ...prev, questions: newQuestions }));
+  const handleQuestionAdded = (newQuestionDetails) => {
+    const currentState = history[currentIndex];
+    let nextY = 0;
+    if (currentState.layout.length > 0) {
+      nextY = Math.max(
+        ...currentState.layout.map((l) => (l.y || 0) + (l.h || 0))
+      );
     }
+    const newLayoutItem = {
+      i: newQuestionDetails.id.toString(),
+      x: 0,
+      y: nextY,
+      w: 6,
+      h: 5,
+    };
+    const newState = {
+      questions: [...currentState.questions, newQuestionDetails],
+      layout: [...currentState.layout, newLayoutItem],
+    };
+    pushStateToHistory(newState);
+  };
+
+  const handleRemoveQuestion = (questionIdToRemove) => {
+    if (isEmbedMode) return;
+    const currentState = history[currentIndex];
+    const newState = {
+      questions: currentState.questions.filter(
+        (q) => q.id !== questionIdToRemove
+      ),
+      layout: currentState.layout.filter(
+        (item) => item.i !== questionIdToRemove.toString()
+      ),
+    };
+    pushStateToHistory(newState);
   };
 
   const handleUndo = () => {
-    if (currentLayoutIndex > 0) {
-      setCurrentLayoutIndex(currentLayoutIndex - 1);
-      setHasUnsavedChanges(true);
+    if (currentIndex > 0) {
+      setCurrentIndex(currentIndex - 1);
     }
   };
 
   const handleRedo = () => {
-    if (currentLayoutIndex < layoutHistory.length - 1) {
-      setCurrentLayoutIndex(currentLayoutIndex + 1);
-      setHasUnsavedChanges(true);
+    if (currentIndex < history.length - 1) {
+      setCurrentIndex(currentIndex + 1);
     }
   };
 
-  const handleSaveLayout = async () => {
-    if (!hasUnsavedChanges || isEmbedMode) return;
+  const handleSaveChanges = async () => {
+    if (isEmbedMode) return;
     setIsSaving(true);
-    const currentLayout = layoutHistory[currentLayoutIndex];
+
+    const originalState = history[0];
+    const currentState = history[currentIndex];
+
     try {
-      await API.put(`/api/dashboards/${id}/layout`, currentLayout);
-      setHasUnsavedChanges(false);
-      dispatch(
-        addToast({ message: "Layout saved successfully!", type: "success" })
+      const originalQuestionIds = new Set(
+        originalState.questions.map((q) => q.id)
       );
+      const currentQuestionIds = new Set(
+        currentState.questions.map((q) => q.id)
+      );
+
+      const removedQuestions = originalState.questions.filter(
+        (q) => !currentQuestionIds.has(q.id)
+      );
+      const addedQuestions = currentState.questions.filter(
+        (q) => !originalQuestionIds.has(q.id)
+      );
+
+      // Hapus semua widget yang perlu dihapus
+      const deletePromises = removedQuestions.map((q) =>
+        API.delete(`/api/dashboards/${id}/questions/${q.id}`)
+      );
+      await Promise.all(deletePromises);
+
+      // Tambahkan semua widget baru
+      const addPromises = addedQuestions.map((q) =>
+        API.post(`/api/dashboards/${id}/questions`, { question_id: q.id })
+      );
+      await Promise.all(addPromises);
+
+      //Setelah semua penambahan/penghapusan selesai, simpan layout akhir
+      await API.put(`/api/dashboards/${id}/layout`, currentState.layout);
+
+      dispatch(
+        addToast({ message: "Dashboard saved successfully!", type: "success" })
+      );
+
+      // Ambil data terbaru dari server untuk sinkronisasi
+      await fetchDashboardData();
     } catch (error) {
-      console.error("Failed to save layout", error);
-      dispatch(addToast({ message: "Failed to save layout.", type: "error" }));
+      console.error("Failed to save dashboard changes", error);
+      dispatch(addToast({ message: "Failed to save changes.", type: "error" }));
     } finally {
       setIsSaving(false);
     }
-  };
-
-  const handleRemoveQuestion = async (questionIdToRemove) => {
-    if (isEmbedMode) return;
-    try {
-      await API.delete(`/api/dashboards/${id}/questions/${questionIdToRemove}`);
-
-      const currentLayout = layoutHistory[currentLayoutIndex];
-      const newLayout = currentLayout.filter(
-        (item) => item.i !== questionIdToRemove.toString()
-      );
-      const newQuestions = dashboard.questions.filter(
-        (q) => q.id !== questionIdToRemove
-      );
-
-      pushToHistory(newLayout, newQuestions);
-
-      dispatch(
-        addToast({
-          message: "Question removed from dashboard.",
-          type: "success",
-        })
-      );
-    } catch (error) {
-      dispatch(
-        addToast({ message: "Failed to remove widget.", type: "error" })
-      );
-    }
-  };
-
-  const handleQuestionAdded = (newQuestionData) => {
-    const currentLayout = layoutHistory[currentLayoutIndex];
-
-    const newLayoutItem = {
-      ...newQuestionData.layout,
-      i: newQuestionData.id.toString(),
-    };
-    const newLayout = [...currentLayout, newLayoutItem];
-    const newQuestions = [...dashboard.questions, newQuestionData];
-
-    pushToHistory(newLayout, newQuestions);
   };
 
   useEffect(() => {
@@ -169,85 +196,94 @@ export default function DashboardViewPage() {
   }, [fetchDashboardData]);
 
   if (isLoading) return <p>Loading dashboard...</p>;
-  if (!dashboard) return <p>Dashboard not found.</p>;
+  if (history.length === 0 || currentIndex === -1)
+    return <p>Dashboard not found or failed to load.</p>;
 
-  const currentLayout = layoutHistory[currentLayoutIndex] || [];
-  const existingQuestionIds = currentLayout.map((item) => parseInt(item.i, 10));
+  const currentState = history[currentIndex];
+  const hasUnsavedChanges = history.length > 1;
 
-  const canUndo = currentLayoutIndex > 0;
-  const canRedo = currentLayoutIndex < layoutHistory.length - 1;
+  const canUndo = currentIndex > 0;
+  const canRedo = currentIndex < history.length - 1;
 
   return (
     <div>
       {!isEmbedMode && (
         <div className="flex justify-between items-center mb-6">
-          <Input
-            type="text"
-            value={dashboardName}
-            onChange={(e) => setDashboardName(e.target.value)}
-            onBlur={handleRenameDashboard}
-            className="text-3xl font-bold bg-transparent focus:outline-none focus:ring-2 focus:ring-indigo-200 rounded-md p-1 -m-1"
-          />
+          <div className="flex-1">
+            <Input
+              type="text"
+              value={dashboardName}
+              onChange={(e) => setDashboardName(e.target.value)}
+              onBlur={handleRenameDashboard}
+              className="text-3xl font-bold bg-transparent"
+            />
+          </div>
+
           <div className="flex items-center space-x-2">
-            <button
+            <Button
+              variant="ghost"
+              size="icon"
               onClick={handleUndo}
               disabled={!canUndo}
-              className="p-2 rounded-md disabled:text-gray-300 hover:bg-gray-100"
+              title="Undo"
             >
               <MdUndo />
-            </button>
-            <button
+            </Button>
+            <Button
+              variant="ghost"
+              size="icon"
               onClick={handleRedo}
               disabled={!canRedo}
-              className="p-2 rounded-md disabled:text-gray-300 hover:bg-gray-100"
+              title="Redo"
             >
               <MdRedo />
-            </button>
-            <button
-              onClick={handleSaveLayout}
+            </Button>
+            <Button
+              onClick={handleSaveChanges}
               disabled={!hasUnsavedChanges || isSaving}
-              className="px-4 py-2 text-sm bg-indigo-600 text-white font-semibold rounded-md hover:bg-indigo-700 disabled:bg-indigo-300 flex items-center gap-2"
+              size="sm"
             >
-              <MdSave /> {isSaving ? "Saving..." : "Save"}
-            </button>
+              <MdSave className="mr-2 h-4 w-4" />{" "}
+              {isSaving ? "Saving..." : "Save Changes"}
+            </Button>
             <div className="border-l h-6 mx-2"></div>
-            <button
+            <Button
+              variant="success"
               onClick={() => setShowModalAdd(true)}
-              className="px-4 py-2 text-sm bg-green-500 text-white font-semibold rounded-md hover:bg-green-600"
+              size="sm"
             >
-              + Add Question
-            </button>
-            <button
+              <RiAddLine className="mr-2 h-4 w-4" /> Add Question
+            </Button>
+            <Button
+              variant="info"
               onClick={() => setShowModalShare(true)}
-              className="px-4 py-2 text-sm bg-blue-500 text-white font-semibold rounded-md hover:bg-blue-600 flex items-center gap-1"
+              size="sm"
             >
-              <MdOutlineShare /> Share
-            </button>
+              <MdOutlineShare className="mr-2 h-4 w-4" /> Share
+            </Button>
           </div>
         </div>
       )}
       <ResponsiveGridLayout
         className="layout"
-        layouts={{ lg: currentLayout }} // PERBAIKAN: Gunakan `layout` prop, bukan `layouts`
+        layouts={{ lg: currentState.layout }}
         breakpoints={{ lg: 1200, md: 996, sm: 768, xs: 480, xxs: 0 }}
         cols={{ lg: 12, md: 10, sm: 6, xs: 4, xxs: 2 }}
         rowHeight={30}
-        onDragStop={(layout) => pushToHistory(layout)}
-        onResizeStop={(layout) => pushToHistory(layout)}
+        onDragStop={handleLayoutChange}
+        onResizeStop={handleLayoutChange}
         isDraggable={!isEmbedMode}
         isResizable={!isEmbedMode}
       >
-        {dashboard.questions
-          .filter((q) => existingQuestionIds.includes(q.id)) // Hanya render question yang ada di layout saat ini
-          .map((q) => (
-            <div key={q.id.toString()}>
-              <ChartWidget
-                questionId={q.id}
-                onRemove={() => handleRemoveQuestion(q.id)}
-                isEmbedMode={isEmbedMode}
-              />
-            </div>
-          ))}
+        {currentState.questions.map((q) => (
+          <div key={q.id.toString()}>
+            <ChartWidget
+              questionId={q.id}
+              onRemove={() => handleRemoveQuestion(q.id)}
+              isEmbedMode={isEmbedMode}
+            />
+          </div>
+        ))}
       </ResponsiveGridLayout>
 
       <ModalDashboardShare
@@ -255,13 +291,14 @@ export default function DashboardViewPage() {
         showModal={showModalShare}
         setShowModal={setShowModalShare}
       />
+
       <ModalAddQuestion
         dashboardId={id}
         showModal={showModalAdd}
         setShowModal={setShowModalAdd}
         onQuestionAdded={handleQuestionAdded}
-        existingQuestionIds={existingQuestionIds}
-        collectionId={dashboard?.collection_id}
+        existingQuestionIds={currentState.questions.map((q) => q.id)}
+        collectionId={originalDashboard?.collection_id}
       />
     </div>
   );

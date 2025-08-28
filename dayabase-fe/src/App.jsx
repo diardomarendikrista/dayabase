@@ -20,7 +20,7 @@ function App() {
         await dispatch(verifyToken());
         setNeedsSetup(false);
       } else {
-        // if no credentials, check for need setup or not
+        // if no credentials, check if need setup or not
         try {
           const response = await API.get("/api/auth/setup-status");
           setNeedsSetup(response.data.needsSetup);
@@ -35,7 +35,6 @@ function App() {
     initializeApp();
   }, [dispatch, token]);
 
-  // TODO: add loading screen
   if (isAppLoading) {
     return (
       <div className="flex justify-center items-center min-h-screen">

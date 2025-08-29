@@ -3,6 +3,7 @@ import { API } from "axios/axios";
 import Modal from "components/molecules/Modal";
 import { useDispatch } from "react-redux";
 import { addToast } from "store/slices/toastSlice";
+import Button from "components/atoms/Button";
 
 export default function ModalAddQuestion({
   showModal,
@@ -102,19 +103,18 @@ export default function ModalAddQuestion({
             </select>
           </div>
           <div className="flex justify-end space-x-4 pt-4">
-            <button
+            <Button
               onClick={() => setShowModal(false)}
-              className="px-4 py-2 bg-gray-200 rounded-md"
+              variant={"outline"}
             >
               Cancel
-            </button>
-            <button
+            </Button>
+            <Button
               onClick={handleSubmit}
               disabled={isSubmitting}
-              className="px-4 py-2 bg-indigo-600 text-white rounded-md"
             >
               {isSubmitting ? "Adding..." : "Add"}
-            </button>
+            </Button>
           </div>
         </div>
       ) : (

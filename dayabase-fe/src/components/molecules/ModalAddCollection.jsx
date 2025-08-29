@@ -3,6 +3,7 @@ import { useDispatch } from "react-redux";
 import Modal from "components/molecules/Modal";
 import { addToast } from "store/slices/toastSlice";
 import Input from "components/atoms/Input";
+import Button from "components/atoms/Button";
 
 export default function ModalAddCollection({
   showModal,
@@ -67,20 +68,19 @@ export default function ModalAddCollection({
           />
         </div>
         <div className="flex justify-end gap-3 pt-4">
-          <button
+          <Button
             onClick={handleCloseModal}
-            className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border rounded-md hover:bg-gray-50"
+            variant="outline"
             disabled={isSaving}
           >
             Cancel
-          </button>
-          <button
+          </Button>
+          <Button
             onClick={handleConfirm}
-            className="px-4 py-2 text-sm font-medium text-white bg-indigo-600 border rounded-md hover:bg-indigo-700 disabled:bg-indigo-300"
             disabled={isSaving}
           >
             {isSaving ? "Saving..." : "Save"}
-          </button>
+          </Button>
         </div>
       </div>
     </Modal>

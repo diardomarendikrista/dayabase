@@ -1,3 +1,4 @@
+import Button from "components/atoms/Button";
 import Input from "components/atoms/Input";
 import Modal from "components/molecules/Modal";
 import { useEffect, useState } from "react";
@@ -93,20 +94,19 @@ export default function ModalEditCollection({
           />
         </div>
         <div className="flex justify-end gap-3 pt-4">
-          <button
+          <Button
             onClick={() => setShowModal(false)}
-            className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border rounded-md hover:bg-gray-50"
+            variant="outline"
             disabled={isSaving}
           >
             Cancel
-          </button>
-          <button
+          </Button>
+          <Button
             onClick={handleSave}
-            className="px-4 py-2 text-sm font-medium text-white bg-indigo-600 border rounded-md hover:bg-indigo-700 disabled:bg-indigo-300"
             disabled={isSaving}
           >
             {isSaving ? "Saving..." : "Save Changes"}
-          </button>
+          </Button>
         </div>
       </div>
     </Modal>

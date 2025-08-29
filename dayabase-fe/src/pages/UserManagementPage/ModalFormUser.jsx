@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { API } from "axios/axios";
 import Modal from "components/molecules/Modal";
 import Input from "components/atoms/Input";
+import Button from "components/atoms/Button";
 
 export default function ModalFormUser({
   showModal,
@@ -117,18 +118,18 @@ export default function ModalFormUser({
         )}
         {error && <p className="text-red-500">{error}</p>}
         <div className="flex justify-end space-x-2 pt-4">
-          <button
+          <Button
             onClick={() => setShowModal(false)}
-            className="px-4 py-2 bg-gray-200 rounded-md"
+            variant="outline"
           >
             Cancel
-          </button>
-          <button
+          </Button>
+          <Button
             onClick={handleSubmit}
-            className="px-4 py-2 bg-indigo-600 text-white rounded-md"
+            className="px-5"
           >
             Save
-          </button>
+          </Button>
         </div>
       </div>
     </Modal>

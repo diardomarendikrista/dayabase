@@ -2,6 +2,7 @@ import { useState } from "react";
 import { API } from "axios/axios";
 import Modal from "./Modal";
 import Input from "components/atoms/Input";
+import Button from "components/atoms/Button";
 
 export default function ModalChangePassword({ showModal, setShowModal }) {
   const [formData, setFormData] = useState({
@@ -69,19 +70,14 @@ export default function ModalChangePassword({ showModal, setShowModal }) {
         {error && <p className="text-red-500">{error}</p>}
         {success && <p className="text-green-500">{success}</p>}
 
-        <div className="flex justify-end space-x-2 pt-4">
-          <button
+        <div className="flex justify-end space-x-3 pt-4">
+          <Button
             onClick={() => setShowModal(false)}
-            className="px-4 py-2 bg-gray-200 rounded-md"
+            variant="outline"
           >
             Cancel
-          </button>
-          <button
-            onClick={handleSubmit}
-            className="px-4 py-2 bg-indigo-600 text-white rounded-md"
-          >
-            Update Password
-          </button>
+          </Button>
+          <Button onClick={handleSubmit}>Update Password</Button>
         </div>
       </div>
     </Modal>

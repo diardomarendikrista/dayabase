@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { API } from "axios/axios";
 import Modal from "components/molecules/Modal";
+import Button from "components/atoms/Button";
 
 export default function DashboardShareModal({
   dashboardId,
@@ -61,6 +62,7 @@ export default function DashboardShareModal({
       title="Sharing & Embedding"
       showModal={showModal}
       setShowModal={setShowModal}
+      closeOnOverlayClick={false}
     >
       {isLoading ? (
         <p>Loading...</p>
@@ -68,18 +70,16 @@ export default function DashboardShareModal({
         <div>
           <div className="flex items-center justify-between p-4 border rounded-md">
             <p className="font-medium">Activate Public Link</p>
-            <button
+            <Button
               onClick={() =>
                 handleToggleSharing(!dashboardData.public_sharing_enabled)
               }
-              className={`px-4 py-2 rounded-md text-white font-semibold ${
-                dashboardData.public_sharing_enabled
-                  ? "bg-red-500 hover:bg-red-600"
-                  : "bg-green-500 hover:bg-green-600"
-              }`}
+              variant={
+                dashboardData.public_sharing_enabled ? "danger" : "success"
+              }
             >
               {dashboardData.public_sharing_enabled ? "Deactivate" : "Activate"}
-            </button>
+            </Button>
           </div>
 
           {dashboardData.public_sharing_enabled && (
@@ -93,12 +93,9 @@ export default function DashboardShareModal({
                   value={getIframeCode()}
                   className="w-full mt-1 p-2 border rounded-md bg-gray-100 font-mono text-sm h-28 resize-none"
                 />
-                <button
-                  onClick={() => copyToClipboard(getIframeCode())}
-                  className="mt-2 px-4 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700"
-                >
+                <Button onClick={() => copyToClipboard(getIframeCode())}>
                   Copy Code
-                </button>
+                </Button>
               </div>
             </div>
           )}

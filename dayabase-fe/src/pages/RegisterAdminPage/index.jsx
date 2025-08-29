@@ -1,4 +1,5 @@
 import { API } from "axios/axios";
+import Button from "components/atoms/Button";
 import Input from "components/atoms/Input";
 import { useEffect, useState } from "react";
 
@@ -79,12 +80,12 @@ export default function RegisterAdminPage() {
             className="w-full p-2 border rounded"
           />
           {error && <p className="text-red-500 text-sm">{error}</p>}
-          <button
+          <Button
             type="submit"
-            className="w-full p-2 bg-indigo-600 text-white rounded"
+            className="w-full"
           >
             Create Admin Account
-          </button>
+          </Button>
         </form>
       </div>
     </div>

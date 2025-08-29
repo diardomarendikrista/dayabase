@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import Modal from "./Modal";
 import Input from "components/atoms/Input";
+import Button from "components/atoms/Button";
 
 export default function ModalAddDashboard({
   showModal,
@@ -55,18 +56,18 @@ export default function ModalAddDashboard({
       {error && <p className="text-red-600 text-sm">{error}</p>}
 
       <div className="flex justify-end space-x-4 mt-2">
-        <button
+        <Button
           onClick={() => setShowModal(false)}
-          className="px-4 py-2 bg-gray-200 rounded-md font-semibold text-gray-700 hover:bg-gray-300"
+          variant="outline"
         >
           Cancel
-        </button>
-        <button
+        </Button>
+        <Button
           onClick={handleConfirm}
-          className="px-4 py-2 bg-indigo-600 text-white font-semibold rounded-md hover:bg-indigo-700"
+          className="px-5"
         >
           Save
-        </button>
+        </Button>
       </div>
     </Modal>
   );

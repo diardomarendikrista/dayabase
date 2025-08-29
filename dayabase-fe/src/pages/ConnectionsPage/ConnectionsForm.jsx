@@ -1,4 +1,5 @@
 import { API } from "axios/axios";
+import Button from "components/atoms/Button";
 import { useState, useEffect } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 
@@ -140,7 +141,7 @@ export default function ConnectionFormPage() {
           </div>
           {error && <p className="text-red-500 text-sm">{error}</p>}
           <div className="flex items-center space-x-4 pt-4">
-            <button
+            <Button
               type="submit"
               disabled={isSubmitting}
               className="px-5 py-2 bg-indigo-600 text-white font-semibold rounded-md hover:bg-indigo-700 disabled:bg-indigo-300"
@@ -150,14 +151,14 @@ export default function ConnectionFormPage() {
                 : isEditMode
                   ? "Update Connection"
                   : "Save Connection"}
-            </button>
-            <button
+            </Button>
+            <Button
               type="button"
               onClick={() => navigate(-1)}
               className="px-5 py-2 bg-gray-200 text-gray-700 font-semibold rounded-md hover:bg-gray-300"
             >
               Cancel
-            </button>
+            </Button>
           </div>
         </form>
       </div>

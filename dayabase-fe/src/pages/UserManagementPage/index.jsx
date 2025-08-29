@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { API } from "axios/axios";
 import ConfirmationModal from "components/molecules/ConfirmationModal";
 import ModalFormUser from "./ModalFormUser";
+import Button from "components/atoms/Button";
 
 export default function UserManagementPage() {
   const [users, setUsers] = useState([]);
@@ -54,15 +55,14 @@ export default function UserManagementPage() {
     <div>
       <div className="flex justify-between items-center mb-6">
         <h1 className="text-3xl font-bold">User Management</h1>
-        <button
+        <Button
           onClick={() => {
             setEditingUser(null);
             setShowFormModal(true);
           }}
-          className="px-5 py-2 bg-indigo-600 text-white font-semibold rounded-md hover:bg-indigo-700"
         >
           Add User
-        </button>
+        </Button>
       </div>
       <div className="bg-white rounded-lg shadow-md">
         <table className="min-w-full">
@@ -88,21 +88,23 @@ export default function UserManagementPage() {
                   {user.is_active ? "Active" : "Inactive"}
                 </td>
                 <td className="p-4 space-x-4">
-                  <button
+                  <Button
                     onClick={() => {
                       setEditingUser(user);
                       setShowFormModal(true);
                     }}
-                    className="text-indigo-600 font-semibold"
+                    variant="ghost"
+                    className="text-indigo-600 font-semibold p-0 h-0"
                   >
                     Edit
-                  </button>
-                  <button
+                  </Button>
+                  <Button
                     onClick={() => openDeleteModal(user)}
-                    className="text-red-600 font-semibold"
+                    variant="ghost"
+                    className="text-red-600 font-semibold p-0 h-0"
                   >
                     Delete
-                  </button>
+                  </Button>
                 </td>
               </tr>
             ))}
@@ -123,7 +125,7 @@ export default function UserManagementPage() {
         title="Delete User"
         message={`Are you sure you want to delete the user "${itemToDelete?.full_name}"?`}
         onConfirm={handleDelete}
-        isDestructive={true}
+        isDanger={true}
       />
     </div>
   );

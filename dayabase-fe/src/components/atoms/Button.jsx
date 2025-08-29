@@ -11,8 +11,9 @@ const Button = forwardRef(({ className, variant, size, ...props }, ref) => {
       secondary: "bg-gray-600 text-white hover:bg-gray-700",
       success: "bg-green-600 text-white hover:bg-green-700",
       info: "bg-blue-500 text-white hover:bg-blue-600",
-      destructive: "bg-red-600 text-white hover:bg-red-700",
-      outline: "border border-gray-300 bg-white hover:bg-gray-50 text-gray-700",
+      danger: "bg-red-600 text-white hover:bg-red-700",
+      outline:
+        "border border-gray-300 bg-white hover:bg-gray-100 text-gray-700",
       ghost: "hover:bg-gray-100 hover:text-gray-900",
     },
     size: {

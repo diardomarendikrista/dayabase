@@ -1,4 +1,5 @@
-import ModalPortal from "../atoms/ModalPortal"; // Pastikan path ini benar
+import Button from "components/atoms/Button";
+import ModalPortal from "../atoms/ModalPortal";
 
 export default function Modal({
   children,
@@ -33,9 +34,11 @@ export default function Modal({
           {/* Header Modal */}
           <div className="flex justify-between items-center mb-4 pb-4 border-b">
             <h2 className="text-xl font-bold">{title}</h2>
-            <button
+            <Button
               onClick={handleClose}
-              className="text-gray-500 hover:text-gray-800"
+              variant="ghost"
+              size="icon"
+              className="h-6 w-6 hover:bg-transparent"
             >
               <svg
                 xmlns="http://www.w3.org/2000/svg"
@@ -51,10 +54,9 @@ export default function Modal({
                   d="M6 18L18 6M6 6l12 12"
                 />
               </svg>
-            </button>
+            </Button>
           </div>
 
-          {/* Konten yang dikirim dari parent */}
           <div>{children}</div>
         </div>
       </div>

@@ -4,6 +4,7 @@ import { Link } from "react-router-dom";
 import ConfirmationModal from "components/molecules/ConfirmationModal";
 import { useDispatch } from "react-redux";
 import { addToast } from "store/slices/toastSlice";
+import Button from "components/atoms/Button";
 
 export default function ConnectionsListPage() {
   const [connections, setConnections] = useState([]);
@@ -96,12 +97,12 @@ export default function ConnectionsListPage() {
                 </p>
               </Link>
               <div className="space-x-4">
-                <button
+                <Button
                   onClick={() => openDeleteModal(conn)}
-                  className="text-red-500 hover:text-red-700 font-semibold"
+                  variant="danger"
                 >
                   Delete
-                </button>
+                </Button>
               </div>
             </li>
           ))}
@@ -120,7 +121,7 @@ export default function ConnectionsListPage() {
         message={`Are you sure you want to delete the dashboard "${itemToDelete?.connection_name}"? This action cannot be undone.`}
         onConfirm={handleDelete}
         confirmText="Yes, Delete"
-        isDestructive={true}
+        isDanger={true}
       />
     </div>
   );

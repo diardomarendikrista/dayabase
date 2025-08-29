@@ -4,6 +4,7 @@ import { useNavigate } from "react-router-dom";
 import { useDispatch } from "react-redux";
 import { setCredentials } from "store/slices/authSlice";
 import Input from "components/atoms/Input";
+import Button from "components/atoms/Button";
 
 export default function LoginPage() {
   const [email, setEmail] = useState("");
@@ -47,12 +48,12 @@ export default function LoginPage() {
             required
           />
           {error && <p className="text-red-500 text-sm">{error}</p>}
-          <button
+          <Button
             type="submit"
-            className="w-full p-2 bg-indigo-600 text-white rounded"
+            className="w-full"
           >
             Login
-          </button>
+          </Button>
         </form>
       </div>
     </div>

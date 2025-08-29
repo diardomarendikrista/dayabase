@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { RiCheckLine, RiCloseLine, RiErrorWarningLine } from "react-icons/ri";
+import Button from "./Button";
 
 export default function Toast({ message, type, onClose }) {
   const [isFadingOut, setIsFadingOut] = useState(false);
@@ -51,13 +52,14 @@ export default function Toast({ message, type, onClose }) {
         {icons[type]}
       </div>
       <div className="ml-3 text-sm font-normal">{message}</div>
-      <button
-        type="button"
-        className="ml-auto -mx-1.5 -my-1.5 bg-white text-gray-400 hover:text-gray-900 rounded-lg p-1.5 hover:bg-gray-100 inline-flex h-8 w-8"
+      <Button
+        variant="ghost"
+        className="h-8 w-8"
+        size="icon"
         onClick={handleClose}
       >
         <RiCloseLine className="w-5 h-5" />
-      </button>
+      </Button>
     </div>
   );
 }

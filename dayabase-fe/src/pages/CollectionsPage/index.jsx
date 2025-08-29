@@ -200,7 +200,7 @@ export default function CollectionPage() {
           </Button>
           <Button
             onClick={() => handleDeleteClick(collection)}
-            variant="destructive"
+            variant="danger"
             size="icon"
           >
             <RiDeleteBinLine />
@@ -236,7 +236,7 @@ export default function CollectionPage() {
         customMessage={getDeleteModalMessage()}
         onConfirm={handleConfirmDelete}
         confirmText="Yes, Delete"
-        isDestructive={true}
+        isDanger={true}
       />
 
       <ModalAddDashboard

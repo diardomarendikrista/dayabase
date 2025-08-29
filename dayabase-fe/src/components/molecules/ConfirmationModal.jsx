@@ -1,3 +1,4 @@
+import Button from "components/atoms/Button";
 import Modal from "./Modal"; // Impor Modal reusable Anda
 
 export default function ConfirmationModal({
@@ -9,7 +10,7 @@ export default function ConfirmationModal({
   onConfirm,
   confirmText = "Confirm",
   cancelText = "Cancel",
-  isDestructive = false, // Untuk memberi warna merah pada tombol konfirmasi
+  isDanger = false,
 }) {
   const handleConfirm = () => {
     onConfirm();
@@ -32,22 +33,18 @@ export default function ConfirmationModal({
         <div className="text-gray-600 mb-6">{customMessage}</div>
       )}
       <div className="flex justify-end space-x-4">
-        <button
+        <Button
           onClick={() => setShowModal(false)}
-          className="px-4 py-2 bg-gray-200 rounded-md font-semibold text-gray-700 hover:bg-gray-300"
+          variant="outline"
         >
           {cancelText}
-        </button>
-        <button
+        </Button>
+        <Button
           onClick={handleConfirm}
-          className={`px-4 py-2 text-white font-semibold rounded-md ${
-            isDestructive
-              ? "bg-red-600 hover:bg-red-700"
-              : "bg-indigo-600 hover:bg-indigo-700"
-          }`}
+          variant={isDanger ? "danger" : "primary"}
         >
           {confirmText}
-        </button>
+        </Button>
       </div>
     </Modal>
   );

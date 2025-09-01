@@ -3,6 +3,7 @@ import { API } from "axios/axios";
 import Modal from "components/molecules/Modal";
 import Input from "components/atoms/Input";
 import Button from "components/atoms/Button";
+import Select from "components/atoms/Select";
 
 export default function ModalFormUser({
   showModal,
@@ -21,6 +22,12 @@ export default function ModalFormUser({
   const [formData, setFormData] = useState(initialFormData);
   const [error, setError] = useState("");
 
+  const roleOptions = [
+    { value: "VIEWER", label: "Viewer" },
+    { value: "EDITOR", label: "Editor" },
+    { value: "ADMIN", label: "Admin" },
+  ];
+
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target;
     setFormData((prev) => ({
@@ -29,10 +36,13 @@ export default function ModalFormUser({
     }));
   };
 
+  const handleRoleChange = (roleValue) => {
+    setFormData((prev) => ({ ...prev, role: roleValue }));
+  };
+
   const handleSubmit = async () => {
     try {
       if (isEditMode) {
-        // Remove password from payload if it's empty
         const { password, ...payload } = formData;
         await API.put(`/api/users/${initialData.id}`, payload);
       } else {
@@ -95,16 +105,11 @@ export default function ModalFormUser({
             placeholder="Password"
           />
         )}
-        <select
-          name="role"
+        <Select
+          options={roleOptions}
           value={formData.role}
-          onChange={handleChange}
-          className="w-full rounded-md border-gray-300"
-        >
-          <option value="VIEWER">Viewer</option>
-          <option value="EDITOR">Editor</option>
-          <option value="ADMIN">Admin</option>
-        </select>
+          onChange={handleRoleChange}
+        />
         {isEditMode && (
           <label className="flex items-center space-x-2">
             <input

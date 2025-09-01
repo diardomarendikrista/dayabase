@@ -3,7 +3,8 @@ import LineChart from "components/organisms/charts/LineChart";
 import DonutChart from "components/organisms/charts/DonutChart";
 import PivotTable from "components/organisms/charts/PivotTable";
 import { FaFileExcel } from "react-icons/fa";
-import { useRef } from "react";
+import { useMemo, useRef } from "react";
+import Select from "components/atoms/Select";
 
 export default function VisualizationPanel({
   error,
@@ -25,12 +26,19 @@ export default function VisualizationPanel({
   if (isLoading) return <p className="mt-8 text-center">Loading...</p>;
   if (results.length === 0) return null;
 
-  const handleDropdownChange = (e) => {
-    const { name, value } = e.target;
-    onChartConfigChange((prev) => ({ ...prev, [name]: value }));
+  const pivotTableRef = useRef(null);
+
+  const columnOptions = useMemo(() => {
+    return columns.map((col) => ({ value: col, label: col }));
+  }, [columns]);
+
+  const handleCategoryChange = (value) => {
+    onChartConfigChange((prev) => ({ ...prev, category: value }));
   };
 
-  const pivotTableRef = useRef(null);
+  const handleValueChange = (value) => {
+    onChartConfigChange((prev) => ({ ...prev, value: value }));
+  };
 
   return (
     <div className="mt-8 bg-white p-6 rounded-lg shadow-md border">
@@ -83,41 +91,21 @@ export default function VisualizationPanel({
       {chartType !== "table" && chartType !== "pivot" && (
         <div className="min-h-96">
           <div className="flex space-x-4 mb-4">
-            <div>
+            <div className="min-w-[170px]">
               <label className="text-sm font-medium">Category / Label</label>
-              <select
-                name="category"
+              <Select
                 value={chartConfig.category}
-                onChange={handleDropdownChange}
-                className="mt-1 block w-full rounded-md border-gray-300"
-              >
-                {columns.map((col) => (
-                  <option
-                    key={col}
-                    value={col}
-                  >
-                    {col}
-                  </option>
-                ))}
-              </select>
+                onChange={handleCategoryChange}
+                options={columnOptions}
+              />
             </div>
-            <div>
+            <div className="min-w-[170px]">
               <label className="text-sm font-medium">Value</label>
-              <select
-                name="value"
+              <Select
                 value={chartConfig.value}
-                onChange={handleDropdownChange}
-                className="mt-1 block w-full rounded-md border-gray-300"
-              >
-                {columns.map((col) => (
-                  <option
-                    key={col}
-                    value={col}
-                  >
-                    {col}
-                  </option>
-                ))}
-              </select>
+                onChange={handleValueChange}
+                options={columnOptions}
+              />
             </div>
           </div>
 

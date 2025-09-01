@@ -4,6 +4,7 @@ import Modal from "components/molecules/Modal";
 import { useDispatch } from "react-redux";
 import { addToast } from "store/slices/toastSlice";
 import Button from "components/atoms/Button";
+import Select from "components/atoms/Select";
 
 export default function ModalAddQuestion({
   showModal,
@@ -22,6 +23,10 @@ export default function ModalAddQuestion({
   const availableQuestions = useMemo(() => {
     return allQuestions.filter((q) => !existingQuestionIds.includes(q.id));
   }, [allQuestions, existingQuestionIds]);
+
+  const questionOptions = useMemo(() => {
+    return availableQuestions.map((q) => ({ value: q.id, label: q.name }));
+  }, [availableQuestions]);
 
   useEffect(() => {
     if (showModal) {
@@ -87,20 +92,11 @@ export default function ModalAddQuestion({
             <label className="block text-sm font-medium text-gray-700 mb-1">
               Select Question
             </label>
-            <select
+            <Select
               value={selectedQuestionId}
-              onChange={(e) => setSelectedQuestionId(e.target.value)}
-              className="w-full rounded-md border-gray-300 shadow-sm"
-            >
-              {availableQuestions.map((q) => (
-                <option
-                  key={q.id}
-                  value={q.id}
-                >
-                  {q.name}
-                </option>
-              ))}
-            </select>
+              onChange={(value) => setSelectedQuestionId(value)}
+              options={questionOptions}
+            />
           </div>
           <div className="flex justify-end space-x-4 pt-4">
             <Button

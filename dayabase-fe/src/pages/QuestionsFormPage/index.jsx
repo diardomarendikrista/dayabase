@@ -34,7 +34,7 @@ export default function QuestionEditorPage() {
       <div className="flex justify-between items-center mb-6">
         <div className="w-1/2  -m-1">
           <form
-            autoComplete="off" // hardcode disable autocomplete
+            autoComplete="off"
             onSubmit={(e) => e.preventDefault()}
           >
             <Input
@@ -62,9 +62,7 @@ export default function QuestionEditorPage() {
           )}
         </div>
         <div className="flex items-center gap-4">
-          <Button
-            onClick={handleSaveQuestion}
-          >
+          <Button onClick={handleSaveQuestion}>
             {id ? "Update Question" : "Save Question"}
           </Button>
           <Button
@@ -80,8 +78,8 @@ export default function QuestionEditorPage() {
       <QueryEditorForm
         connections={connections}
         selectedConnectionId={selectedConnectionId}
-        onConnectionChange={(e) => {
-          setSelectedConnectionId(e.target.value);
+        onConnectionChange={(value) => {
+          setSelectedConnectionId(value);
           if (errors.selectedConnectionId) {
             const newErrors = { ...errors };
             delete newErrors.selectedConnectionId;

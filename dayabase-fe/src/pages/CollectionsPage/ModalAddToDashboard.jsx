@@ -1,9 +1,10 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { API } from "axios/axios";
 import Modal from "components/molecules/Modal";
 import { useDispatch } from "react-redux";
 import { addToast } from "store/slices/toastSlice";
 import Button from "components/atoms/Button";
+import Select from "components/atoms/Select";
 
 export default function ModalAddToDashboard({
   questionId,
@@ -16,6 +17,10 @@ export default function ModalAddToDashboard({
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const dispatch = useDispatch();
+
+  const dashboardOptions = useMemo(() => {
+    return dashboards.map((d) => ({ value: d.id, label: d.name }));
+  }, [dashboards]);
 
   useEffect(() => {
     const fetchDashboards = async () => {
@@ -66,20 +71,11 @@ export default function ModalAddToDashboard({
         <label className="block text-sm font-medium text-gray-700 mb-1">
           Select Dashboard
         </label>
-        <select
+        <Select
           value={selectedDashboardId}
-          onChange={(e) => setSelectedDashboardId(e.target.value)}
-          className="w-full rounded-md border-gray-300"
-        >
-          {dashboards.map((d) => (
-            <option
-              key={d.id}
-              value={d.id}
-            >
-              {d.name}
-            </option>
-          ))}
-        </select>
+          onChange={(value) => setSelectedDashboardId(value)}
+          options={dashboardOptions}
+        />
       </div>
       <div className="flex justify-end gap-2">
         <Button

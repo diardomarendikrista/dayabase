@@ -1,5 +1,7 @@
 import { API } from "axios/axios";
 import Button from "components/atoms/Button";
+import Input from "components/atoms/Input";
+import Select from "components/atoms/Select";
 import { useState, useEffect } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 
@@ -19,6 +21,11 @@ export default function ConnectionFormPage() {
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState(null);
+
+  const dbTypeOptions = [
+    { value: "postgres", label: "PostgreSQL" },
+    { value: "mysql", label: "MySQL" },
+  ];
 
   useEffect(() => {
     if (isEditMode) {
@@ -49,6 +56,10 @@ export default function ConnectionFormPage() {
     setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
+  const handleDbTypeChange = (value) => {
+    setFormData((prev) => ({ ...prev, db_type: value }));
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     setIsSubmitting(true);
@@ -75,76 +86,86 @@ export default function ConnectionFormPage() {
       <div className="bg-white p-6 rounded-lg shadow-md border border-gray-200">
         <form
           onSubmit={handleSubmit}
-          className="space-y-4"
+          className="space-y-6"
         >
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <input
-              name="connection_name"
-              value={formData.connection_name}
-              onChange={handleChange}
-              placeholder="Connection Name (e.g., Production DB)"
-              required
-              className="w-full rounded-md border-gray-300"
-            />
-            <select
-              name="db_type"
-              value={formData.db_type}
-              onChange={handleChange}
-              className="w-full rounded-md border-gray-300"
-            >
-              <option value="postgres">PostgreSQL</option>
-              <option value="mysql">MySQL</option>
-            </select>
-            <input
-              name="host"
-              value={formData.host}
-              onChange={handleChange}
-              placeholder="Host"
-              required
-              className="w-full rounded-md border-gray-300"
-            />
-            <input
-              name="port"
-              type="number"
-              value={formData.port}
-              onChange={handleChange}
-              placeholder="Port"
-              required
-              className="w-full rounded-md border-gray-300"
-            />
-            <input
-              name="db_user"
-              value={formData.db_user}
-              onChange={handleChange}
-              placeholder="User"
-              required
-              className="w-full rounded-md border-gray-300"
-            />
-            <input
-              name="password"
-              value={formData.password}
-              onChange={handleChange}
-              type="password"
-              placeholder={
-                isEditMode ? "Leave empty to keep unchanged" : "Password"
-              }
-              className="w-full rounded-md border-gray-300"
-            />
-            <input
-              name="database_name"
-              value={formData.database_name}
-              onChange={handleChange}
-              placeholder="Database Name"
-              required
-              className="w-full rounded-md border-gray-300"
-            />
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div>
+              <Input
+                name="connection_name"
+                label="Connection Name"
+                value={formData.connection_name}
+                onChange={handleChange}
+                placeholder="e.g., Production DB"
+                required
+              />
+            </div>
+            <div>
+              <Select
+                label="Database Type"
+                options={dbTypeOptions}
+                value={formData.db_type}
+                onChange={handleDbTypeChange}
+              />
+            </div>
+            <div>
+              <Input
+                label="Host"
+                name="host"
+                value={formData.host}
+                onChange={handleChange}
+                placeholder="localhost"
+                required
+              />
+            </div>
+            <div>
+              <Input
+                label="Port"
+                name="port"
+                type="number"
+                value={formData.port}
+                onChange={handleChange}
+                placeholder="5432"
+                required
+              />
+            </div>
+            <div>
+              <Input
+                label="User"
+                name="db_user"
+                value={formData.db_user}
+                onChange={handleChange}
+                placeholder="postgres"
+                required
+              />
+            </div>
+            <div>
+              <Input
+                label="Password"
+                name="password"
+                value={formData.password}
+                onChange={handleChange}
+                type="password"
+                placeholder={
+                  isEditMode ? "Leave empty to keep unchanged" : "Password"
+                }
+              />
+            </div>
+            <div>
+              <Input
+                label="Database Name"
+                name="database_name"
+                value={formData.database_name}
+                onChange={handleChange}
+                placeholder="mydatabase"
+                required
+              />
+            </div>
           </div>
           {error && <p className="text-red-500 text-sm">{error}</p>}
           <div className="flex items-center space-x-4 pt-4">
             <Button
               type="submit"
               disabled={isSubmitting}
-              className="px-5 py-2 bg-indigo-600 text-white font-semibold rounded-md hover:bg-indigo-700 disabled:bg-indigo-300"
             >
               {isSubmitting
                 ? "Saving..."
@@ -154,8 +175,8 @@ export default function ConnectionFormPage() {
             </Button>
             <Button
               type="button"
+              variant="outline"
               onClick={() => navigate(-1)}
-              className="px-5 py-2 bg-gray-200 text-gray-700 font-semibold rounded-md hover:bg-gray-300"
             >
               Cancel
             </Button>

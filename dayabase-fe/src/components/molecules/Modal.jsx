@@ -1,5 +1,6 @@
 import Button from "components/atoms/Button";
-import ModalPortal from "../atoms/ModalPortal";
+import Portal from "components/atoms/Portal";
+import { RiCloseLine } from "react-icons/ri";
 
 export default function Modal({
   children,
@@ -18,13 +19,17 @@ export default function Modal({
   const handleContentClick = (e) => e.stopPropagation();
 
   return (
-    <ModalPortal aria-hidden={!showModal}>
+    <Portal
+      portalId="modal-portal-root"
+      zIndex={1000}
+    >
       {/* Lapisan Overlay Abu-abu */}
       <div
         className={`fixed inset-0 bg-black/50 flex justify-center items-center z-50 transition-opacity duration-300 ${
           showModal ? "" : "opacity-0 pointer-events-none"
         }`}
         onClick={closeOnOverlayClick ? handleClose : undefined}
+        aria-hidden={!showModal}
       >
         {/* Kontainer Konten Modal */}
         <div
@@ -40,26 +45,13 @@ export default function Modal({
               size="icon"
               className="h-6 w-6 hover:bg-transparent"
             >
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                className="h-6 w-6"
-                fill="none"
-                viewBox="0 0 24 24"
-                stroke="currentColor"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M6 18L18 6M6 6l12 12"
-                />
-              </svg>
+              <RiCloseLine className="h-6 w-6" />
             </Button>
           </div>
 
           <div>{children}</div>
         </div>
       </div>
-    </ModalPortal>
+    </Portal>
   );
 }

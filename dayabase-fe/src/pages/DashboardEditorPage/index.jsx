@@ -210,13 +210,18 @@ export default function DashboardViewPage() {
       {!isEmbedMode && (
         <div className="flex justify-between items-center mb-6">
           <div className="flex-1">
-            <Input
-              type="text"
-              value={dashboardName}
-              onChange={(e) => setDashboardName(e.target.value)}
-              onBlur={handleRenameDashboard}
-              className="text-3xl font-bold bg-transparent"
-            />
+            <form
+              autoComplete="off"
+              onSubmit={(e) => e.preventDefault()}
+            >
+              <Input
+                type="text"
+                value={dashboardName}
+                onChange={(e) => setDashboardName(e.target.value)}
+                onBlur={handleRenameDashboard}
+                className="text-3xl font-bold bg-transparent"
+              />
+            </form>
           </div>
 
           <div className="flex items-center space-x-2">

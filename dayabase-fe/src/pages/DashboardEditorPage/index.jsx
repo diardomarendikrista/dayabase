@@ -27,6 +27,7 @@ export default function DashboardViewPage() {
 
   const [history, setHistory] = useState([]);
   const [currentIndex, setCurrentIndex] = useState(-1);
+  const [savedIndex, setSavedIndex] = useState(-1);
 
   const [isSaving, setIsSaving] = useState(false);
   const [showModalShare, setShowModalShare] = useState(false);
@@ -49,6 +50,8 @@ export default function DashboardViewPage() {
       const response = await API.get(apiUrl);
       const data = response.data;
 
+      console.log(data, "data");
+
       setOriginalDashboard(data);
       setDashboardName(data.name);
 
@@ -59,6 +62,7 @@ export default function DashboardViewPage() {
 
       setHistory([{ questions: data.questions, layout: initialLayout }]);
       setCurrentIndex(0);
+      setSavedIndex(0);
     } catch (error) {
       console.error("Gagal mengambil data dashboard", error);
       setHistory([]);
@@ -95,6 +99,7 @@ export default function DashboardViewPage() {
   const handleQuestionAdded = (newQuestionDetails) => {
     const currentState = history[currentIndex];
     let nextY = 0;
+    // Nentuin posisi Y terahir, agar question baru munculnya paling bawah, tidak paling atas dan merusak tatanan
     if (currentState.layout.length > 0) {
       nextY = Math.max(
         ...currentState.layout.map((l) => (l.y || 0) + (l.h || 0))
@@ -141,48 +146,46 @@ export default function DashboardViewPage() {
   };
 
   const handleSaveChanges = async () => {
-    if (isEmbedMode) return;
+    if (isEmbedMode || currentIndex === savedIndex) return;
     setIsSaving(true);
 
-    const originalState = history[0];
+    // Bandingkan state saat ini dengan state yang terakhir disimpan
+    const lastSavedState = history[savedIndex];
     const currentState = history[currentIndex];
 
     try {
-      const originalQuestionIds = new Set(
-        originalState.questions.map((q) => q.id)
+      const lastSavedQuestionIds = new Set(
+        lastSavedState.questions.map((q) => q.id)
       );
       const currentQuestionIds = new Set(
         currentState.questions.map((q) => q.id)
       );
 
-      const removedQuestions = originalState.questions.filter(
+      const removedQuestions = lastSavedState.questions.filter(
         (q) => !currentQuestionIds.has(q.id)
       );
       const addedQuestions = currentState.questions.filter(
-        (q) => !originalQuestionIds.has(q.id)
+        (q) => !lastSavedQuestionIds.has(q.id)
       );
 
-      // Hapus semua widget yang perlu dihapus
       const deletePromises = removedQuestions.map((q) =>
         API.delete(`/api/dashboards/${id}/questions/${q.id}`)
       );
-      await Promise.all(deletePromises);
-
-      // Tambahkan semua widget baru
       const addPromises = addedQuestions.map((q) =>
         API.post(`/api/dashboards/${id}/questions`, { question_id: q.id })
       );
-      await Promise.all(addPromises);
 
-      //Setelah semua penambahan/penghapusan selesai, simpan layout akhir
+      await Promise.all([...deletePromises, ...addPromises]);
+
+      // Simpan layout HANYA setelah penambahan/penghapusan selesai
       await API.put(`/api/dashboards/${id}/layout`, currentState.layout);
 
       dispatch(
         addToast({ message: "Dashboard saved successfully!", type: "success" })
       );
 
-      // Ambil data terbaru dari server untuk sinkronisasi
-      await fetchDashboardData();
+      // Perbarui penanda 'saved' ke posisi saat ini, JANGAN reset riwayat
+      setSavedIndex(currentIndex);
     } catch (error) {
       console.error("Failed to save dashboard changes", error);
       dispatch(addToast({ message: "Failed to save changes.", type: "error" }));
@@ -200,7 +203,7 @@ export default function DashboardViewPage() {
     return <p>Dashboard not found or failed to load.</p>;
 
   const currentState = history[currentIndex];
-  const hasUnsavedChanges = history.length > 1;
+  const hasUnsavedChanges = currentIndex !== savedIndex;
 
   const canUndo = currentIndex > 0;
   const canRedo = currentIndex < history.length - 1;

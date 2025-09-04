@@ -60,14 +60,15 @@ class DashboardController {
    * @description Mengambil detail satu dashboard beserta question dan layoutnya
    * @route GET /api/dashboards/:id
    */
+
   static async getDashboardById(req, res) {
     const { id } = req.params;
     try {
-      // Query untuk mengambil detail dashboard dan semua question di dalamnya
       const queryText = `
         SELECT 
           d.id as dashboard_id, d.name, d.description, d.public_sharing_enabled, d.public_token,
           d.collection_id,
+          dq.id as instance_id,
           dq.question_id, q.name as question_name, q.chart_type,
           dq.layout_config
         FROM dashboards d
@@ -81,7 +82,6 @@ class DashboardController {
         return res.status(404).json({ message: "Dashboard tidak ditemukan" });
       }
 
-      // dirapikan dulu sebelum kirim ke FE
       const dashboardData = {
         id: result.rows[0].dashboard_id,
         name: result.rows[0].name,
@@ -91,6 +91,7 @@ class DashboardController {
         public_token: result.rows[0].public_token,
         questions: result.rows[0].question_id
           ? result.rows.map((row) => ({
+              instance_id: row.instance_id,
               id: row.question_id,
               name: row.question_name,
               chart_type: row.chart_type,
@@ -168,7 +169,7 @@ class DashboardController {
    */
   static async addQuestionToDashboard(req, res) {
     const { id: dashboard_id } = req.params;
-    const { question_id } = req.body; // Hanya butuh question_id
+    const { question_id } = req.body;
 
     if (!question_id) {
       return res.status(400).json({ message: "question_id wajib diisi." });
@@ -178,7 +179,6 @@ class DashboardController {
     try {
       await client.query("BEGIN");
 
-      // Ambil semua layout yang sudah ada di dashboard ini untuk memposisikan chart baru paling bawah
       const existingLayouts = await client.query(
         "SELECT layout_config FROM dashboard_questions WHERE dashboard_id = $1",
         [dashboard_id]
@@ -189,20 +189,46 @@ class DashboardController {
         nextY = Math.max(
           ...existingLayouts.rows.map((row) => {
             const layout = row.layout_config;
-            return (layout.y || 0) + (layout.h || 0); // y + tinggi
+            return (layout.y || 0) + (layout.h || 0);
           })
         );
       }
 
       const newLayoutConfig = { x: 0, y: nextY, w: 6, h: 5 };
 
-      const newLink = await client.query(
-        "INSERT INTO dashboard_questions (dashboard_id, question_id, layout_config) VALUES ($1, $2, $3) RETURNING *",
-        [dashboard_id, question_id, JSON.stringify(newLayoutConfig)]
-      );
+      const newLinkQuery = `
+        WITH new_row AS (
+          INSERT INTO dashboard_questions (dashboard_id, question_id, layout_config) 
+          VALUES ($1, $2, $3) 
+          RETURNING id as instance_id, question_id, layout_config
+        )
+        SELECT 
+          nr.instance_id, 
+          nr.question_id, 
+          nr.layout_config,
+          q.name as question_name,
+          q.chart_type
+        FROM new_row nr
+        JOIN questions q ON nr.question_id = q.id;
+      `;
+
+      const newLinkResult = await client.query(newLinkQuery, [
+        dashboard_id,
+        question_id,
+        JSON.stringify(newLayoutConfig),
+      ]);
 
       await client.query("COMMIT");
-      res.status(201).json(newLink.rows[0]);
+
+      const responseData = {
+        instance_id: newLinkResult.rows[0].instance_id,
+        id: newLinkResult.rows[0].question_id,
+        name: newLinkResult.rows[0].question_name,
+        chart_type: newLinkResult.rows[0].chart_type,
+        layout: newLinkResult.rows[0].layout_config,
+      };
+
+      res.status(201).json(responseData);
     } catch (error) {
       await client.query("ROLLBACK");
       console.error(
@@ -239,15 +265,20 @@ class DashboardController {
 
       await Promise.all(
         layout.map((item) => {
-          const { i: question_id, ...gridProps } = item;
-          return client.query(
-            "UPDATE dashboard_questions SET layout_config = $1 WHERE dashboard_id = $2 AND question_id = $3",
-            [JSON.stringify(gridProps), dashboard_id, question_id]
-          );
+          const { i: instance_id, ...gridProps } = item;
+          if (
+            typeof instance_id === "number" ||
+            !instance_id.toString().startsWith("temp_")
+          ) {
+            return client.query(
+              "UPDATE dashboard_questions SET layout_config = $1 WHERE id = $2 AND dashboard_id = $3",
+              [JSON.stringify(gridProps), instance_id, dashboard_id]
+            );
+          }
+          return Promise.resolve();
         })
       );
 
-      // Update timestamp dan user di tabel dashboards
       await client.query(
         "UPDATE dashboards SET updated_at = NOW(), updated_by_user_id = $1 WHERE id = $2",
         [userId, dashboard_id]
@@ -276,11 +307,11 @@ class DashboardController {
    * @route DELETE /api/dashboards/:id/questions/:questionId
    */
   static async removeQuestionFromDashboard(req, res) {
-    const { id: dashboard_id, questionId: question_id } = req.params;
+    const { dashboardId, instanceId } = req.params;
     try {
       const deleteOp = await pool.query(
-        "DELETE FROM dashboard_questions WHERE dashboard_id = $1 AND question_id = $2 RETURNING *",
-        [dashboard_id, question_id]
+        "DELETE FROM dashboard_questions WHERE id = $1 AND dashboard_id = $2 RETURNING *",
+        [instanceId, dashboardId]
       );
       if (deleteOp.rowCount === 0) {
         return res
@@ -292,7 +323,7 @@ class DashboardController {
         .json({ message: "Question berhasil dihapus dari dashboard." });
     } catch (error) {
       console.error(
-        `Gagal menghapus question ${question_id} dari dashboard ${dashboard_id}:`,
+        `Gagal menghapus question instance ${instanceId} dari dashboard ${dashboardId}:`,
         error
       );
       res.status(500).json({

@@ -14,7 +14,7 @@ router.delete("/:id", DashboardController.deleteDashboard);
 router.post("/:id/questions", DashboardController.addQuestionToDashboard);
 router.put("/:id/layout", DashboardController.updateDashboardLayout);
 router.delete(
-  "/:id/questions/:questionId",
+  "/:dashboardId/questions/:instanceId",
   DashboardController.removeQuestionFromDashboard
 );
 

@@ -183,10 +183,10 @@ Before starting the server, you need to set up the application's database.
 
     -- Junction table to link questions to dashboards and store their layout
     CREATE TABLE dashboard_questions (
+        id SERIAL PRIMARY KEY,
         dashboard_id INT NOT NULL REFERENCES dashboards(id) ON DELETE CASCADE,
         question_id INT NOT NULL REFERENCES questions(id) ON DELETE CASCADE,
-        layout_config JSONB NOT NULL,
-        PRIMARY KEY (dashboard_id, question_id)
+        layout_config JSONB NOT NULL
     );
     ```
 

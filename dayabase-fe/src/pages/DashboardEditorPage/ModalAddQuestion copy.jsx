@@ -10,6 +10,7 @@ export default function ModalAddQuestion({
   showModal,
   setShowModal,
   onQuestionAdded,
+  existingQuestionIds = [],
   collectionId,
 }) {
   const [allQuestions, setAllQuestions] = useState([]);
@@ -19,9 +20,13 @@ export default function ModalAddQuestion({
 
   const dispatch = useDispatch();
 
+  const availableQuestions = useMemo(() => {
+    return allQuestions.filter((q) => !existingQuestionIds.includes(q.id));
+  }, [allQuestions, existingQuestionIds]);
+
   const questionOptions = useMemo(() => {
-    return allQuestions.map((q) => ({ value: q.id, label: q.name }));
-  }, [allQuestions]);
+    return availableQuestions.map((q) => ({ value: q.id, label: q.name }));
+  }, [availableQuestions]);
 
   useEffect(() => {
     if (showModal) {
@@ -45,12 +50,12 @@ export default function ModalAddQuestion({
   }, [showModal, collectionId]);
 
   useEffect(() => {
-    if (allQuestions.length > 0) {
-      setSelectedQuestionId(allQuestions[0].id);
+    if (availableQuestions.length > 0) {
+      setSelectedQuestionId(availableQuestions[0].id);
     } else {
       setSelectedQuestionId("");
     }
-  }, [allQuestions]);
+  }, [availableQuestions]);
 
   const handleSubmit = async () => {
     if (!selectedQuestionId) {
@@ -81,7 +86,7 @@ export default function ModalAddQuestion({
     >
       {isLoading ? (
         <p>Loading questions...</p>
-      ) : allQuestions.length > 0 ? (
+      ) : availableQuestions.length > 0 ? (
         <div>
           <div className="mb-4">
             <label className="block text-sm font-medium text-gray-700 mb-1">

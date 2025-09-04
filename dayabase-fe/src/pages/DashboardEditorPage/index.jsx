@@ -21,7 +21,6 @@ export default function DashboardViewPage() {
   const isEmbedMode = location.pathname.includes("/embed/");
   const dashboardIdentifier = id || token;
 
-  const [originalDashboard, setOriginalDashboard] = useState(null);
   const [dashboardName, setDashboardName] = useState("");
   const [isLoading, setIsLoading] = useState(true);
 
@@ -50,17 +49,19 @@ export default function DashboardViewPage() {
       const response = await API.get(apiUrl);
       const data = response.data;
 
-      console.log(data, "data");
-
-      setOriginalDashboard(data);
       setDashboardName(data.name);
 
       const initialLayout = data.questions.map((q) => ({
         ...q.layout,
-        i: q.id.toString(),
+        i: q.instance_id.toString(),
       }));
 
-      setHistory([{ questions: data.questions, layout: initialLayout }]);
+      const initialState = {
+        questions: data.questions,
+        layout: initialLayout,
+        name: data.name,
+      };
+      setHistory([initialState]);
       setCurrentIndex(0);
       setSavedIndex(0);
     } catch (error) {
@@ -71,120 +72,127 @@ export default function DashboardViewPage() {
     }
   }, [dashboardIdentifier, isEmbedMode]);
 
-  const handleRenameDashboard = async () => {
-    if (isEmbedMode) return;
-    if (dashboard && dashboardName && dashboardName !== dashboard.name) {
-      try {
-        await API.put(`/api/dashboards/${id}`, {
-          name: dashboardName,
-          description: dashboard.description,
-        });
-        setDashboard((prev) => ({ ...prev, name: dashboardName }));
-        dispatch(addToast({ message: "Dashboard renamed.", type: "success" }));
-      } catch (error) {
-        setDashboardName(dashboard.name);
-        dispatch(
-          addToast({ message: "Failed to save new name.", type: "error" })
-        );
-      }
-    }
-  };
-
   const handleLayoutChange = (newLayout) => {
     if (isEmbedMode) return;
     const currentState = history[currentIndex];
-    pushStateToHistory({ ...currentState, layout: newLayout });
+    if (JSON.stringify(currentState.layout) !== JSON.stringify(newLayout)) {
+      pushStateToHistory({ ...currentState, layout: newLayout });
+    }
   };
 
   const handleQuestionAdded = (newQuestionDetails) => {
     const currentState = history[currentIndex];
+    const instanceId = `temp_${newQuestionDetails.id}_${Date.now()}`;
+
     let nextY = 0;
-    // Nentuin posisi Y terahir, agar question baru munculnya paling bawah, tidak paling atas dan merusak tatanan
     if (currentState.layout.length > 0) {
       nextY = Math.max(
         ...currentState.layout.map((l) => (l.y || 0) + (l.h || 0))
       );
     }
-    const newLayoutItem = {
-      i: newQuestionDetails.id.toString(),
-      x: 0,
-      y: nextY,
-      w: 6,
-      h: 5,
+
+    const newLayoutItem = { i: instanceId, x: 0, y: nextY, w: 6, h: 5 };
+    const newQuestionInstance = {
+      ...newQuestionDetails,
+      instance_id: instanceId,
     };
+
     const newState = {
-      questions: [...currentState.questions, newQuestionDetails],
+      ...currentState,
+      questions: [...currentState.questions, newQuestionInstance],
       layout: [...currentState.layout, newLayoutItem],
     };
     pushStateToHistory(newState);
   };
 
-  const handleRemoveQuestion = (questionIdToRemove) => {
+  const handleRemoveQuestion = (instanceIdToRemove) => {
     if (isEmbedMode) return;
     const currentState = history[currentIndex];
     const newState = {
+      ...currentState,
       questions: currentState.questions.filter(
-        (q) => q.id !== questionIdToRemove
+        (q) => q.instance_id.toString() !== instanceIdToRemove
       ),
       layout: currentState.layout.filter(
-        (item) => item.i !== questionIdToRemove.toString()
+        (item) => item.i !== instanceIdToRemove
       ),
     };
     pushStateToHistory(newState);
   };
 
   const handleUndo = () => {
-    if (currentIndex > 0) {
-      setCurrentIndex(currentIndex - 1);
-    }
+    if (currentIndex > 0) setCurrentIndex(currentIndex - 1);
   };
 
   const handleRedo = () => {
-    if (currentIndex < history.length - 1) {
-      setCurrentIndex(currentIndex + 1);
-    }
+    if (currentIndex < history.length - 1) setCurrentIndex(currentIndex + 1);
   };
 
   const handleSaveChanges = async () => {
-    if (isEmbedMode || currentIndex === savedIndex) return;
+    if (isEmbedMode) return;
     setIsSaving(true);
 
-    // Bandingkan state saat ini dengan state yang terakhir disimpan
     const lastSavedState = history[savedIndex];
-    const currentState = history[currentIndex];
+    let currentState = { ...history[currentIndex] };
+
+    const nameHasChanged = dashboardName !== lastSavedState.name;
 
     try {
-      const lastSavedQuestionIds = new Set(
-        lastSavedState.questions.map((q) => q.id)
-      );
-      const currentQuestionIds = new Set(
-        currentState.questions.map((q) => q.id)
-      );
+      if (nameHasChanged) {
+        await API.put(`/api/dashboards/${id}`, { name: dashboardName });
+      }
 
-      const removedQuestions = lastSavedState.questions.filter(
-        (q) => !currentQuestionIds.has(q.id)
+      const currentInstanceIds = new Set(
+        currentState.questions.map((q) => q.instance_id.toString())
       );
-      const addedQuestions = currentState.questions.filter(
-        (q) => !lastSavedQuestionIds.has(q.id)
+      const removedInstances = lastSavedState.questions.filter(
+        (q) => !currentInstanceIds.has(q.instance_id.toString())
       );
-
-      const deletePromises = removedQuestions.map((q) =>
-        API.delete(`/api/dashboards/${id}/questions/${q.id}`)
+      const addedInstances = currentState.questions.filter((q) =>
+        q.instance_id.toString().startsWith("temp_")
       );
-      const addPromises = addedQuestions.map((q) =>
+      const deletePromises = removedInstances.map((q) =>
+        API.delete(`/api/dashboards/${id}/questions/${q.instance_id}`)
+      );
+      await Promise.all(deletePromises);
+      const addPromises = addedInstances.map((q) =>
         API.post(`/api/dashboards/${id}/questions`, { question_id: q.id })
       );
-
-      await Promise.all([...deletePromises, ...addPromises]);
-
-      // Simpan layout HANYA setelah penambahan/penghapusan selesai
+      const newItemsFromBackend = await Promise.all(addPromises);
+      const tempIdToRealIdMap = new Map();
+      newItemsFromBackend.forEach((newItem, index) => {
+        const oldTempId = addedInstances[index].instance_id;
+        tempIdToRealIdMap.set(oldTempId, newItem.data.instance_id.toString());
+      });
+      currentState.questions = currentState.questions.map((q) => {
+        const realId = tempIdToRealIdMap.get(q.instance_id);
+        return realId ? { ...q, instance_id: realId } : q;
+      });
+      currentState.layout = currentState.layout.map((l) => {
+        const realId = tempIdToRealIdMap.get(l.i);
+        return realId ? { ...l, i: realId } : l;
+      });
       await API.put(`/api/dashboards/${id}/layout`, currentState.layout);
 
       dispatch(
         addToast({ message: "Dashboard saved successfully!", type: "success" })
       );
 
-      // Perbarui penanda 'saved' ke posisi saat ini, JANGAN reset riwayat
+      let finalHistory = history.slice(0, currentIndex + 1);
+
+      if (nameHasChanged) {
+        finalHistory = finalHistory.map((h) => ({
+          ...h,
+          name: dashboardName,
+        }));
+      }
+
+      finalHistory[currentIndex] = {
+        ...currentState,
+        name: dashboardName,
+      };
+
+      setHistory(finalHistory);
       setSavedIndex(currentIndex);
     } catch (error) {
       console.error("Failed to save dashboard changes", error);
@@ -203,7 +211,8 @@ export default function DashboardViewPage() {
     return <p>Dashboard not found or failed to load.</p>;
 
   const currentState = history[currentIndex];
-  const hasUnsavedChanges = currentIndex !== savedIndex;
+  const hasUnsavedChanges =
+    currentIndex !== savedIndex || dashboardName !== currentState?.name;
 
   const canUndo = currentIndex > 0;
   const canRedo = currentIndex < history.length - 1;
@@ -221,12 +230,10 @@ export default function DashboardViewPage() {
                 type="text"
                 value={dashboardName}
                 onChange={(e) => setDashboardName(e.target.value)}
-                onBlur={handleRenameDashboard}
                 className="text-3xl font-bold bg-transparent"
               />
             </form>
           </div>
-
           <div className="flex items-center space-x-2">
             <Button
               variant="ghost"
@@ -284,10 +291,10 @@ export default function DashboardViewPage() {
         isResizable={!isEmbedMode}
       >
         {currentState.questions.map((q) => (
-          <div key={q.id.toString()}>
+          <div key={q.instance_id.toString()}>
             <ChartWidget
               questionId={q.id}
-              onRemove={() => handleRemoveQuestion(q.id)}
+              onRemove={() => handleRemoveQuestion(q.instance_id.toString())}
               isEmbedMode={isEmbedMode}
             />
           </div>
@@ -299,14 +306,11 @@ export default function DashboardViewPage() {
         showModal={showModalShare}
         setShowModal={setShowModalShare}
       />
-
       <ModalAddQuestion
         dashboardId={id}
         showModal={showModalAdd}
         setShowModal={setShowModalAdd}
         onQuestionAdded={handleQuestionAdded}
-        existingQuestionIds={currentState.questions.map((q) => q.id)}
-        collectionId={originalDashboard?.collection_id}
       />
     </div>
   );

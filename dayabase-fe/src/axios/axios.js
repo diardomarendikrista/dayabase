@@ -1,7 +1,7 @@
 import axios from "axios";
 
 const serviceLocal = "http://localhost:4000";
-const serviceProduction = "https://service-dayabase.diardo.my.id";
+const serviceProduction = "https://dayabase.onrender.com";
 
 // --- Dynamic Configuration ---
 // We check the NODE_ENV environment variable.

@@ -5,38 +5,51 @@
 #     branches: [main]
 #     paths:
 #       - "dayabase-be/**"
+#       - ".github/workflows/deploy-be.yml"
 
 # jobs:
 #   deploy-be:
 #     runs-on: ubuntu-latest
 #     steps:
-#       - name: Checkout repository
-#         uses: actions/checkout@v3
-
-#       - name: SSH & deploy dayabase-be
-#         uses: appleboy/ssh-action@v0.1.0
+#       - name: SSH & Deploy Backend
+#         uses: appleboy/ssh-action@v1.0.3
 #         with:
 #           host: ${{ secrets.EC2_HOST }}
 #           username: ${{ secrets.EC2_USER }}
 #           key: ${{ secrets.EC2_KEY }}
 #           script: |
-#             cd /home/ubuntu/dayabase/dayabase-be
+#             # Masuk ke direktori project utama
+#             echo "🚚 Navigating to project directory..."
+#             cd ~/dayabase
 
-#             # pastikan branch main diupdate
+#             # Update kode dari remote repository
+#             echo "🔄 Fetching latest code from main branch..."
 #             git fetch --all
 #             git reset --hard origin/main
 
-#             # install dependency
+#             # Masuk ke direktori backend
+#             echo "⚙️ Setting up backend..."
+#             cd dayabase-be
+
+#             # Install/update dependencies
+#             echo "📦 Installing Node dependencies..."
 #             npm install
 
-#             # restart pm2 service
-#             pm2 reload ecosystem.config.js --only dayabase-be
+#             # Kembali ke direktori utama
+#             cd ..
 
-#       - name: Check PM2 status
-#         uses: appleboy/ssh-action@v0.1.0
+#             # Restart service backend menggunakan PM2
+#             echo "🚀 Reloading PM2 service: dayabase-be..."
+#             pm2 reload ecosystem.config.js --only dayabase-be
+#             echo "✅ Deployment complete!"
+
+#       - name: Check PM2 Status After Deploy
+#         if: always()
+#         uses: appleboy/ssh-action@v1.0.3
 #         with:
 #           host: ${{ secrets.EC2_HOST }}
 #           username: ${{ secrets.EC2_USER }}
 #           key: ${{ secrets.EC2_KEY }}
 #           script: |
+#             echo "🔍 Checking PM2 status..."
 #             pm2 status

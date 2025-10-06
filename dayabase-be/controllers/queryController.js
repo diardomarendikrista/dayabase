@@ -4,7 +4,7 @@ const appDbPool = require("../config/db"); // Koneksi ke 'dayabase_app'
 
 class QueryController {
   static async runQuery(req, res) {
-    const { sql, connectionId } = req.body;
+    const { sql, connectionId, row_limit } = req.body;
 
     if (!sql || !connectionId) {
       return res
@@ -12,6 +12,34 @@ class QueryController {
         .json({ message: "sql and connectionId are required!" });
     }
 
+    // ---- BASIC SECURITY CHECKS (prevent SQL injection) ----
+    // Karena menyangkut hajat hidup perusahaan, tolong nanti ini dikembangkan bener2, kalo DB kena inject, kita kena kartu merah. hehe
+    const cleaned = sql.trim();
+    if (cleaned.length > 50000)
+      return res.status(400).json({ message: "SQL too long." });
+
+    // simple semicolon check (boleh dikembangkan nanti)
+    if (cleaned.includes(";"))
+      return res
+        .status(400)
+        .json({ message: "Multiple statements not allowed." });
+
+    // simple check start query
+    const sqlWithoutComments = cleaned
+      .replace(/^\s*(\/\*[\s\S]*?\*\/|--.*(\r?\n|$))*/g, "")
+      .trim();
+    if (!/^(SELECT|WITH)\b/i.test(sqlWithoutComments)) {
+      return res.status(400).json({ message: "Only SELECT queries allowed." });
+    }
+
+    // enforce LIMIT
+    const limit =
+      Number.isInteger(row_limit) && row_limit > 0 ? row_limit : 1000;
+    let execSql = sql;
+    if (!/limit\s+\d+/i.test(sqlWithoutComments))
+      execSql = `${sql.trim()} LIMIT ${limit}`;
+
+    // ----------------- fetch connection details -----------------
     let targetConnection; // Koneksi ke database target
     try {
       const connDetailsResult = await appDbPool.query(
@@ -43,11 +71,11 @@ class QueryController {
 
       switch (dbConfig.dbType) {
         case "postgres":
-          const pgResult = await targetConnection.query(sql);
+          const pgResult = await targetConnection.query(execSql);
           rows = pgResult.rows;
           break;
         case "mysql":
-          const [mysqlRows] = await targetConnection.execute(sql);
+          const [mysqlRows] = await targetConnection.execute(execSql);
           rows = mysqlRows;
           break;
         default:

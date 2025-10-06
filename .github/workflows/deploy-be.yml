@@ -1,0 +1,42 @@
+# name: Deploy dayabase-be
+
+# on:
+#   push:
+#     branches: [main]
+#     paths:
+#       - "dayabase-be/**"
+
+# jobs:
+#   deploy-be:
+#     runs-on: ubuntu-latest
+#     steps:
+#       - name: Checkout repository
+#         uses: actions/checkout@v3
+
+#       - name: SSH & deploy dayabase-be
+#         uses: appleboy/ssh-action@v0.1.0
+#         with:
+#           host: ${{ secrets.EC2_HOST }}
+#           username: ${{ secrets.EC2_USER }}
+#           key: ${{ secrets.EC2_KEY }}
+#           script: |
+#             cd /home/ubuntu/dayabase/dayabase-be
+
+#             # pastikan branch main diupdate
+#             git fetch --all
+#             git reset --hard origin/main
+
+#             # install dependency
+#             npm install
+
+#             # restart pm2 service
+#             pm2 reload ecosystem.config.js --only dayabase-be
+
+#       - name: Check PM2 status
+#         uses: appleboy/ssh-action@v0.1.0
+#         with:
+#           host: ${{ secrets.EC2_HOST }}
+#           username: ${{ secrets.EC2_USER }}
+#           key: ${{ secrets.EC2_KEY }}
+#           script: |
+#             pm2 status

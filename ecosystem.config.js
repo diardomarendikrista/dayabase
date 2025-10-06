@@ -2,7 +2,7 @@ module.exports = {
   apps: [
     {
       name: "dayabase-be",
-      script: "./dayabase-be/app.js",
+      script: "app.js",
       cwd: "./dayabase-be/",
 
       watch: false,

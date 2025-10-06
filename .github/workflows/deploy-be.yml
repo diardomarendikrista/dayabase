@@ -9,16 +9,13 @@ on:
 
 jobs:
   deploy-be:
-    # Memberitahu GitHub untuk menjalankan pekerjaan ini di runner pribadi Anda
-    runs-on: self-hosted
+    runs-on: self-hosted # Pakai runner di EC2 , jangan lupa kalo mau hapus ini, service di EC2 juga dihapus
 
     steps:
-      # Langkah ini sekarang hanya satu blok 'run' karena semua perintah
-      # dieksekusi langsung di server Anda, bukan melalui SSH.
       - name: Deploy Backend on Server
         run: |
           echo "Navigating to project directory..."
-          cd /home/ubuntu/dayabase  # Gunakan path absolut untuk keamanan
+          cd /home/ubuntu/dayabase
 
           echo "Fetching latest code from main branch..."
           git fetch --all

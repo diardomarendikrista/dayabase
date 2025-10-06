@@ -1,6 +1,5 @@
 // config/db.js
 const { Pool } = require("pg");
-require("dotenv").config(); // Memuat variabel dari file .env
 
 // Membuat koneksi pool ke DB dayabase_app
 // Pakai prefix APP_ untuk membedakan dengan koneksi database target.

@@ -2,7 +2,6 @@
 // ini untuk enkripsi dan dekripsi password yang ada di conenction, yang di auth/login pakai bcrypt.
 
 const crypto = require("crypto");
-require("dotenv").config();
 
 const ALGORITHM = "aes-256-cbc";
 // Kunci rahasia, HARUS 32 karakter. Simpan di .env

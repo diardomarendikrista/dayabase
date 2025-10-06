@@ -9,47 +9,36 @@ on:
 
 jobs:
   deploy-be:
-    runs-on: ubuntu-latest
+    # Memberitahu GitHub untuk menjalankan pekerjaan ini di runner pribadi Anda
+    runs-on: self-hosted
+
     steps:
-      - name: SSH & Deploy Backend
-        uses: appleboy/ssh-action@v1.0.3
-        with:
-          host: ${{ secrets.EC2_HOST }}
-          username: ${{ secrets.EC2_USER }}
-          key: ${{ secrets.EC2_KEY }}
-          script: |
-            # Masuk ke direktori project utama
-            echo "🚚 Navigating to project directory..."
-            cd ~/dayabase
+      # Langkah ini sekarang hanya satu blok 'run' karena semua perintah
+      # dieksekusi langsung di server Anda, bukan melalui SSH.
+      - name: Deploy Backend on Server
+        run: |
+          echo "Navigating to project directory..."
+          cd /home/ubuntu/dayabase  # Gunakan path absolut untuk keamanan
 
-            # Update kode dari remote repository
-            echo "🔄 Fetching latest code from main branch..."
-            git fetch --all
-            git reset --hard origin/main
+          echo "Fetching latest code from main branch..."
+          git fetch --all
+          git reset --hard origin/main
 
-            # Masuk ke direktori backend
-            echo "⚙️ Setting up backend..."
-            cd dayabase-be
+          echo "Setting up backend in dayabase-be..."
+          cd dayabase-be
 
-            # Install/update dependencies
-            echo "📦 Installing Node dependencies..."
-            npm install
+          echo "Installing Node dependencies..."
+          npm install
 
-            # Kembali ke direktori utama
-            cd ..
+          echo "Reloading PM2 service: dayabase-be..."
+          # Kembali ke direktori utama tempat ecosystem.config.js berada
+          cd /home/ubuntu/dayabase 
+          pm2 reload ecosystem.config.js --only dayabase-be
 
-            # Restart service backend menggunakan PM2
-            echo "🚀 Reloading PM2 service: dayabase-be..."
-            pm2 reload ecosystem.config.js --only dayabase-be
-            echo "✅ Deployment complete!"
+          echo "Deployment complete!"
 
       - name: Check PM2 Status After Deploy
         if: always()
-        uses: appleboy/ssh-action@v1.0.3
-        with:
-          host: ${{ secrets.EC2_HOST }}
-          username: ${{ secrets.EC2_USER }}
-          key: ${{ secrets.EC2_KEY }}
-          script: |
-            echo "🔍 Checking PM2 status..."
-            pm2 status
+        run: |
+          echo "🔍 Checking PM2 status..."
+          pm2 status

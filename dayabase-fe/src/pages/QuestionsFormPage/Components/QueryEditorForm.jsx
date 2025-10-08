@@ -22,12 +22,17 @@ export default function QueryEditorForm({
         <label className="block text-sm font-medium text-gray-700 mb-1">
           Database Connection
         </label>
-        <Select
-          options={connectionOptions}
-          value={selectedConnectionId}
-          onChange={onConnectionChange}
-          placeholder="Select a connection"
-        />
+        <form
+          autoComplete="off"
+          onSubmit={(e) => e.preventDefault()}
+        >
+          <Select
+            options={connectionOptions}
+            value={selectedConnectionId}
+            onChange={onConnectionChange}
+            placeholder="Select a connection"
+          />
+        </form>
         {error && <p className="text-red-600 text-sm mt-1">{error}</p>}
       </div>
       <h2 className="text-xl font-semibold mb-2">SQL Query</h2>

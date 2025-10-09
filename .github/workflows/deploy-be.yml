@@ -9,32 +9,36 @@ on:
 
 jobs:
   deploy-be:
-    runs-on: self-hosted # Pakai runner di EC2 , jangan lupa kalo mau hapus ini, service di EC2 juga dihapus
+    runs-on: self-hosted
 
     steps:
-      - name: Deploy Backend on Server
+      - name: 1. Fetch Latest Code
+        # Menjalankan perintah di dalam direktori proyek utama
+        working-directory: /home/ec2-user/dayabase
         run: |
-          echo "Navigating to project directory..."
-          cd /home/ec2-user/dayabase
-
           echo "Fetching latest code from main branch..."
           git fetch --all
           git reset --hard origin/main
+          echo "Code updated!"
 
-          echo "Setting up backend in dayabase-be..."
-          cd dayabase-be
-
+      - name: 2. Install Dependencies
+        # Pindah ke direktori backend untuk instalasi
+        working-directory: /home/ec2-user/dayabase/dayabase-be
+        run: |
           echo "Installing Node dependencies..."
           npm install
+          echo "Dependencies installed!"
 
-          echo "Reloading PM2 service: dayabase-be..."
-          # Kembali ke direktori utama tempat ecosystem.config.js berada
-          cd /home/ec2-user/dayabase 
-          pm2 reload ecosystem.config.js --only dayabase-be
+      - name: 3. Reload PM2 Service
+        # Kembali ke direktori utama di mana file ecosystem berada
+        working-directory: /home/ec2-user/dayabase
+        run: |
+          echo "Reloading PM2 service: app..."
+          pm2 reload ecosystem.config.js --only app
+          echo "Service 'app' reloaded!"
 
-          echo "Deployment complete!"
-
-      - name: Check PM2 Status After Deploy
+      - name: 4. Check PM2 Status After Deploy
+        # Selalu jalankan langkah ini untuk verifikasi, bahkan jika langkah sebelumnya gagal
         if: always()
         run: |
           echo "Checking PM2 status..."

@@ -1,7 +1,7 @@
 import { useState, useEffect, useMemo } from "react";
 import { API } from "axios/axios";
 import Modal from "components/molecules/Modal";
-import { useDispatch } from "react-redux";
+import { useDispatch, useSelector } from "react-redux";
 import { addToast } from "store/slices/toastSlice";
 import Button from "components/atoms/Button";
 import Select from "components/atoms/Select";
@@ -10,11 +10,14 @@ export default function ModalAddToDashboard({
   questionId,
   showModal,
   setShowModal,
-  collectionId,
+  currentCollectionId,
 }) {
+  const { items: collections } = useSelector((state) => state.collections);
   const [dashboards, setDashboards] = useState([]);
   const [selectedDashboardId, setSelectedDashboardId] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  const [collectionId, setCollectionId] = useState("");
 
   const dispatch = useDispatch();
 
@@ -22,10 +25,14 @@ export default function ModalAddToDashboard({
     return dashboards.map((d) => ({ value: d.id, label: d.name }));
   }, [dashboards]);
 
+  const collectionOptions = useMemo(() => {
+    return collections.map((item) => ({ value: item.id, label: item.name }));
+  }, [collections]);
+
   useEffect(() => {
     const fetchDashboards = async () => {
       const response = await API.get(
-        `/api/dashboards?collectionId=${collectionId}`
+        `/api/dashboards?collectionId=${collectionId || currentCollectionId}`
       );
       setDashboards(response.data);
       if (response.data.length > 0) {
@@ -33,7 +40,7 @@ export default function ModalAddToDashboard({
       }
     };
     fetchDashboards();
-  }, []);
+  }, [collectionId, currentCollectionId]);
 
   const handleSubmit = async () => {
     if (!selectedDashboardId) {
@@ -67,6 +74,19 @@ export default function ModalAddToDashboard({
       showModal={showModal}
       setShowModal={setShowModal}
     >
+      <div className="mb-4">
+        <label className="block text-sm font-medium text-gray-700 mb-1">
+          From Collection
+        </label>
+        <Select
+          value={Number(collectionId || currentCollectionId)}
+          onChange={(value) => {
+            setCollectionId(value);
+            setSelectedDashboardId(null);
+          }}
+          options={collectionOptions}
+        />
+      </div>
       <div className="mb-4">
         <label className="block text-sm font-medium text-gray-700 mb-1">
           Select Dashboard

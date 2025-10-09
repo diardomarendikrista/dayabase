@@ -15,7 +15,7 @@ jobs:
       - name: Deploy Backend on Server
         run: |
           echo "Navigating to project directory..."
-          cd /home/ubuntu/dayabase
+          cd /home/ec2-user/dayabase
 
           echo "Fetching latest code from main branch..."
           git fetch --all
@@ -29,7 +29,7 @@ jobs:
 
           echo "Reloading PM2 service: dayabase-be..."
           # Kembali ke direktori utama tempat ecosystem.config.js berada
-          cd /home/ubuntu/dayabase 
+          cd /home/ec2-user/dayabase 
           pm2 reload ecosystem.config.js --only dayabase-be
 
           echo "Deployment complete!"
@@ -37,5 +37,5 @@ jobs:
       - name: Check PM2 Status After Deploy
         if: always()
         run: |
-          echo "🔍 Checking PM2 status..."
+          echo "Checking PM2 status..."
           pm2 status

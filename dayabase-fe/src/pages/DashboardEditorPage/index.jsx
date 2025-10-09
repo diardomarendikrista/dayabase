@@ -22,6 +22,7 @@ export default function DashboardViewPage() {
   const dashboardIdentifier = id || token;
 
   const [dashboardName, setDashboardName] = useState("");
+  const [collectionId, setCollectionId] = useState("");
   const [isLoading, setIsLoading] = useState(true);
 
   const [history, setHistory] = useState([]);
@@ -50,6 +51,7 @@ export default function DashboardViewPage() {
       const data = response.data;
 
       setDashboardName(data.name);
+      setCollectionId(data.collection_id);
 
       const initialLayout = data.questions.map((q) => ({
         ...q.layout,
@@ -311,6 +313,7 @@ export default function DashboardViewPage() {
         showModal={showModalAdd}
         setShowModal={setShowModalAdd}
         onQuestionAdded={handleQuestionAdded}
+        currentCollectionId={collectionId}
       />
     </div>
   );

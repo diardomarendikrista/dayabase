@@ -1,7 +1,7 @@
 import { useState, useEffect, useMemo } from "react";
 import { API } from "axios/axios";
 import Modal from "components/molecules/Modal";
-import { useDispatch } from "react-redux";
+import { useDispatch, useSelector } from "react-redux";
 import { addToast } from "store/slices/toastSlice";
 import Button from "components/atoms/Button";
 import Select from "components/atoms/Select";
@@ -10,12 +10,15 @@ export default function ModalAddQuestion({
   showModal,
   setShowModal,
   onQuestionAdded,
-  collectionId,
+  currentCollectionId,
 }) {
+  const { items: collections } = useSelector((state) => state.collections);
   const [allQuestions, setAllQuestions] = useState([]);
   const [selectedQuestionId, setSelectedQuestionId] = useState("");
   const [isLoading, setIsLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  const [collectionId, setCollectionId] = useState(null);
 
   const dispatch = useDispatch();
 
@@ -23,15 +26,17 @@ export default function ModalAddQuestion({
     return allQuestions.map((q) => ({ value: q.id, label: q.name }));
   }, [allQuestions]);
 
+  const collectionOptions = useMemo(() => {
+    return collections.map((item) => ({ value: item.id, label: item.name }));
+  }, [collections]);
+
   useEffect(() => {
     if (showModal) {
       setIsLoading(true);
       const fetchQuestions = async () => {
         try {
           let apiUrl = "/api/questions";
-          if (collectionId) {
-            apiUrl += `?collectionId=${collectionId}`;
-          }
+          apiUrl += `?collectionId=${collectionId ?? currentCollectionId}`;
           const response = await API.get(apiUrl);
           setAllQuestions(response.data);
         } catch (error) {
@@ -79,10 +84,23 @@ export default function ModalAddQuestion({
       showModal={showModal}
       setShowModal={setShowModal}
     >
-      {isLoading ? (
-        <p>Loading questions...</p>
-      ) : allQuestions.length > 0 ? (
+      {isLoading || allQuestions.length > 0 ? (
         <div>
+          <div className="mb-4">
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              From Collection
+            </label>
+            <Select
+              value={collectionId || currentCollectionId}
+              onChange={(value) => {
+                setCollectionId(value);
+                setSelectedQuestionId(null);
+              }}
+              options={collectionOptions}
+              defaultValue={currentCollectionId}
+              isDisabled={isLoading}
+            />
+          </div>
           <div className="mb-4">
             <label className="block text-sm font-medium text-gray-700 mb-1">
               Select Question
@@ -91,18 +109,20 @@ export default function ModalAddQuestion({
               value={selectedQuestionId}
               onChange={(value) => setSelectedQuestionId(value)}
               options={questionOptions}
+              isDisabled={isLoading}
             />
           </div>
           <div className="flex justify-end space-x-4 pt-4">
             <Button
               onClick={() => setShowModal(false)}
               variant={"outline"}
+              disabled={isSubmitting || isLoading}
             >
               Cancel
             </Button>
             <Button
               onClick={handleSubmit}
-              disabled={isSubmitting}
+              disabled={isSubmitting || isLoading}
             >
               {isSubmitting ? "Adding..." : "Add"}
             </Button>

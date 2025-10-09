@@ -256,7 +256,7 @@ export default function CollectionPage() {
         showModal={showAddToDashboardModal}
         setShowModal={setShowAddToDashboardModal}
         questionId={selectedItem?.id}
-        collectionId={id}
+        currentCollectionId={id}
       />
     </div>
   );

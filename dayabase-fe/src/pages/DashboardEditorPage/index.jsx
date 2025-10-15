@@ -45,7 +45,7 @@ export default function DashboardViewPage() {
     setIsLoading(true);
 
     const apiUrl = isEmbedMode
-      ? `/api/embed/dashboards/${dashboardIdentifier}`
+      ? `/api/public/dashboards/${dashboardIdentifier}`
       : `/api/dashboards/${dashboardIdentifier}`;
 
     try {
@@ -285,6 +285,7 @@ export default function DashboardViewPage() {
           </div>
         </div>
       )}
+
       <ResponsiveGridLayout
         className="layout"
         layouts={{ lg: currentState.layout }}

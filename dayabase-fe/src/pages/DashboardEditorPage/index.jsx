@@ -43,19 +43,23 @@ export default function DashboardViewPage() {
   const fetchDashboardData = useCallback(async () => {
     if (!dashboardIdentifier) return;
     setIsLoading(true);
+
     const apiUrl = isEmbedMode
-      ? `/api/public/dashboards/${dashboardIdentifier}`
+      ? `/api/embed/dashboards/${dashboardIdentifier}`
       : `/api/dashboards/${dashboardIdentifier}`;
+
     try {
       const response = await API.get(apiUrl);
       const data = response.data;
+
+      console.log(data, "data");
 
       setDashboardName(data.name);
       setCollectionId(data.collection_id);
 
       const initialLayout = data.questions.map((q) => ({
         ...q.layout,
-        i: q.instance_id.toString(),
+        i: q?.instance_id?.toString(),
       }));
 
       const initialState = {
@@ -293,7 +297,7 @@ export default function DashboardViewPage() {
         isResizable={!isEmbedMode}
       >
         {currentState.questions.map((q) => (
-          <div key={q.instance_id.toString()}>
+          <div key={q?.instance_id?.toString()}>
             <ChartWidget
               questionId={q.id}
               onRemove={() => handleRemoveQuestion(q.instance_id.toString())}
@@ -303,18 +307,22 @@ export default function DashboardViewPage() {
         ))}
       </ResponsiveGridLayout>
 
-      <ModalDashboardShare
-        dashboardId={id}
-        showModal={showModalShare}
-        setShowModal={setShowModalShare}
-      />
-      <ModalAddQuestion
-        dashboardId={id}
-        showModal={showModalAdd}
-        setShowModal={setShowModalAdd}
-        onQuestionAdded={handleQuestionAdded}
-        currentCollectionId={collectionId}
-      />
+      {!isEmbedMode && (
+        <>
+          <ModalDashboardShare
+            dashboardId={id}
+            showModal={showModalShare}
+            setShowModal={setShowModalShare}
+          />
+          <ModalAddQuestion
+            dashboardId={id}
+            showModal={showModalAdd}
+            setShowModal={setShowModalAdd}
+            onQuestionAdded={handleQuestionAdded}
+            currentCollectionId={collectionId}
+          />
+        </>
+      )}
     </div>
   );
 }

@@ -12,6 +12,7 @@ class PublicController {
         SELECT 
           d.id as dashboard_id, d.name, d.description,
           dq.question_id,
+          dq.id as instance_id,
           dq.layout_config
         FROM dashboards d
         LEFT JOIN dashboard_questions dq ON d.id = dq.dashboard_id
@@ -31,6 +32,7 @@ class PublicController {
         description: result.rows[0].description,
         questions: result.rows[0].question_id
           ? result.rows.map((row) => ({
+              instance_id: row.instance_id,
               id: row.question_id,
               layout: row.layout_config,
             }))

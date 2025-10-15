@@ -169,7 +169,7 @@ class DashboardController {
    */
   static async addQuestionToDashboard(req, res) {
     const { id: dashboard_id } = req.params;
-    const { question_id } = req.body;
+    const { question_id, layoutConfig } = req.body;
 
     if (!question_id) {
       return res.status(400).json({ message: "question_id wajib diisi." });
@@ -194,7 +194,13 @@ class DashboardController {
         );
       }
 
-      const newLayoutConfig = { x: 0, y: nextY, w: 6, h: 5 };
+      const newLayoutConfig = {
+        x: 0,
+        y: nextY,
+        w: 12,
+        h: 10,
+        ...layoutConfig,
+      };
 
       const newLinkQuery = `
         WITH new_row AS (

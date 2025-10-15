@@ -49,10 +49,13 @@ export default function ModalAddToDashboard({
       );
       return;
     }
+
     setIsSubmitting(true);
     try {
+      const layoutConfig = { w: 12, h: 10 };
       await API.post(`/api/dashboards/${selectedDashboardId}/questions`, {
         question_id: questionId,
+        layoutConfig, // optional
       });
       dispatch(
         addToast({

@@ -93,7 +93,7 @@ export default function DashboardViewPage() {
       );
     }
 
-    const newLayoutItem = { i: instanceId, x: 0, y: nextY, w: 6, h: 5 };
+    const newLayoutItem = { i: instanceId, x: 0, y: nextY, w: 12, h: 10 };
     const newQuestionInstance = {
       ...newQuestionDetails,
       instance_id: instanceId,
@@ -284,8 +284,8 @@ export default function DashboardViewPage() {
       <ResponsiveGridLayout
         className="layout"
         layouts={{ lg: currentState.layout }}
-        breakpoints={{ lg: 1200, md: 996, sm: 768, xs: 480, xxs: 0 }}
-        cols={{ lg: 12, md: 10, sm: 6, xs: 4, xxs: 2 }}
+        breakpoints={{ lg: 1100, md: 996, sm: 768, xs: 480, xxs: 0 }}
+        cols={{ lg: 24, md: 20, sm: 12, xs: 8, xxs: 4 }}
         rowHeight={30}
         onDragStop={handleLayoutChange}
         onResizeStop={handleLayoutChange}

@@ -1,4 +1,5 @@
 import Select from "components/atoms/Select";
+import Textarea from "components/atoms/TextArea";
 import { useMemo } from "react";
 
 export default function QueryEditorForm({
@@ -36,7 +37,13 @@ export default function QueryEditorForm({
         {error && <p className="text-red-600 text-sm mt-1">{error}</p>}
       </div>
       <h2 className="text-xl font-semibold mb-2">SQL Query</h2>
-      <textarea
+      {/* <textarea
+        value={sql}
+        onChange={onSqlChange}
+        className="w-full h-40 p-2 border rounded-md font-mono text-sm"
+      /> */}
+
+      <Textarea
         value={sql}
         onChange={onSqlChange}
         className="w-full h-40 p-2 border rounded-md font-mono text-sm"

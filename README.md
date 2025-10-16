@@ -163,7 +163,7 @@ Before starting the server, you need to set up the application's database.
         public_sharing_enabled BOOLEAN DEFAULT FALSE,
         public_token UUID UNIQUE DEFAULT gen_random_uuid(),
         user_id INT REFERENCES users(id) ON DELETE CASCADE,
-        collection_id INT REFERENCES collections(id) ON DELETE CASCADE,
+        collection_id INT NOT NULL REFERENCES collections(id) ON DELETE CASCADE,
         updated_by_user_id INT REFERENCES users(id) ON DELETE SET NULL
     );
 
@@ -177,7 +177,7 @@ Before starting the server, you need to set up the application's database.
         public_sharing_enabled BOOLEAN DEFAULT FALSE,
         public_token UUID UNIQUE DEFAULT gen_random_uuid(),
         user_id INT REFERENCES users(id) ON DELETE CASCADE,
-        collection_id INT REFERENCES collections(id) ON DELETE CASCADE,
+        collection_id INT NOT NULL REFERENCES collections(id) ON DELETE CASCADE,
         updated_by_user_id INT REFERENCES users(id) ON DELETE SET NULL
     );
 

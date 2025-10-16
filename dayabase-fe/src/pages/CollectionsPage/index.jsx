@@ -36,7 +36,9 @@ export default function CollectionPage() {
       const newData = { type: "collection", ...response.data };
       setCollection(newData);
     } catch (err) {
-      setError("Failed to fetch collection data.");
+      setError(
+        err?.response?.data?.message || "Failed to fetch collection data."
+      );
       console.error(err);
     } finally {
       setIsLoading(false);
@@ -216,7 +218,6 @@ export default function CollectionPage() {
               <CollectionItem
                 key={`${item.type}-${item.id}`}
                 item={item}
-                collectionId={id}
                 onDeleteClick={handleDeleteClick}
                 onAddToDashboardClick={handleAddToDashboardClick}
               />

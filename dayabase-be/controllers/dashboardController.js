@@ -68,12 +68,14 @@ class DashboardController {
         SELECT 
           d.id as dashboard_id, d.name, d.description, d.public_sharing_enabled, d.public_token,
           d.collection_id,
+          c.name as collection_name,
           dq.id as instance_id,
           dq.question_id, q.name as question_name, q.chart_type,
           dq.layout_config
         FROM dashboards d
         LEFT JOIN dashboard_questions dq ON d.id = dq.dashboard_id
         LEFT JOIN questions q ON dq.question_id = q.id
+        LEFT JOIN collections c ON d.collection_id = c.id
         WHERE d.id = $1;
       `;
       const result = await pool.query(queryText, [id]);
@@ -87,6 +89,7 @@ class DashboardController {
         name: result.rows[0].name,
         description: result.rows[0].description,
         collection_id: result.rows[0].collection_id,
+        collection_name: result.rows[0].collection_name,
         public_sharing_enabled: result.rows[0].public_sharing_enabled,
         public_token: result.rows[0].public_token,
         questions: result.rows[0].question_id

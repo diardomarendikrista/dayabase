@@ -6,6 +6,7 @@ import HeaderSection from "./Components/HeaderSection";
 export default function QuestionEditorPage() {
   const {
     id,
+    dataQuestion,
     pageTitle,
     setPageTitle,
     sql,
@@ -27,10 +28,15 @@ export default function QuestionEditorPage() {
     handleSaveQuestion,
   } = useQuestionEditor();
 
+  if (errors.status === 404) {
+    return <div>Question not found</div>;
+  }
+
   return (
     <div>
       <HeaderSection
         id={id}
+        dataQuestion={dataQuestion}
         isLoading={isLoading}
         errors={errors}
         setErrors={setErrors}

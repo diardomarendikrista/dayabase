@@ -9,7 +9,6 @@ import { Link } from "react-router-dom";
 
 export default function CollectionItem({
   item,
-  collectionId,
   onDeleteClick,
   onAddToDashboardClick,
 }) {
@@ -31,7 +30,7 @@ export default function CollectionItem({
       case "dashboard":
         return `/dashboards/${item.id}`;
       case "question":
-        return `/questions/${item.id}?collectionId=${collectionId}`;
+        return `/questions/${item.id}`;
       case "collection":
         return `/collections/${item.id}`;
       default:

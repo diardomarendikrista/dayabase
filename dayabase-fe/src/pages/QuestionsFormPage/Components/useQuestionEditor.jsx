@@ -10,6 +10,10 @@ export function useQuestionEditor() {
   const dispatch = useDispatch();
   const location = useLocation();
 
+  // get collection Id for create new question
+  const queryParams = new URLSearchParams(location.search);
+  const collectionId = queryParams.get("collectionId");
+
   const [pageTitle, setPageTitle] = useState("");
   const [connections, setConnections] = useState([]);
   const [selectedConnectionId, setSelectedConnectionId] = useState("");
@@ -20,6 +24,7 @@ export function useQuestionEditor() {
   const [errors, setErrors] = useState({});
   const [chartType, setChartType] = useState("pivot"); // Default ke pivot
   const [chartConfig, setChartConfig] = useState({});
+  const [dataQuestion, setDataQuestion] = useState({});
 
   const handleRunQuery = async (options = {}) => {
     const { newSql, newConnectionId, isInitialLoad = false } = options;
@@ -88,17 +93,13 @@ export function useQuestionEditor() {
       delete finalChartConfig.filterState;
     }
 
-    // get collection Id
-    const queryParams = new URLSearchParams(location.search);
-    const collectionId = queryParams.get("collectionId");
-
     const payload = {
       name: pageTitle,
       sql_query: sql,
       chart_type: chartType,
       chart_config: finalChartConfig,
       connection_id: selectedConnectionId,
-      collection_id: collectionId,
+      collection_id: dataQuestion.collection_id || collectionId,
     };
     try {
       if (id) {
@@ -106,7 +107,7 @@ export function useQuestionEditor() {
       } else {
         await API.post("/api/questions", payload);
       }
-      navigate(`/collections/${collectionId}`);
+      navigate(`/collections/${dataQuestion.collection_id}`);
       dispatch(
         addToast({
           message: id
@@ -117,7 +118,9 @@ export function useQuestionEditor() {
       );
     } catch (err) {
       console.error("Failed to save/update question:", err);
-      setErrors({ api: err.response?.data?.message || "Operation failed." });
+      setErrors({
+        api: err.response?.data?.message || "An unknown error occurred.",
+      });
     }
   };
 
@@ -136,6 +139,12 @@ export function useQuestionEditor() {
       seriesData: results.map((row) => row[chartConfig.value]),
     };
   }, [results, chartConfig, chartType]);
+
+  useEffect(() => {
+    if (location.pathname === "/questions/new" && !collectionId) {
+      navigate("/");
+    }
+  }, [location.pathname, collectionId, navigate]);
 
   useEffect(() => {
     const fetchConnections = async () => {
@@ -164,23 +173,26 @@ export function useQuestionEditor() {
       const fetchQuestionData = async () => {
         setIsLoading(true);
         try {
-          const response = await API.get(`/api/questions/${id}`);
-          const q = response.data;
-          setPageTitle(q.name);
-          setSql(q.sql_query);
-          setSelectedConnectionId(q.connection_id);
-          setChartType(q.chart_type);
-          setChartConfig(q.chart_config);
+          const { data } = await API.get(`/api/questions/${id}`);
+          console.log(data);
+
+          setDataQuestion(data);
+          setPageTitle(data.name);
+          setSql(data.sql_query);
+          setSelectedConnectionId(data.connection_id);
+          setChartType(data.chart_type);
+          setChartConfig(data.chart_config);
           handleRunQuery({
-            newSql: q.sql_query,
-            newConnectionId: q.connection_id,
+            newSql: data.sql_query,
+            newConnectionId: data.connection_id,
             isInitialLoad: true,
           });
         } catch (err) {
-          dispatch(
-            addToast({ message: "Could not find the question.", type: "error" })
-          );
-          navigate("/questions");
+          // console.log(err);
+          setErrors({
+            api: err.response?.data?.message || "An unknown error occurred.",
+            status: err.response?.status,
+          });
         }
       };
       fetchQuestionData();
@@ -191,6 +203,7 @@ export function useQuestionEditor() {
 
   return {
     id,
+    dataQuestion,
     pageTitle,
     setPageTitle,
     sql,

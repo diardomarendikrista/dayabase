@@ -11,6 +11,7 @@ import { RiAddLine } from "react-icons/ri";
 import { addToast } from "store/slices/toastSlice";
 import Input from "components/atoms/Input";
 import Button from "components/atoms/Button";
+import BackButton from "components/molecules/BackButton";
 
 const ResponsiveGridLayout = WidthProvider(Responsive);
 
@@ -22,7 +23,7 @@ export default function DashboardViewPage() {
   const dashboardIdentifier = id || token;
 
   const [dashboardName, setDashboardName] = useState("");
-  const [collectionId, setCollectionId] = useState("");
+  const [dataDashboard, setDataDashboard] = useState("");
   const [isLoading, setIsLoading] = useState(true);
 
   const [history, setHistory] = useState([]);
@@ -55,7 +56,7 @@ export default function DashboardViewPage() {
       console.log(data, "data");
 
       setDashboardName(data.name);
-      setCollectionId(data.collection_id);
+      setDataDashboard(data);
 
       const initialLayout = data.questions.map((q) => ({
         ...q.layout,
@@ -214,7 +215,11 @@ export default function DashboardViewPage() {
 
   if (isLoading) return <p>Loading dashboard...</p>;
   if (history.length === 0 || currentIndex === -1)
-    return <p>Dashboard not found or failed to load.</p>;
+    return (
+      <div className="text-center">
+        <p>Dashboard not found or failed to load.</p>
+      </div>
+    );
 
   const currentState = history[currentIndex];
   const hasUnsavedChanges =
@@ -227,6 +232,12 @@ export default function DashboardViewPage() {
     <div>
       {!isEmbedMode && (
         <div className="flex justify-between items-center mb-6">
+          <div className="flex px-2">
+            <BackButton
+              to={`/collections/${dataDashboard.collection_id}`}
+              title={`Back to ${dataDashboard.collection_name}`}
+            />
+          </div>
           <div className="flex-1">
             <form
               autoComplete="off"
@@ -320,7 +331,7 @@ export default function DashboardViewPage() {
             showModal={showModalAdd}
             setShowModal={setShowModalAdd}
             onQuestionAdded={handleQuestionAdded}
-            currentCollectionId={collectionId}
+            currentCollectionId={dataDashboard.collection_id}
           />
         </>
       )}

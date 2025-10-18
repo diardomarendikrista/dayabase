@@ -6,6 +6,7 @@ import {
   RiLogoutBoxRLine,
 } from "react-icons/ri";
 import { useDispatch, useSelector } from "react-redux";
+import { useNavigate } from "react-router-dom";
 import { selectCurrentUser, logOut } from "store/slices/authSlice";
 
 export default function UserDropdown() {
@@ -16,6 +17,7 @@ export default function UserDropdown() {
 
   const dropdownRef = useRef(null);
   const dispatch = useDispatch();
+  const navigate = useNavigate();
 
   // Menutup dropdown saat klik di luar
   useEffect(() => {

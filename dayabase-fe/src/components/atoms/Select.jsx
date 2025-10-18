@@ -38,17 +38,39 @@ export default function Select({
   onChange,
   placeholder = "Select an option...",
   className,
+  isMulti = false,
   ...props
 }) {
   const id = useId();
 
-  const selectedValue = useMemo(
-    () => options.find((opt) => opt.value === value) || null,
-    [options, value]
-  );
+  const selectedValue = useMemo(() => {
+    if (isMulti) {
+      // Multi-select: value adalah array
+      if (!value || !Array.isArray(value)) return [];
+      return options.filter((opt) => value.includes(opt.value));
+    } else {
+      // Single-select: value adalah string
+      return options.find((opt) => opt.value === value) || null;
+    }
+  }, [options, value, isMulti]);
 
   const handleChange = (selectedOption) => {
-    onChange(selectedOption ? selectedOption.value : null);
+    if (isMulti) {
+      // Multi-select: return array of values
+      // selectedOption bisa null, undefined, atau array
+      if (
+        !selectedOption ||
+        !Array.isArray(selectedOption) ||
+        selectedOption.length === 0
+      ) {
+        onChange([]);
+      } else {
+        onChange(selectedOption.map((opt) => opt.value));
+      }
+    } else {
+      // Single-select: return single value
+      onChange(selectedOption ? selectedOption.value : null);
+    }
   };
 
   return (
@@ -68,6 +90,7 @@ export default function Select({
         placeholder={placeholder}
         styles={customStyles}
         className={cn("w-full", className)}
+        isMulti={isMulti}
         {...props}
       />
     </div>

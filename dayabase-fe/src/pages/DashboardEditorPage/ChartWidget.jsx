@@ -51,10 +51,14 @@ export default function ChartWidget({ questionId, onRemove, isEmbedMode }) {
   const transformedData = useMemo(() => {
     if (!question || !question.chart_config || results.length === 0)
       return null;
-    const { category, value } = question.chart_config;
-    if (!category || !value) return null;
 
+    const { category, value, values } = question.chart_config;
+
+    if (!category) return null;
+
+    // Untuk Pie Chart - tetap single value
     if (question.chart_type === "pie") {
+      if (!value) return null;
       return {
         seriesData: results.map((row) => ({
           name: row[category],
@@ -62,9 +66,25 @@ export default function ChartWidget({ questionId, onRemove, isEmbedMode }) {
         })),
       };
     }
+
+    // Untuk Bar dan Line Chart - support multi values
+    // Backward compatibility: jika masih pakai 'value' (data lama), convert ke array
+    const valueColumns = values || (value ? [value] : null);
+
+    if (
+      !valueColumns ||
+      !Array.isArray(valueColumns) ||
+      valueColumns.length === 0
+    ) {
+      return null;
+    }
+
     return {
       xAxisData: results.map((row) => row[category]),
-      seriesData: results.map((row) => row[value]),
+      seriesData: valueColumns.map((valueColumn) => ({
+        name: valueColumn,
+        data: results.map((row) => row[valueColumn]),
+      })),
     };
   }, [results, question]);
 

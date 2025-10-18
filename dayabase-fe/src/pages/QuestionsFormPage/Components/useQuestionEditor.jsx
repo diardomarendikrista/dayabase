@@ -55,12 +55,21 @@ export function useQuestionEditor() {
         const dataColumns = Object.keys(data[0]);
         setResults(data);
         setColumns(dataColumns);
+
         if (!isInitialLoad) {
-          setChartConfig({
-            ...chartConfig, // Pertahankan state pivot yang mungkin sudah ada
+          const newConfig = {
+            ...chartConfig,
             category: dataColumns[0] || "",
-            value: dataColumns[1] || "",
-          });
+          };
+
+          // Set value/values berdasarkan chartType
+          if (chartType === "pie") {
+            newConfig.value = dataColumns[1] || "";
+          } else if (chartType === "bar" || chartType === "line") {
+            newConfig.values = [dataColumns[1] || ""];
+          }
+
+          setChartConfig(newConfig);
         }
       } else {
         setResults([]);
@@ -73,6 +82,45 @@ export function useQuestionEditor() {
       setIsLoading(false);
     }
   };
+
+  useEffect(() => {
+    // Hanya jalankan saat chartType berubah DAN ada results
+    if (results.length === 0 || !columns.length) return;
+
+    setChartConfig((prev) => {
+      const newConfig = { ...prev };
+
+      // Pastikan ada category
+      if (!newConfig.category && columns.length > 0) {
+        newConfig.category = columns[0];
+      }
+
+      // Set value/values sesuai chartType
+      if (chartType === "pie") {
+        // Pie butuh single value
+        if (prev.values && !prev.value) {
+          newConfig.value = Array.isArray(prev.values)
+            ? prev.values[0]
+            : columns[1] || "";
+          delete newConfig.values;
+        } else if (!prev.value && columns.length > 1) {
+          newConfig.value = columns[1];
+          delete newConfig.values;
+        }
+      } else if (chartType === "bar" || chartType === "line") {
+        // Bar/Line butuh array values
+        if (prev.value && !prev.values) {
+          newConfig.values = [prev.value];
+          delete newConfig.value;
+        } else if (!prev.values && columns.length > 1) {
+          newConfig.values = [columns[1]];
+          delete newConfig.value;
+        }
+      }
+
+      return newConfig;
+    });
+  }, [chartType, columns]); // Tambah columns di dependency
 
   const handleSaveQuestion = async () => {
     const newErrors = {};
@@ -107,7 +155,7 @@ export function useQuestionEditor() {
       } else {
         await API.post("/api/questions", payload);
       }
-      navigate(`/collections/${dataQuestion.collection_id}`);
+      navigate(`/collections/${dataQuestion.collection_id || collectionId}`);
       dispatch(
         addToast({
           message: id
@@ -125,19 +173,50 @@ export function useQuestionEditor() {
   };
 
   const transformedData = useMemo(() => {
-    if (!chartConfig?.category || !chartConfig?.value || results.length === 0)
+    // console.log("Computing transformedData", {
+    //   chartType,
+    //   chartConfig,
+    //   resultsLength: results.length,
+    // });
+
+    if (!chartConfig?.category || results.length === 0) {
+      // console.log("Return null: no category or no results");
       return null;
-    if (chartType === "pie")
+    }
+
+    // Untuk Pie Chart
+    if (chartType === "pie") {
+      if (!chartConfig?.value) {
+        console.log("Return null: pie but no value");
+        return null;
+      }
       return {
         seriesData: results.map((row) => ({
           name: row[chartConfig.category],
           value: row[chartConfig.value],
         })),
       };
-    return {
+    }
+
+    // Untuk Bar dan Line Chart
+    const values = chartConfig?.values;
+    console.log("Bar/Line values:", values);
+
+    if (!values || !Array.isArray(values) || values.length === 0) {
+      console.log("Return null: bar/line but invalid values");
+      return null;
+    }
+
+    const transformed = {
       xAxisData: results.map((row) => row[chartConfig.category]),
-      seriesData: results.map((row) => row[chartConfig.value]),
+      seriesData: values.map((valueColumn) => ({
+        name: valueColumn,
+        data: results.map((row) => row[valueColumn]),
+      })),
     };
+    // console.log(transformed);
+
+    return transformed;
   }, [results, chartConfig, chartType]);
 
   useEffect(() => {

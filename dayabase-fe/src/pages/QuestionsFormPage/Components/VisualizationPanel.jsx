@@ -35,10 +35,29 @@ export default function VisualizationPanel({
   const handleCategoryChange = (value) => {
     onChartConfigChange((prev) => ({ ...prev, category: value }));
   };
-
   const handleValueChange = (value) => {
-    onChartConfigChange((prev) => ({ ...prev, value: value }));
+    console.log("handleValueChange called with:", value);
+
+    if (chartType === "pie") {
+      // Untuk pie chart, value adalah string single
+      onChartConfigChange((prev) => ({
+        ...prev,
+        value: value,
+        values: undefined, // Hapus values jika ada
+      }));
+    } else {
+      // Untuk bar dan line, value adalah array
+      onChartConfigChange((prev) => ({
+        ...prev,
+        values: value,
+        value: undefined, // Hapus value jika ada
+      }));
+    }
   };
+
+  // Tentukan apakah menggunakan single atau multi select
+  const isMultiValue = chartType === "bar" || chartType === "line";
+  const currentValue = isMultiValue ? chartConfig.values : chartConfig.value;
 
   return (
     <div className="mt-8 bg-white p-6 rounded-lg shadow-md border">
@@ -90,7 +109,11 @@ export default function VisualizationPanel({
       )}
       {chartType !== "table" && chartType !== "pivot" && (
         <div className="min-h-96">
-          <div className="flex space-x-4 mb-4">
+          <form
+            autoComplete="off"
+            onSubmit={(e) => e.preventDefault()}
+            className="flex gap-2 mb-4"
+          >
             <div className="min-w-[170px]">
               <label className="text-sm font-medium">Category / Label</label>
               <Select
@@ -100,21 +123,24 @@ export default function VisualizationPanel({
               />
             </div>
             <div className="min-w-[170px]">
-              <label className="text-sm font-medium">Value</label>
+              <label className="text-sm font-medium">
+                {isMultiValue ? "Values (Multiple)" : "Value"}
+              </label>
               <Select
-                value={chartConfig.value}
+                value={currentValue}
                 onChange={handleValueChange}
                 options={columnOptions}
+                isMulti={isMultiValue}
               />
             </div>
-          </div>
+          </form>
 
           {transformedData && chartType === "bar" && (
             <BarChart
               xAxisData={transformedData.xAxisData}
               seriesData={transformedData.seriesData}
               xAxisName={chartConfig.category}
-              yAxisName={chartConfig.value}
+              yAxisName="Values"
             />
           )}
           {transformedData && chartType === "line" && (

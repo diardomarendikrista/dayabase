@@ -160,14 +160,6 @@ export default function Sidebar() {
               <span>Users</span>
             </NavLink>
           )}
-          <NavLink
-            to="/mvp"
-            className={getLinkClass}
-            end
-          >
-            <RiDashboardLine className="h-5 w-5" />
-            <span>Demo MVP</span>
-          </NavLink>
         </div>
       </aside>
 

@@ -99,52 +99,6 @@ class QueryController {
       }
     }
   }
-
-  // ini nanti dihapus, pake yang atas (Ini untuk test menu MVP aja)
-  static async testRunQuery(req, res) {
-    const { sql, dbConfig } = req.body;
-
-    if (!sql || !dbConfig) {
-      return res
-        .status(400)
-        .json({ message: "sql and dbConfig are required!" });
-    }
-
-    let targetConnection; // Koneksi ke database target
-    try {
-      targetConnection = await connectToDatabase(dbConfig);
-      let rows;
-
-      switch (dbConfig.dbType) {
-        case "postgres":
-          const pgResult = await targetConnection.query(sql);
-          rows = pgResult.rows;
-          break;
-        case "mysql":
-          const [mysqlRows] = await targetConnection.execute(sql);
-          rows = mysqlRows;
-          break;
-        default:
-          throw new Error(
-            `Execution logic for ${dbConfig.dbType} not implemented.`
-          );
-      }
-
-      res.status(200).json(rows);
-    } catch (error) {
-      console.error("Error executing query:", error);
-      res
-        .status(500)
-        .json({ message: "Failed to execute query", error: error.message });
-    } finally {
-      // Menutup koneksi ke database target
-      if (targetConnection && targetConnection.end) {
-        await targetConnection.end();
-      } else if (targetConnection && targetConnection.close) {
-        await targetConnection.close();
-      }
-    }
-  }
 }
 
 module.exports = QueryController;

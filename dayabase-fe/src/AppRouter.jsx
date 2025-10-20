@@ -9,7 +9,6 @@ import QuestionEditorPage from "./pages/QuestionsFormPage";
 import ConnectionsPage from "./pages/ConnectionsPage";
 import ConnectionFormPage from "./pages/ConnectionsPage/ConnectionsForm";
 import UserManagementPage from "./pages/UserManagementPage";
-import MVP from "./pages/MVP";
 import HomePage from "pages/Home";
 import CollectionPage from "pages/CollectionsPage";
 
@@ -85,10 +84,6 @@ export default function AppRouter({ needsSetup }) {
               <Route
                 path="/settings/users"
                 element={<UserManagementPage />}
-              />
-              <Route
-                path="/mvp"
-                element={<MVP />}
               />
             </Route>
           </Route>

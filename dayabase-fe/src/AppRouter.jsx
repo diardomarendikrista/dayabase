@@ -11,6 +11,7 @@ import ConnectionFormPage from "./pages/ConnectionsPage/ConnectionsForm";
 import UserManagementPage from "./pages/UserManagementPage";
 import HomePage from "pages/Home";
 import CollectionPage from "pages/CollectionsPage";
+import Error404Page from "components/molecules/Error404Page";
 
 // AppRouter sekarang menerima `needsSetup` sebagai prop
 export default function AppRouter({ needsSetup }) {
@@ -44,6 +45,10 @@ export default function AppRouter({ needsSetup }) {
           <Route
             path="/embed/dashboards/:token"
             element={<DashboardViewPage />}
+          />
+          <Route
+            path="*"
+            element={<Error404Page />}
           />
 
           {/* Protected Routes */}

@@ -65,25 +65,25 @@ export default function VisualizationPanel({
         <nav className="-mb-px flex space-x-8">
           <button
             onClick={() => onChartTypeChange("pivot")}
-            className={`whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm ${chartType === "pivot" ? "border-indigo-500 text-indigo-600" : "border-transparent text-gray-500 hover:text-gray-700"}`}
+            className={`whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm ${chartType === "pivot" ? "border-primary-light text-primary" : "border-transparent text-gray-500 hover:text-gray-700"}`}
           >
             Pivot Table
           </button>
           <button
             onClick={() => onChartTypeChange("bar")}
-            className={`whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm ${chartType === "bar" ? "border-indigo-500 text-indigo-600" : "border-transparent text-gray-500 hover:text-gray-700"}`}
+            className={`whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm ${chartType === "bar" ? "border-primary-light text-primary" : "border-transparent text-gray-500 hover:text-gray-700"}`}
           >
             Bar
           </button>
           <button
             onClick={() => onChartTypeChange("line")}
-            className={`whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm ${chartType === "line" ? "border-indigo-500 text-indigo-600" : "border-transparent text-gray-500 hover:text-gray-700"}`}
+            className={`whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm ${chartType === "line" ? "border-primary-light text-primary" : "border-transparent text-gray-500 hover:text-gray-700"}`}
           >
             Line
           </button>
           <button
             onClick={() => onChartTypeChange("pie")}
-            className={`whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm ${chartType === "pie" ? "border-indigo-500 text-indigo-600" : "border-transparent text-gray-500 hover:text-gray-700"}`}
+            className={`whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm ${chartType === "pie" ? "border-primary-light text-primary" : "border-transparent text-gray-500 hover:text-gray-700"}`}
           >
             Pie
           </button>

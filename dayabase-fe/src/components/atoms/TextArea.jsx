@@ -7,7 +7,7 @@ const Textarea = forwardRef(({ className, error, label, ...props }, ref) => {
   const id = useId();
   const baseClasses = cn(
     "block w-full rounded-md shadow-sm min-h-[38px] px-3 py-2 border border-gray-300",
-    "focus:outline-none focus:ring-1 focus:ring-indigo-500 placeholder:text-gray-400",
+    "focus:outline-none focus:ring-1 focus:ring-primary-light placeholder:text-gray-400",
     "disabled:cursor-not-allowed disabled:bg-gray-50 disabled:text-gray-500",
     "transition duration-150 ease-in-out"
   );

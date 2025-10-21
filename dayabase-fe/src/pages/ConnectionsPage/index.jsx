@@ -69,7 +69,7 @@ export default function ConnectionsListPage() {
         <h1 className="text-3xl font-bold">Database Connections</h1>
         <Link
           to="/settings/connections/new"
-          className="px-5 py-2 bg-indigo-600 text-white font-semibold rounded-md hover:bg-indigo-700"
+          className="px-5 py-2 bg-primary text-white font-semibold rounded-md hover:bg-primary-dark"
         >
           Add Connection
         </Link>
@@ -84,7 +84,7 @@ export default function ConnectionsListPage() {
             >
               <Link
                 to={`/settings/connections/${conn.id}/edit`}
-                className="hover:text-indigo-600 font-semibold"
+                className="hover:text-primary font-semibold"
               >
                 <p className="font-bold text-lg">
                   {conn.connection_name}{" "}

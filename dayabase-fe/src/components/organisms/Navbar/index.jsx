@@ -9,7 +9,7 @@ export default function Navbar() {
         to="/"
         className="flex items-center gap-2 text-2xl font-bold"
       >
-        <div className="text-indigo-600">
+        <div className="text-primary">
           <GiThunderball />
         </div>
         <h1 className="text-gray-900">DayaBase</h1>

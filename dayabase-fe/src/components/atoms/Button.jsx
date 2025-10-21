@@ -7,7 +7,7 @@ const Button = forwardRef(({ className, variant, size, ...props }, ref) => {
 
   const buttonVariants = {
     variant: {
-      primary: "bg-indigo-600 text-white hover:bg-indigo-700",
+      primary: "bg-primary text-white hover:bg-primary-dark",
       secondary: "bg-gray-600 text-white hover:bg-gray-700",
       success: "bg-green-600 text-white hover:bg-green-700",
       info: "bg-blue-500 text-white hover:bg-blue-600",

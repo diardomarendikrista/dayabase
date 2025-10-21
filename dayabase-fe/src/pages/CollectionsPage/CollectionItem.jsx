@@ -55,7 +55,7 @@ export default function CollectionItem({
       >
         {getItemIcon(item)}
         <div className="flex-1">
-          <p className="font-bold text-lg text-gray-800 group-hover:text-indigo-600 transition-colors">
+          <p className="font-bold text-lg text-gray-800 group-hover:text-primary transition-colors">
             {item.name}
           </p>
           <div className="flex items-center gap-2 text-sm text-gray-500">

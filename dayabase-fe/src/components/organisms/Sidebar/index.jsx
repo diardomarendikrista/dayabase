@@ -22,8 +22,8 @@ import { selectIsAdmin } from "store/slices/authSlice";
 const getLinkClass = ({ isActive }) =>
   `flex items-center gap-3 w-full px-4 py-2 rounded-md text-sm font-medium transition-colors ${
     isActive
-      ? "bg-indigo-600 text-white"
-      : "text-gray-700 hover:bg-indigo-50 hover:text-indigo-600"
+      ? "bg-primary text-white"
+      : "text-gray-700 hover:bg-indigo-50 hover:text-primary"
   }`;
 
 export default function Sidebar() {

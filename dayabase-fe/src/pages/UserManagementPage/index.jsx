@@ -94,7 +94,7 @@ export default function UserManagementPage() {
                       setShowFormModal(true);
                     }}
                     variant="ghost"
-                    className="text-indigo-600 font-semibold p-0 h-0"
+                    className="text-primary font-semibold p-0 h-0"
                   >
                     Edit
                   </Button>

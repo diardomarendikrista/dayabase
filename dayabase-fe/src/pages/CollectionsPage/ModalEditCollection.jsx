@@ -89,7 +89,7 @@ export default function ModalEditCollection({
             value={description}
             onChange={(e) => setDescription(e.target.value)}
             rows={3}
-            className="block w-full rounded-md shadow-sm border-gray-300 focus:ring-indigo-500 focus:border-indigo-500"
+            className="block w-full rounded-md shadow-sm border-gray-300 focus:ring-primary-light focus:border-primary-light"
             disabled={isSaving}
           />
         </div>

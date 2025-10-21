@@ -5,6 +5,7 @@ import { useDispatch, useSelector } from "react-redux";
 import { useEffect, useState } from "react";
 import { verifyToken } from "store/slices/authSlice";
 import { API } from "axios/axios";
+import LoadingSpinner from "components/atoms/LoadingSpinner";
 
 function App() {
   const { token } = useSelector((state) => state.auth);
@@ -37,8 +38,8 @@ function App() {
 
   if (isAppLoading) {
     return (
-      <div className="flex justify-center items-center min-h-screen">
-        Loading application...
+      <div className="flex flex-col justify-center items-center h-full min-h-[100vh] bg-white rounded-xl shadow-lg p-6">
+        <LoadingSpinner />
       </div>
     );
   }

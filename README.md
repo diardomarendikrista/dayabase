@@ -1,6 +1,6 @@
 # DayaBase
 
-DayaBase is a modern, lightweight, and self-hostable Business Intelligence (BI) tool designed to help you connect to your databases, run raw SQL queries, and visualize the results instantly. It's built with a focus on simplicity and performance, inspired by tools like Metabase.
+DayaBase is a self-hostable Business Intelligence (BI) tool designed to help you connect to your databases, run raw SQL queries, and visualize the results instantly. It's built with a focus on simplicity and performance, inspired by tools like Metabase.
 
 This project is a monorepo containing both the backend API and the frontend client.
 
@@ -144,7 +144,7 @@ Before starting the server, you need to set up the application's database.
         id SERIAL PRIMARY KEY,
         name VARCHAR(255) NOT NULL,
         description TEXT,
-        parent_collection_id INT REFERENCES collections(id) ON DELETE SET NULL,
+        parent_collection_id INT REFERENCES collections(id) ON DELETE CASCADE,
         created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
         updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
         user_id INT NOT NULL REFERENCES users(id) ON DELETE CASCADE
@@ -163,7 +163,7 @@ Before starting the server, you need to set up the application's database.
         public_sharing_enabled BOOLEAN DEFAULT FALSE,
         public_token UUID UNIQUE DEFAULT gen_random_uuid(),
         user_id INT REFERENCES users(id) ON DELETE CASCADE,
-        collection_id INT NOT NULL REFERENCES collections(id) ON DELETE CASCADE,
+        collection_id INT REFERENCES collections(id) ON DELETE CASCADE,
         updated_by_user_id INT REFERENCES users(id) ON DELETE SET NULL
     );
 
@@ -177,7 +177,7 @@ Before starting the server, you need to set up the application's database.
         public_sharing_enabled BOOLEAN DEFAULT FALSE,
         public_token UUID UNIQUE DEFAULT gen_random_uuid(),
         user_id INT REFERENCES users(id) ON DELETE CASCADE,
-        collection_id INT NOT NULL REFERENCES collections(id) ON DELETE CASCADE,
+        collection_id INT REFERENCES collections(id) ON DELETE CASCADE,
         updated_by_user_id INT REFERENCES users(id) ON DELETE SET NULL
     );
 
@@ -186,7 +186,18 @@ Before starting the server, you need to set up the application's database.
         id SERIAL PRIMARY KEY,
         dashboard_id INT NOT NULL REFERENCES dashboards(id) ON DELETE CASCADE,
         question_id INT NOT NULL REFERENCES questions(id) ON DELETE CASCADE,
-        layout_config JSONB NOT NULL
+        layout_config JSONB NOT NULL,
+        filter_mappings JSONB -- Stores mappings like {"filter_id": "column_name"}
+    );
+
+    -- Table to define the filters available on a dashboard
+    CREATE TABLE dashboard_filters (
+        id SERIAL PRIMARY KEY,
+        dashboard_id INT NOT NULL REFERENCES dashboards(id) ON DELETE CASCADE,
+        name VARCHAR(255) NOT NULL, -- The variable name, e.g., "kategori_produk"
+        display_name VARCHAR(255) NOT NULL, -- The label users see, e.g., "Product Category"
+        type VARCHAR(50) NOT NULL, -- e.g., 'text', 'date', 'number'
+        created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
     );
     ```
 

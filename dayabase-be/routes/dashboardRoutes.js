@@ -21,4 +21,20 @@ router.delete(
 // Embed & Share
 router.put("/:id/sharing", DashboardController.updateSharingStatus);
 
+//// FILTER \\\\
+router.post("/:id/filters", DashboardController.addFilterToDashboard);
+router.put(
+  "/:id/filters/:filterId",
+  DashboardController.updateFilterOnDashboard
+);
+router.delete(
+  "/:id/filters/:filterId",
+  DashboardController.deleteFilterFromDashboard
+);
+// connect filter to chart
+router.put(
+  "/:id/questions/:instanceId/mappings",
+  DashboardController.updateFilterMappings
+);
+
 module.exports = router;

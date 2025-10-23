@@ -1,10 +1,11 @@
 const { decrypt } = require("../utils/crypto"); // Impor fungsi dekripsi
 const { connectToDatabase } = require("../config/databaseConnector");
 const appDbPool = require("../config/db"); // Koneksi ke 'dayabase_app'
+const { parseSqlWithParameters } = require("../utils/sqlParser");
 
 class QueryController {
   static async runQuery(req, res) {
-    const { sql, connectionId, row_limit } = req.body;
+    const { sql, connectionId, row_limit, parameters } = req.body;
 
     if (!sql || !connectionId) {
       return res
@@ -40,8 +41,9 @@ class QueryController {
       execSql = `${sql.trim()} LIMIT ${limit}`;
 
     // ----------------- fetch connection details -----------------
-    let targetConnection; // Koneksi ke database target
+    let targetConnection; // Definisikan di scope luar agar bisa diakses di 'finally'
     try {
+      //  Ambil detail koneksi dari DB Aplikasi
       const connDetailsResult = await appDbPool.query(
         "SELECT * FROM database_connections WHERE id = $1",
         [connectionId]
@@ -54,9 +56,28 @@ class QueryController {
       }
 
       const connDetails = connDetailsResult.rows[0];
+      const dbType = connDetails.db_type;
 
+      // Parse SQL menggunakan parameters
+      // Ini akan melempar error jika parameter yang diperlukan hilang
+      const { finalSql, queryValues } = parseSqlWithParameters(
+        sql,
+        parameters,
+        dbType
+      );
+
+      // Enforce LIMIT (pada SQL yang sudah diproses)
+      const limit =
+        Number.isInteger(row_limit) && row_limit > 0 ? row_limit : 1000;
+      let execSql = finalSql;
+
+      // Cek LIMIT lagi pada SQL *mentah* (karena 'finalSql' sudah diganti $1, $2)
+      if (!/limit\s+\d+/i.test(sqlWithoutComments)) {
+        execSql = `${finalSql.trim()} LIMIT ${limit}`;
+      }
+
+      // Dekripsi password dan siapkan config
       const decryptedPassword = decrypt(connDetails.password_encrypted);
-
       const dbConfig = {
         dbType: connDetails.db_type,
         host: connDetails.host,
@@ -65,17 +86,21 @@ class QueryController {
         database: connDetails.database_name,
         password: decryptedPassword,
       };
-
       targetConnection = await connectToDatabase(dbConfig);
       let rows;
 
       switch (dbConfig.dbType) {
         case "postgres":
-          const pgResult = await targetConnection.query(execSql);
+          // Kirim SQL yang diproses DAN array 'queryValues'
+          const pgResult = await targetConnection.query(execSql, queryValues);
           rows = pgResult.rows;
           break;
         case "mysql":
-          const [mysqlRows] = await targetConnection.execute(execSql);
+          // Kirim SQL yang diproses DAN array 'queryValues'
+          const [mysqlRows] = await targetConnection.execute(
+            execSql,
+            queryValues
+          );
           rows = mysqlRows;
           break;
         default:
@@ -91,11 +116,11 @@ class QueryController {
         .status(500)
         .json({ message: "Failed to execute query", error: error.message });
     } finally {
-      // Tutup koneksi ke database target
+      // 6. Tutup koneksi ke database target
       if (targetConnection && targetConnection.end) {
-        await targetConnection.end();
+        await targetConnection.end(); // Untuk node-postgres
       } else if (targetConnection && targetConnection.close) {
-        await targetConnection.close();
+        await targetConnection.close(); // Untuk mysql2
       }
     }
   }

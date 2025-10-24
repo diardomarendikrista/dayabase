@@ -149,7 +149,9 @@ export default function FilterPanel({
   return (
     <div className="bg-white p-4 rounded-lg shadow-md border border-gray-200 mb-4">
       <div className="flex justify-between items-center mb-3">
-        <h3 className="font-bold text-lg">Dashboard Filters</h3>
+        <h3 className="font-bold text-lg">
+          Dashboard Filters (masih in progress)
+        </h3>
         {!isEmbedMode && (
           <Button
             size="sm"

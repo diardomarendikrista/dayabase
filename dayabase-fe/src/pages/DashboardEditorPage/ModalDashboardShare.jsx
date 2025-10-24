@@ -12,6 +12,8 @@ export default function DashboardShareModal({
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
+    if (!showModal) return;
+
     const fetchDashboardDetails = async () => {
       try {
         // Endpoint GET /api/dashboards/:id must return public_token and public_sharing_enabled
@@ -24,7 +26,7 @@ export default function DashboardShareModal({
       }
     };
     fetchDashboardDetails();
-  }, [dashboardId]);
+  }, [dashboardId, showModal]);
 
   const handleToggleSharing = async (enabled) => {
     try {

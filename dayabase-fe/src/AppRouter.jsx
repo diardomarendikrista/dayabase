@@ -11,7 +11,7 @@ import ConnectionFormPage from "./pages/ConnectionsPage/ConnectionsForm";
 import UserManagementPage from "./pages/UserManagementPage";
 import HomePage from "pages/Home";
 import CollectionPage from "pages/CollectionsPage";
-import Error404Page from "pages/Error404Page";
+import Error404Page from "components/organisms/Errors/Error404Page";
 
 // AppRouter sekarang menerima `needsSetup` sebagai prop
 export default function AppRouter({ needsSetup }) {

@@ -64,25 +64,36 @@ class DashboardController {
   static async getDashboardById(req, res) {
     const { id } = req.params;
     try {
+      // Query untuk dashboard dan questions
       const queryText = `
-        SELECT 
-          d.id as dashboard_id, d.name, d.description, d.public_sharing_enabled, d.public_token,
-          d.collection_id,
-          c.name as collection_name,
-          dq.id as instance_id,
-          dq.question_id, q.name as question_name, q.chart_type,
-          dq.layout_config
-        FROM dashboards d
-        LEFT JOIN dashboard_questions dq ON d.id = dq.dashboard_id
-        LEFT JOIN questions q ON dq.question_id = q.id
-        LEFT JOIN collections c ON d.collection_id = c.id
-        WHERE d.id = $1;
-      `;
+      SELECT
+        d.id as dashboard_id, d.name, d.description, d.public_sharing_enabled, d.public_token,
+        d.collection_id,
+        c.name as collection_name,
+        dq.id as instance_id,
+        dq.question_id, q.name as question_name, q.chart_type,
+        dq.layout_config,
+        dq.filter_mappings
+      FROM dashboards d
+      LEFT JOIN dashboard_questions dq ON d.id = dq.dashboard_id
+      LEFT JOIN questions q ON dq.question_id = q.id
+      LEFT JOIN collections c ON d.collection_id = c.id
+      WHERE d.id = $1;
+    `;
       const result = await pool.query(queryText, [id]);
 
       if (result.rows.length === 0) {
         return res.status(404).json({ message: "Dashboard tidak ditemukan" });
       }
+
+      // Query untuk filters
+      const filtersQuery = `
+      SELECT id, name, display_name, type
+      FROM dashboard_filters
+      WHERE dashboard_id = $1
+      ORDER BY id ASC;
+    `;
+      const filtersResult = await pool.query(filtersQuery, [id]);
 
       const dashboardData = {
         id: result.rows[0].dashboard_id,
@@ -92,6 +103,7 @@ class DashboardController {
         collection_name: result.rows[0].collection_name,
         public_sharing_enabled: result.rows[0].public_sharing_enabled,
         public_token: result.rows[0].public_token,
+        filters: filtersResult.rows,
         questions: result.rows[0].question_id
           ? result.rows.map((row) => ({
               instance_id: row.instance_id,
@@ -99,6 +111,7 @@ class DashboardController {
               name: row.question_name,
               chart_type: row.chart_type,
               layout: row.layout_config,
+              filter_mappings: row.filter_mappings || {},
             }))
           : [],
       };
@@ -111,7 +124,6 @@ class DashboardController {
         .json({ message: "Gagal mengambil dashboard", error: error.message });
     }
   }
-
   /**
    * @description Memperbarui nama/deskripsi dashboard
    * @route PUT /api/dashboards/:id

@@ -11,7 +11,12 @@ import DonutChart from "components/organisms/charts/DonutChart";
 import { cn } from "lib/utils";
 import PivotTable from "components/organisms/charts/PivotTable";
 
-export default function ChartWidget({ questionId, onRemove, isEmbedMode }) {
+export default function ChartWidget({
+  questionId,
+  onRemove,
+  isEmbedMode,
+  filterParameters = {},
+}) {
   const [question, setQuestion] = useState(null);
   const [results, setResults] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -32,6 +37,7 @@ export default function ChartWidget({ questionId, onRemove, isEmbedMode }) {
         const queryResponse = await API.post("/api/query/run", {
           sql: qDetails.sql_query,
           connectionId: qDetails.connection_id,
+          parameters: filterParameters,
         });
 
         if (queryResponse.data && queryResponse.data.length > 0) {
@@ -46,7 +52,7 @@ export default function ChartWidget({ questionId, onRemove, isEmbedMode }) {
       }
     };
     loadAndRunQuestion();
-  }, [questionId]);
+  }, [questionId, filterParameters]);
 
   const transformedData = useMemo(() => {
     if (!question || !question.chart_config || results.length === 0)

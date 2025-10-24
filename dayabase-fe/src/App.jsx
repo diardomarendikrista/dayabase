@@ -6,31 +6,36 @@ import { useEffect, useState } from "react";
 import { verifyToken } from "store/slices/authSlice";
 import { API } from "axios/axios";
 import LoadingSpinner from "components/atoms/LoadingSpinner";
+import Error500Page from "components/organisms/Errors/Error500Page";
 
 function App() {
   const { token } = useSelector((state) => state.auth);
   const dispatch = useDispatch();
 
   const [isAppLoading, setIsAppLoading] = useState(true);
+  const [isAppError, setIsAppError] = useState(false);
   const [needsSetup, setNeedsSetup] = useState(false);
 
   useEffect(() => {
     const initializeApp = async () => {
-      // credential check
-      if (token) {
-        await dispatch(verifyToken());
-        setNeedsSetup(false);
-      } else {
-        // if no credentials, check if need setup or not
-        try {
+      try {
+        // credential check
+        if (token) {
+          await dispatch(verifyToken());
+
+          setNeedsSetup(false); // Token valid berarti setup sudah selesai
+        } else {
+          // if no credentials, check if need setup or not
           const response = await API.get("/api/auth/setup-status");
+
           setNeedsSetup(response.data.needsSetup);
-        } catch (error) {
-          console.error("Failed to check setup status:", error);
-          setNeedsSetup(false);
         }
+      } catch (error) {
+        console.error("Failed to initialize app:", error);
+        setIsAppError(true);
+      } finally {
+        setIsAppLoading(false);
       }
-      setIsAppLoading(false);
     };
 
     initializeApp();
@@ -42,6 +47,10 @@ function App() {
         <LoadingSpinner />
       </div>
     );
+  }
+
+  if (isAppError) {
+    return <Error500Page />;
   }
 
   return (

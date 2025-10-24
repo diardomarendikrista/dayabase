@@ -1,11 +1,9 @@
-// pages/DashboardEditorPage/index.jsx - UPDATE
 import { useState, useEffect, useCallback } from "react";
 import { useLocation, useParams } from "react-router-dom";
 import { useDispatch } from "react-redux";
 import { API } from "axios/axios";
 import { Responsive, WidthProvider } from "react-grid-layout";
 import ChartWidget from "./ChartWidget";
-import FilterPanel from "./FilterPanel";
 import ModalDashboardShare from "./ModalDashboardShare";
 import ModalAddQuestion from "./ModalAddQuestion";
 import { MdOutlineShare, MdRedo, MdSave, MdUndo } from "react-icons/md";
@@ -27,10 +25,6 @@ export default function DashboardViewPage() {
   const [dashboardName, setDashboardName] = useState("");
   const [dataDashboard, setDataDashboard] = useState("");
   const [isLoading, setIsLoading] = useState(true);
-
-  // Filter state
-  const [filters, setFilters] = useState([]);
-  const [filterValues, setFilterValues] = useState({});
 
   const [history, setHistory] = useState([]);
   const [currentIndex, setCurrentIndex] = useState(-1);
@@ -59,9 +53,10 @@ export default function DashboardViewPage() {
       const response = await API.get(apiUrl);
       const data = response.data;
 
+      console.log(data, "data");
+
       setDashboardName(data.name);
       setDataDashboard(data);
-      setFilters(data.filters || []); // Set filters dari backend
 
       const initialLayout = data.questions.map((q) => ({
         ...q.layout,
@@ -302,16 +297,6 @@ export default function DashboardViewPage() {
         </div>
       )}
 
-      {/* FILTER PANEL */}
-      <FilterPanel
-        dashboardId={id}
-        filters={filters}
-        onFiltersChange={setFilters}
-        filterValues={filterValues}
-        onFilterValuesChange={setFilterValues}
-        isEmbedMode={isEmbedMode}
-      />
-
       <ResponsiveGridLayout
         className="layout"
         layouts={{ lg: currentState.layout }}
@@ -327,7 +312,6 @@ export default function DashboardViewPage() {
           <div key={q?.instance_id?.toString()}>
             <ChartWidget
               questionId={q.id}
-              filterParameters={filterValues}
               onRemove={() => handleRemoveQuestion(q.instance_id.toString())}
               isEmbedMode={isEmbedMode}
             />

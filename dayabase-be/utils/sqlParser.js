@@ -11,45 +11,58 @@ function parseSqlWithParameters(sql, parameters = {}, dbType) {
   const queryValues = [];
   let pgParamIndex = 1;
 
-  // Handle klausa opsional [[...]]
+  // 1. Menangani klausa opsional [[...]]
+  // Regex ini mencari blok [[...]] dan mengecek variabel di dalamnya.
   const sqlAfterOptional = sql.replace(
     /\[\[([\s\S]*?)\]\]/g,
     (match, innerContent) => {
+      // Temukan semua placeholder {{...}} DI DALAM blok opsional ini
       const placeholders = innerContent.match(/\{\{([\w_]+)\}\}/g) || [];
 
       if (placeholders.length === 0) {
+        // Ini blok statis, misal [[AND 1=1]], pertahankan.
         return innerContent;
       }
 
+      // Cek apakah SEMUA placeholder di dalam blok ini memiliki nilai (bukan null/undefined/'')
       const allValid = placeholders.every((placeholder) => {
-        const varName = placeholder.replace(/[{}]/g, "");
-        return (
-          parameters[varName] !== null && parameters[varName] !== undefined
-        );
+        const varName = placeholder.replace(/[{}]/g, ""); // Dapatkan "kategori" dari "{{kategori}}"
+        const value = parameters[varName];
+        // Consider empty string as invalid too
+        return value !== null && value !== undefined && value !== "";
       });
 
+      // Jika semua valid, kembalikan kontennya (tanpa [[...]]). Jika tidak, hapus seluruh blok.
       return allValid ? innerContent : "";
     }
   );
 
-  // Handle placeholder variabel {{...}}
+  // 2. Menangani placeholder variabel {{...}} yang tersisa dan menggantinya dengan placeholder aman
   const finalSql = sqlAfterOptional.replace(
     /\{\{([\w_]+)\}\}/g,
     (match, varName) => {
       const value = parameters[varName];
 
-      if (value === undefined) {
+      if (value === undefined || value === null || value === "") {
+        // Variabel ini *dibutuhkan* (tidak di dalam blok opsional yang dihapus)
+        // tapi nilainya tidak ada di 'parameters'.
         throw new Error(`Missing required parameter value for: {{${varName}}}`);
       }
 
+      // Tambahkan nilai ke array values
       queryValues.push(value);
 
+      // Kembalikan sintaks placeholder yang benar untuk driver database
       if (dbType === "postgres") {
         return `$${pgParamIndex++}`;
       }
-      return "?";
+      return "?"; // Default ke '?' untuk MySQL dan lainnya
     }
   );
+
+  console.log(sqlAfterOptional, "sqlAfterOptional");
+  console.log(finalSql, "finalSql");
+  console.log(queryValues, "queryValues");
 
   return { finalSql, queryValues };
 }

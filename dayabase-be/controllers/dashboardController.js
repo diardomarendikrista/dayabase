@@ -124,6 +124,7 @@ class DashboardController {
         .json({ message: "Gagal mengambil dashboard", error: error.message });
     }
   }
+
   /**
    * @description Memperbarui nama/deskripsi dashboard
    * @route PUT /api/dashboards/:id
@@ -395,19 +396,20 @@ class DashboardController {
     // TODO: Tambahkan validasi tipe filter jika perlu
 
     try {
-      // Pastikan dashboard milik user
-      const dashboardCheck = await pool.query(
-        "SELECT user_id FROM dashboards WHERE id = $1",
-        [dashboard_id]
-      );
-      if (
-        dashboardCheck.rowCount === 0 ||
-        dashboardCheck.rows[0].user_id !== userId
-      ) {
-        return res
-          .status(403)
-          .json({ message: "Cannot add filter to a dashboard you don't own." });
-      }
+      // Pastikan dashboard milik user (sekarang tidak ada fungsi ini)
+      // const dashboardCheck = await pool.query(
+      //   "SELECT user_id FROM dashboards WHERE id = $1",
+      //   [dashboard_id]
+      // );
+
+      // if (
+      //   dashboardCheck.rowCount === 0 ||
+      //   dashboardCheck.rows[0].user_id !== userId
+      // ) {
+      //   return res
+      //     .status(403)
+      //     .json({ message: "Cannot add filter to a dashboard you don't own." });
+      // }
 
       const newFilter = await pool.query(
         "INSERT INTO dashboard_filters (dashboard_id, name, display_name, type) VALUES ($1, $2, $3, $4) RETURNING *",
@@ -449,19 +451,19 @@ class DashboardController {
     // TODO: Tambahkan validasi tipe filter jika perlu
 
     try {
-      // Pastikan dashboard milik user
-      const dashboardCheck = await pool.query(
-        "SELECT user_id FROM dashboards WHERE id = $1",
-        [dashboard_id]
-      );
-      if (
-        dashboardCheck.rowCount === 0 ||
-        dashboardCheck.rows[0].user_id !== userId
-      ) {
-        return res.status(403).json({
-          message: "Cannot modify filters on a dashboard you don't own.",
-        });
-      }
+      // Pastikan dashboard milik user (sekarang tidak ada fungsi ini)
+      // const dashboardCheck = await pool.query(
+      //   "SELECT user_id FROM dashboards WHERE id = $1",
+      //   [dashboard_id]
+      // );
+      // if (
+      //   dashboardCheck.rowCount === 0 ||
+      //   dashboardCheck.rows[0].user_id !== userId
+      // ) {
+      //   return res.status(403).json({
+      //     message: "Cannot modify filters on a dashboard you don't own.",
+      //   });
+      // }
 
       const updatedFilter = await pool.query(
         "UPDATE dashboard_filters SET name = $1, display_name = $2, type = $3 WHERE id = $4 AND dashboard_id = $5 RETURNING *",
@@ -502,18 +504,18 @@ class DashboardController {
 
     try {
       // Pastikan dashboard milik user
-      const dashboardCheck = await pool.query(
-        "SELECT user_id FROM dashboards WHERE id = $1",
-        [dashboard_id]
-      );
-      if (
-        dashboardCheck.rowCount === 0 ||
-        dashboardCheck.rows[0].user_id !== userId
-      ) {
-        return res.status(403).json({
-          message: "Cannot modify filters on a dashboard you don't own.",
-        });
-      }
+      // const dashboardCheck = await pool.query(
+      //   "SELECT user_id FROM dashboards WHERE id = $1",
+      //   [dashboard_id]
+      // );
+      // if (
+      //   dashboardCheck.rowCount === 0 ||
+      //   dashboardCheck.rows[0].user_id !== userId
+      // ) {
+      //   return res.status(403).json({
+      //     message: "Cannot modify filters on a dashboard you don't own.",
+      //   });
+      // }
 
       // Hapus filter dari tabel dashboard_filters
       const deleteOp = await pool.query(
@@ -570,18 +572,18 @@ class DashboardController {
 
     try {
       // Pastikan dashboard milik user
-      const dashboardCheck = await pool.query(
-        "SELECT user_id FROM dashboards WHERE id = $1",
-        [dashboard_id]
-      );
-      if (
-        dashboardCheck.rowCount === 0 ||
-        dashboardCheck.rows[0].user_id !== userId
-      ) {
-        return res.status(403).json({
-          message: "Cannot modify mappings on a dashboard you don't own.",
-        });
-      }
+      // const dashboardCheck = await pool.query(
+      //   "SELECT user_id FROM dashboards WHERE id = $1",
+      //   [dashboard_id]
+      // );
+      // if (
+      //   dashboardCheck.rowCount === 0 ||
+      //   dashboardCheck.rows[0].user_id !== userId
+      // ) {
+      //   return res.status(403).json({
+      //     message: "Cannot modify mappings on a dashboard you don't own.",
+      //   });
+      // }
 
       const updatedMapping = await pool.query(
         "UPDATE dashboard_questions SET filter_mappings = $1 WHERE id = $2 AND dashboard_id = $3 RETURNING *",

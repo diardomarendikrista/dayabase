@@ -1,9 +1,11 @@
+// pages/DashboardEditorPage/ChartWidget.jsx - COMPLETE VERSION
 import { useState, useEffect, useMemo, useRef } from "react";
 import { API } from "axios/axios";
 import useMeasure from "react-use-measure";
 import { MdDragIndicator } from "react-icons/md";
 import { IoMdClose } from "react-icons/io";
 import { FaFileExcel } from "react-icons/fa";
+import { RiFilterLine } from "react-icons/ri";
 
 import BarChart from "components/organisms/charts/BarChart";
 import LineChart from "components/organisms/charts/LineChart";
@@ -13,9 +15,10 @@ import PivotTable from "components/organisms/charts/PivotTable";
 
 export default function ChartWidget({
   questionId,
-  onRemove,
-  isEmbedMode,
   filterParameters = {},
+  onRemove,
+  onOpenFilterMapping,
+  isEmbedMode,
 }) {
   const [question, setQuestion] = useState(null);
   const [results, setResults] = useState([]);
@@ -25,6 +28,7 @@ export default function ChartWidget({
   const pivotTableRef = useRef(null);
   const [ref, { width, height }] = useMeasure();
 
+  // Re-run query ketika filterParameters berubah
   useEffect(() => {
     const loadAndRunQuestion = async () => {
       setIsLoading(true);
@@ -34,6 +38,13 @@ export default function ChartWidget({
         const qDetails = qResponse.data;
         setQuestion(qDetails);
 
+        // DEBUG: Log SQL dan parameters
+        console.log("=== ChartWidget Debug ===");
+        console.log("Question SQL:", qDetails.sql_query);
+        console.log("Filter Parameters:", filterParameters);
+        console.log("========================");
+
+        // Kirim parameters ke backend
         const queryResponse = await API.post("/api/query/run", {
           sql: qDetails.sql_query,
           connectionId: qDetails.connection_id,
@@ -46,13 +57,14 @@ export default function ChartWidget({
           setResults([]);
         }
       } catch (err) {
-        setError("Failed to load widget data.");
+        setError(err.response?.data?.message || "Failed to load widget data.");
+        console.error("Widget error:", err);
       } finally {
         setIsLoading(false);
       }
     };
     loadAndRunQuestion();
-  }, [questionId, filterParameters]);
+  }, [questionId, filterParameters]); // Dependency: re-run saat filter berubah
 
   const transformedData = useMemo(() => {
     if (!question || !question.chart_config || results.length === 0)
@@ -74,7 +86,6 @@ export default function ChartWidget({
     }
 
     // Untuk Bar dan Line Chart - support multi values
-    // Backward compatibility: jika masih pakai 'value' (data lama), convert ke array
     const valueColumns = values || (value ? [value] : null);
 
     if (
@@ -124,9 +135,8 @@ export default function ChartWidget({
       );
     }
 
-    // Header height ≈ 40px (py-2 + border + text)
     const headerHeight = 40;
-    const padding = 24; // inset-3 = 12px * 2
+    const padding = 24;
 
     const chartProps = {
       ...transformedData,
@@ -183,7 +193,7 @@ export default function ChartWidget({
 
   return (
     <div className="bg-white rounded-lg shadow-md border border-gray-200 h-full w-full flex flex-col relative group overflow-hidden">
-      {/* HEADER - Draggable area - Fixed height */}
+      {/* HEADER - Draggable area */}
       <div
         className={cn(
           "flex items-center justify-between px-3 py-2 flex-shrink-0 widget-drag-handle",
@@ -199,53 +209,75 @@ export default function ChartWidget({
           {question?.name || "Loading..."}
         </h3>
 
-        {/* export pivot table sementara taruh sini, nanti harusnya di titik tiga menu */}
-        {(question?.chart_type === "pivot" ||
-          question?.chart_type === "table") && (
-          <button
-            onClick={(e) => {
-              e.stopPropagation();
-              e.preventDefault();
-              pivotTableRef.current?.exportToExcel();
-            }}
-            onMouseDown={(e) => {
-              e.stopPropagation(); // Prevent drag initiation
-            }}
-            className="p-1 rounded-full text-gray-500 hover:bg-green-100 hover:text-green-700 pointer-events-auto"
-            title="Export to Excel"
-            style={{ pointerEvents: "auto" }}
-          >
-            <FaFileExcel />
-          </button>
-        )}
-
-        {/* Drag & remove icons */}
-        {!isEmbedMode && onRemove && (
-          <div className="flex items-center space-x-2">
-            <div className="text-gray-400 pointer-events-none">
-              <MdDragIndicator />
-            </div>
-
+        {/* Action Buttons Container */}
+        <div className="flex items-center gap-1">
+          {/* Export Excel Button - Hanya untuk Pivot/Table */}
+          {(question?.chart_type === "pivot" ||
+            question?.chart_type === "table") && (
             <button
               onClick={(e) => {
                 e.stopPropagation();
                 e.preventDefault();
-                onRemove();
+                pivotTableRef.current?.exportToExcel();
               }}
               onMouseDown={(e) => {
-                e.stopPropagation(); // Prevent drag initiation
+                e.stopPropagation();
               }}
-              className="p-1 bg-gray-200 rounded-full text-gray-600 hover:bg-red-500 hover:text-white transition-all pointer-events-auto cursor-pointer"
-              title="Remove from Dashboard"
+              className="p-1 rounded-full text-gray-500 hover:bg-green-100 hover:text-green-700 pointer-events-auto transition-colors"
+              title="Export to Excel"
               style={{ pointerEvents: "auto" }}
             >
-              <IoMdClose />
+              <FaFileExcel />
             </button>
-          </div>
-        )}
+          )}
+
+          {/* Filter Mapping Button - Hanya di Edit Mode */}
+          {!isEmbedMode && onOpenFilterMapping && (
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                e.preventDefault();
+                onOpenFilterMapping();
+              }}
+              onMouseDown={(e) => {
+                e.stopPropagation();
+              }}
+              className="p-1 rounded-full text-gray-500 hover:bg-blue-100 hover:text-blue-700 pointer-events-auto transition-colors"
+              title="Configure Filter Mappings"
+              style={{ pointerEvents: "auto" }}
+            >
+              <RiFilterLine />
+            </button>
+          )}
+
+          {/* Drag & Remove Icons - Hanya di Edit Mode */}
+          {!isEmbedMode && onRemove && (
+            <>
+              <div className="text-gray-400 pointer-events-none ml-1">
+                <MdDragIndicator />
+              </div>
+
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  e.preventDefault();
+                  onRemove();
+                }}
+                onMouseDown={(e) => {
+                  e.stopPropagation();
+                }}
+                className="p-1 bg-gray-200 rounded-full text-gray-600 hover:bg-red-500 hover:text-white transition-all pointer-events-auto cursor-pointer"
+                title="Remove from Dashboard"
+                style={{ pointerEvents: "auto" }}
+              >
+                <IoMdClose />
+              </button>
+            </>
+          )}
+        </div>
       </div>
 
-      {/* CONTENT AREA - Clickable for chart interaction */}
+      {/* CONTENT AREA */}
       <div
         ref={ref}
         className="flex-1 min-h-0 w-full relative"
@@ -254,7 +286,6 @@ export default function ChartWidget({
           userSelect: "auto",
         }}
         onMouseDown={(e) => {
-          // Prevent drag initiation when clicking on the chart area
           e.stopPropagation();
         }}
       >

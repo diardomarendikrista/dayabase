@@ -1,4 +1,4 @@
-// pages/DashboardEditorPage/index.jsx - UPDATE
+// pages/DashboardEditorPage/index.jsx
 import { useState, useEffect, useCallback } from "react";
 import { useLocation, useParams } from "react-router-dom";
 import { useDispatch } from "react-redux";
@@ -8,6 +8,7 @@ import ChartWidget from "./ChartWidget";
 import FilterPanel from "./FilterPanel";
 import ModalDashboardShare from "./ModalDashboardShare";
 import ModalAddQuestion from "./ModalAddQuestion";
+import ModalFilterMapping from "./ModalFilterMapping";
 import { MdOutlineShare, MdRedo, MdSave, MdUndo } from "react-icons/md";
 import { RiAddLine } from "react-icons/ri";
 import { addToast } from "store/slices/toastSlice";
@@ -25,7 +26,7 @@ export default function DashboardViewPage() {
   const dashboardIdentifier = id || token;
 
   const [dashboardName, setDashboardName] = useState("");
-  const [dataDashboard, setDataDashboard] = useState("");
+  const [dataDashboard, setDataDashboard] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
 
   // Filter state
@@ -39,6 +40,9 @@ export default function DashboardViewPage() {
   const [isSaving, setIsSaving] = useState(false);
   const [showModalShare, setShowModalShare] = useState(false);
   const [showModalAdd, setShowModalAdd] = useState(false);
+  const [showModalFilterMapping, setShowModalFilterMapping] = useState(false);
+  const [selectedQuestionForMapping, setSelectedQuestionForMapping] =
+    useState(null);
 
   const pushStateToHistory = (newState) => {
     const newHistory = history.slice(0, currentIndex + 1);
@@ -58,6 +62,8 @@ export default function DashboardViewPage() {
     try {
       const response = await API.get(apiUrl);
       const data = response.data;
+
+      console.log("Dashboard data:", data);
 
       setDashboardName(data.name);
       setDataDashboard(data);
@@ -107,6 +113,7 @@ export default function DashboardViewPage() {
     const newQuestionInstance = {
       ...newQuestionDetails,
       instance_id: instanceId,
+      filter_mappings: {}, // Initialize empty mappings
     };
 
     const newState = {
@@ -140,6 +147,38 @@ export default function DashboardViewPage() {
     if (currentIndex < history.length - 1) setCurrentIndex(currentIndex + 1);
   };
 
+  // Handler untuk membuka modal filter mapping
+  const handleOpenFilterMapping = (questionInstance) => {
+    console.log("Opening filter mapping for:", questionInstance);
+    setSelectedQuestionForMapping(questionInstance);
+    setShowModalFilterMapping(true);
+  };
+
+  // Handler setelah filter mappings disimpan
+  const handleFilterMappingsSaved = (newMappings) => {
+    console.log("Filter mappings saved:", newMappings);
+
+    // Update question's filter_mappings dalam state
+    const currentState = history[currentIndex];
+    const updatedQuestions = currentState.questions.map((q) =>
+      q.instance_id === selectedQuestionForMapping.instance_id
+        ? { ...q, filter_mappings: newMappings }
+        : q
+    );
+
+    pushStateToHistory({
+      ...currentState,
+      questions: updatedQuestions,
+    });
+
+    dispatch(
+      addToast({
+        message: "Filter mappings updated in dashboard state",
+        type: "success",
+      })
+    );
+  };
+
   const handleSaveChanges = async () => {
     if (isEmbedMode) return;
     setIsSaving(true);
@@ -163,19 +202,23 @@ export default function DashboardViewPage() {
       const addedInstances = currentState.questions.filter((q) =>
         q.instance_id.toString().startsWith("temp_")
       );
+
       const deletePromises = removedInstances.map((q) =>
         API.delete(`/api/dashboards/${id}/questions/${q.instance_id}`)
       );
       await Promise.all(deletePromises);
+
       const addPromises = addedInstances.map((q) =>
         API.post(`/api/dashboards/${id}/questions`, { question_id: q.id })
       );
       const newItemsFromBackend = await Promise.all(addPromises);
+
       const tempIdToRealIdMap = new Map();
       newItemsFromBackend.forEach((newItem, index) => {
         const oldTempId = addedInstances[index].instance_id;
         tempIdToRealIdMap.set(oldTempId, newItem.data.instance_id.toString());
       });
+
       currentState.questions = currentState.questions.map((q) => {
         const realId = tempIdToRealIdMap.get(q.instance_id);
         return realId ? { ...q, instance_id: realId } : q;
@@ -184,6 +227,7 @@ export default function DashboardViewPage() {
         const realId = tempIdToRealIdMap.get(l.i);
         return realId ? { ...l, i: realId } : l;
       });
+
       await API.put(`/api/dashboards/${id}/layout`, currentState.layout);
 
       dispatch(
@@ -239,8 +283,8 @@ export default function DashboardViewPage() {
         <div className="flex justify-between items-center mb-6">
           <div className="flex px-2">
             <BackButton
-              to={`/collections/${dataDashboard.collection_id}`}
-              title={`Back to ${dataDashboard.collection_name}`}
+              to={`/collections/${dataDashboard?.collection_id}`}
+              title={`Back to ${dataDashboard?.collection_name}`}
             />
           </div>
           <div className="flex-1">
@@ -329,6 +373,7 @@ export default function DashboardViewPage() {
               questionId={q.id}
               filterParameters={filterValues}
               onRemove={() => handleRemoveQuestion(q.instance_id.toString())}
+              onOpenFilterMapping={() => handleOpenFilterMapping(q)}
               isEmbedMode={isEmbedMode}
             />
           </div>
@@ -347,7 +392,15 @@ export default function DashboardViewPage() {
             showModal={showModalAdd}
             setShowModal={setShowModalAdd}
             onQuestionAdded={handleQuestionAdded}
-            currentCollectionId={dataDashboard.collection_id}
+            currentCollectionId={dataDashboard?.collection_id}
+          />
+          <ModalFilterMapping
+            showModal={showModalFilterMapping}
+            setShowModal={setShowModalFilterMapping}
+            dashboardId={id}
+            questionInstance={selectedQuestionForMapping}
+            availableFilters={filters}
+            onMappingsSaved={handleFilterMappingsSaved}
           />
         </>
       )}

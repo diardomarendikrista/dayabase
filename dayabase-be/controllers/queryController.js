@@ -1,6 +1,7 @@
-const { decrypt } = require("../utils/crypto"); // Impor fungsi dekripsi
+// controllers/queryController.js
+const { decrypt } = require("../utils/crypto");
 const { connectToDatabase } = require("../config/databaseConnector");
-const appDbPool = require("../config/db"); // Koneksi ke 'dayabase_app'
+const appDbPool = require("../config/db");
 const { parseSqlWithParameters } = require("../utils/sqlParser");
 
 class QueryController {
@@ -13,37 +14,27 @@ class QueryController {
         .json({ message: "sql and connectionId are required!" });
     }
 
-    // ---- BASIC SECURITY CHECKS (prevent SQL injection) ----
-    // Karena menyangkut hajat hidup perusahaan, tolong nanti ini dikembangkan bener2, kalo DB kena inject, kita kena kartu merah. hehe
+    // ---- BASIC SECURITY CHECKS ----
     const cleaned = sql.trim();
     if (cleaned.length > 50000)
       return res.status(400).json({ message: "SQL too long." });
 
-    // simple semicolon check (boleh dikembangkan nanti)
     if (cleaned.includes(";"))
       return res
         .status(400)
         .json({ message: "Multiple statements not allowed." });
 
-    // simple check start query
     const sqlWithoutComments = cleaned
       .replace(/^\s*(\/\*[\s\S]*?\*\/|--.*(\r?\n|$))*/g, "")
       .trim();
+
     if (!/^(SELECT|WITH)\b/i.test(sqlWithoutComments)) {
       return res.status(400).json({ message: "Only SELECT queries allowed." });
     }
 
-    // enforce LIMIT
-    const limit =
-      Number.isInteger(row_limit) && row_limit > 0 ? row_limit : 1000;
-    let execSql = sql;
-    if (!/limit\s+\d+/i.test(sqlWithoutComments))
-      execSql = `${sql.trim()} LIMIT ${limit}`;
-
-    // ----------------- fetch connection details -----------------
-    let targetConnection; // Definisikan di scope luar agar bisa diakses di 'finally'
+    let targetConnection;
     try {
-      //  Ambil detail koneksi dari DB Aplikasi
+      // 1. Ambil detail koneksi dari DB Aplikasi
       const connDetailsResult = await appDbPool.query(
         "SELECT * FROM database_connections WHERE id = $1",
         [connectionId]
@@ -58,25 +49,24 @@ class QueryController {
       const connDetails = connDetailsResult.rows[0];
       const dbType = connDetails.db_type;
 
-      // Parse SQL menggunakan parameters
-      // Ini akan melempar error jika parameter yang diperlukan hilang
+      // 2. Parse SQL dengan parameters (placeholder substitution)
       const { finalSql, queryValues } = parseSqlWithParameters(
         sql,
-        parameters,
+        parameters || {},
         dbType
       );
 
-      // Enforce LIMIT (pada SQL yang sudah diproses)
+      // 3. Enforce LIMIT pada SQL yang sudah diproses
       const limit =
         Number.isInteger(row_limit) && row_limit > 0 ? row_limit : 1000;
-      let execSql = finalSql;
 
-      // Cek LIMIT lagi pada SQL *mentah* (karena 'finalSql' sudah diganti $1, $2)
+      let execSql = finalSql;
+      // Cek apakah sudah ada LIMIT di SQL original
       if (!/limit\s+\d+/i.test(sqlWithoutComments)) {
         execSql = `${finalSql.trim()} LIMIT ${limit}`;
       }
 
-      // Dekripsi password dan siapkan config
+      // 4. Dekripsi password dan setup koneksi
       const decryptedPassword = decrypt(connDetails.password_encrypted);
       const dbConfig = {
         dbType: connDetails.db_type,
@@ -86,17 +76,17 @@ class QueryController {
         database: connDetails.database_name,
         password: decryptedPassword,
       };
+
+      // 5. Koneksi dan eksekusi query
       targetConnection = await connectToDatabase(dbConfig);
       let rows;
 
       switch (dbConfig.dbType) {
         case "postgres":
-          // Kirim SQL yang diproses DAN array 'queryValues'
           const pgResult = await targetConnection.query(execSql, queryValues);
           rows = pgResult.rows;
           break;
         case "mysql":
-          // Kirim SQL yang diproses DAN array 'queryValues'
           const [mysqlRows] = await targetConnection.execute(
             execSql,
             queryValues
@@ -116,11 +106,11 @@ class QueryController {
         .status(500)
         .json({ message: "Failed to execute query", error: error.message });
     } finally {
-      // 6. Tutup koneksi ke database target
+      // 6. Tutup koneksi
       if (targetConnection && targetConnection.end) {
-        await targetConnection.end(); // Untuk node-postgres
+        await targetConnection.end();
       } else if (targetConnection && targetConnection.close) {
-        await targetConnection.close(); // Untuk mysql2
+        await targetConnection.close();
       }
     }
   }

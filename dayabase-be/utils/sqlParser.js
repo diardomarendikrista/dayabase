@@ -60,9 +60,9 @@ function parseSqlWithParameters(sql, parameters = {}, dbType) {
     }
   );
 
-  console.log(sqlAfterOptional, "sqlAfterOptional");
-  console.log(finalSql, "finalSql");
-  console.log(queryValues, "queryValues");
+  // console.log(sqlAfterOptional, "sqlAfterOptional");
+  // console.log(finalSql, "finalSql");
+  // console.log(queryValues, "queryValues");
 
   return { finalSql, queryValues };
 }

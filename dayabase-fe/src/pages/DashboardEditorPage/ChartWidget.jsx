@@ -1,4 +1,4 @@
-// pages/DashboardEditorPage/ChartWidget.jsx - COMPLETE VERSION
+// pages/DashboardEditorPage/ChartWidget.jsx
 import { useState, useEffect, useMemo, useRef } from "react";
 import { API } from "axios/axios";
 import useMeasure from "react-use-measure";
@@ -28,7 +28,6 @@ export default function ChartWidget({
   const pivotTableRef = useRef(null);
   const [ref, { width, height }] = useMeasure();
 
-  // Re-run query ketika filterParameters berubah
   useEffect(() => {
     const loadAndRunQuestion = async () => {
       setIsLoading(true);
@@ -38,13 +37,6 @@ export default function ChartWidget({
         const qDetails = qResponse.data;
         setQuestion(qDetails);
 
-        // DEBUG: Log SQL dan parameters
-        console.log("=== ChartWidget Debug ===");
-        console.log("Question SQL:", qDetails.sql_query);
-        console.log("Filter Parameters:", filterParameters);
-        console.log("========================");
-
-        // Kirim parameters ke backend
         const queryResponse = await API.post("/api/query/run", {
           sql: qDetails.sql_query,
           connectionId: qDetails.connection_id,
@@ -64,7 +56,7 @@ export default function ChartWidget({
       }
     };
     loadAndRunQuestion();
-  }, [questionId, filterParameters]); // Dependency: re-run saat filter berubah
+  }, [questionId, filterParameters]);
 
   const transformedData = useMemo(() => {
     if (!question || !question.chart_config || results.length === 0)

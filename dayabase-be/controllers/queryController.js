@@ -34,7 +34,6 @@ class QueryController {
 
     let targetConnection;
     try {
-      // 1. Ambil detail koneksi dari DB Aplikasi
       const connDetailsResult = await appDbPool.query(
         "SELECT * FROM database_connections WHERE id = $1",
         [connectionId]
@@ -49,14 +48,14 @@ class QueryController {
       const connDetails = connDetailsResult.rows[0];
       const dbType = connDetails.db_type;
 
-      // 2. Parse SQL dengan parameters (placeholder substitution)
+      // Parse SQL dengan parameters (placeholder substitution)
       const { finalSql, queryValues } = parseSqlWithParameters(
         sql,
         parameters || {},
         dbType
       );
 
-      // 3. Enforce LIMIT pada SQL yang sudah diproses
+      // Enforce LIMIT pada SQL yang sudah diproses
       const limit =
         Number.isInteger(row_limit) && row_limit > 0 ? row_limit : 1000;
 
@@ -66,7 +65,7 @@ class QueryController {
         execSql = `${finalSql.trim()} LIMIT ${limit}`;
       }
 
-      // 4. Dekripsi password dan setup koneksi
+      // Decrypt password dan setup koneksi
       const decryptedPassword = decrypt(connDetails.password_encrypted);
       const dbConfig = {
         dbType: connDetails.db_type,
@@ -77,7 +76,7 @@ class QueryController {
         password: decryptedPassword,
       };
 
-      // 5. Koneksi dan eksekusi query
+      // Koneksi dan eksekusi query
       targetConnection = await connectToDatabase(dbConfig);
       let rows;
 

@@ -503,7 +503,7 @@ class DashboardController {
     const userId = req.user.id;
 
     try {
-      // Pastikan dashboard milik user
+      // Pastikan dashboard milik user (sekarang tidak ada fungsi ini)
       // const dashboardCheck = await pool.query(
       //   "SELECT user_id FROM dashboards WHERE id = $1",
       //   [dashboard_id]
@@ -571,7 +571,7 @@ class DashboardController {
     }
 
     try {
-      // Pastikan dashboard milik user
+      // Pastikan dashboard milik user (sekarang tidak ada fungsi ini)
       // const dashboardCheck = await pool.query(
       //   "SELECT user_id FROM dashboards WHERE id = $1",
       //   [dashboard_id]

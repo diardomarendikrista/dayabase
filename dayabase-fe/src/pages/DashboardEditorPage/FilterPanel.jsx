@@ -43,15 +43,15 @@ export default function FilterPanel({
   // Handler untuk apply filters ke parent
   const handleApplyFilters = () => {
     onFilterValuesChange(localFilterValues);
-    dispatch(
-      addToast({
-        message: "Filters applied successfully",
-        type: "success",
-      })
-    );
+    // dispatch(
+    //   addToast({
+    //     message: "Filters applied successfully",
+    //     type: "success",
+    //   })
+    // );
   };
 
-  // Handler untuk add filter baru
+  // add filter baru
   const handleAddFilter = async () => {
     if (!newFilterName.trim() || !newFilterDisplayName.trim()) {
       dispatch(
@@ -96,7 +96,6 @@ export default function FilterPanel({
     }
   };
 
-  // Handler untuk update filter
   const handleUpdateFilter = async (filterId) => {
     if (!newFilterName.trim() || !newFilterDisplayName.trim()) {
       dispatch(
@@ -144,7 +143,6 @@ export default function FilterPanel({
     }
   };
 
-  // Handler untuk delete filter
   const handleDeleteFilter = async (filterId) => {
     if (!confirm("Are you sure you want to delete this filter?")) return;
 
@@ -177,7 +175,6 @@ export default function FilterPanel({
     }
   };
 
-  // Handler untuk mulai edit filter
   const startEditFilter = (filter) => {
     setEditingFilterId(filter.id);
     setNewFilterName(filter.name);
@@ -185,7 +182,6 @@ export default function FilterPanel({
     setNewFilterType(filter.type);
   };
 
-  // Handler untuk cancel add/edit
   const cancelEdit = () => {
     setEditingFilterId(null);
     setIsAddingFilter(false);

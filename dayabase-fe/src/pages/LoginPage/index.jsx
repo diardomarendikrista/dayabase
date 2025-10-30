@@ -1,5 +1,5 @@
 import { API } from "axios/axios";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useDispatch } from "react-redux";
 import { setCredentials } from "store/slices/authSlice";
@@ -11,6 +11,7 @@ export default function LoginPage() {
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
 
+  const token = localStorage.getItem("authToken");
   const navigate = useNavigate();
   const dispatch = useDispatch();
 
@@ -24,6 +25,10 @@ export default function LoginPage() {
       setError("Incorrect email or password.");
     }
   };
+
+  useEffect(() => {
+    if (token) navigate("/");
+  }, [token]);
 
   return (
     <div className="flex items-center justify-center min-h-screen bg-gray-100">

@@ -9,7 +9,7 @@ async function connectToDatabase(config) {
   // Switch untuk memilih driver yang tepat
   switch (dbType) {
     case "postgres":
-      console.log("Connecting to PostgreSQL...");
+      // console.log("Connecting to PostgreSQL...");
       const pgPool = new Pool({ user, host, database, password, port });
       return pgPool;
 

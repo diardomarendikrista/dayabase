@@ -2,7 +2,13 @@
 import { useState, useEffect } from "react";
 import Input from "components/atoms/Input";
 import Button from "components/atoms/Button";
-import { RiAddLine, RiDeleteBinLine, RiPencilLine } from "react-icons/ri";
+import {
+  RiAddLine,
+  RiDeleteBinLine,
+  RiPencilLine,
+  RiAddCircleLine,
+  RiCloseCircleLine,
+} from "react-icons/ri";
 import { API } from "axios/axios";
 import { useDispatch } from "react-redux";
 import { addToast } from "store/slices/toastSlice";
@@ -15,24 +21,22 @@ export default function FilterPanel({
   onFilterValuesChange,
   isEmbedMode,
 }) {
-  // State lokal untuk input filter sebelum di-apply
   const [localFilterValues, setLocalFilterValues] = useState({});
 
-  // State untuk form add/edit filter
   const [isAddingFilter, setIsAddingFilter] = useState(false);
   const [editingFilterId, setEditingFilterId] = useState(null);
   const [newFilterName, setNewFilterName] = useState("");
   const [newFilterDisplayName, setNewFilterDisplayName] = useState("");
   const [newFilterType, setNewFilterType] = useState("text");
+  const [newFilterOptions, setNewFilterOptions] = useState([]);
+  const [optionInput, setOptionInput] = useState("");
 
   const dispatch = useDispatch();
 
-  // Sync localFilterValues dengan filterValues yang di-apply
   useEffect(() => {
     setLocalFilterValues(filterValues);
   }, [filterValues]);
 
-  // Handler untuk mengubah nilai filter lokal (belum di-apply)
   const handleFilterValueChange = (filterName, value) => {
     setLocalFilterValues((prev) => ({
       ...prev,
@@ -40,18 +44,21 @@ export default function FilterPanel({
     }));
   };
 
-  // Handler untuk apply filters ke parent
   const handleApplyFilters = () => {
     onFilterValuesChange(localFilterValues);
-    // dispatch(
-    //   addToast({
-    //     message: "Filters applied successfully",
-    //     type: "success",
-    //   })
-    // );
   };
 
-  // add filter baru
+  const handleAddOption = () => {
+    if (optionInput.trim()) {
+      setNewFilterOptions([...newFilterOptions, optionInput.trim()]);
+      setOptionInput("");
+    }
+  };
+
+  const handleRemoveOption = (index) => {
+    setNewFilterOptions(newFilterOptions.filter((_, i) => i !== index));
+  };
+
   const handleAddFilter = async () => {
     if (!newFilterName.trim() || !newFilterDisplayName.trim()) {
       dispatch(
@@ -63,21 +70,36 @@ export default function FilterPanel({
       return;
     }
 
+    // Validate select type has options
+    if (newFilterType === "select" && newFilterOptions.length === 0) {
+      dispatch(
+        addToast({
+          message: "Select type filter requires at least one option",
+          type: "error",
+        })
+      );
+      return;
+    }
+
     try {
+      const payload = {
+        name: newFilterName.trim(),
+        display_name: newFilterDisplayName.trim(),
+        type: newFilterType,
+      };
+
+      // Only include options for select type
+      if (newFilterType === "select") {
+        payload.options = newFilterOptions;
+      }
+
       const response = await API.post(
         `/api/dashboards/${dashboardId}/filters`,
-        {
-          name: newFilterName.trim(),
-          display_name: newFilterDisplayName.trim(),
-          type: newFilterType,
-        }
+        payload
       );
 
       onFiltersChange([...filters, response.data]);
-      setIsAddingFilter(false);
-      setNewFilterName("");
-      setNewFilterDisplayName("");
-      setNewFilterType("text");
+      resetForm();
 
       dispatch(
         addToast({
@@ -107,24 +129,37 @@ export default function FilterPanel({
       return;
     }
 
+    if (newFilterType === "select" && newFilterOptions.length === 0) {
+      dispatch(
+        addToast({
+          message: "Select type filter requires at least one option",
+          type: "error",
+        })
+      );
+      return;
+    }
+
     try {
+      const payload = {
+        name: newFilterName.trim(),
+        display_name: newFilterDisplayName.trim(),
+        type: newFilterType,
+      };
+
+      if (newFilterType === "select") {
+        payload.options = newFilterOptions;
+      }
+
       const response = await API.put(
         `/api/dashboards/${dashboardId}/filters/${filterId}`,
-        {
-          name: newFilterName.trim(),
-          display_name: newFilterDisplayName.trim(),
-          type: newFilterType,
-        }
+        payload
       );
 
       onFiltersChange(
         filters.map((f) => (f.id === filterId ? response.data : f))
       );
 
-      setEditingFilterId(null);
-      setNewFilterName("");
-      setNewFilterDisplayName("");
-      setNewFilterType("text");
+      resetForm();
 
       dispatch(
         addToast({
@@ -150,7 +185,6 @@ export default function FilterPanel({
       await API.delete(`/api/dashboards/${dashboardId}/filters/${filterId}`);
       onFiltersChange(filters.filter((f) => f.id !== filterId));
 
-      // Hapus juga nilai filter yang sudah di-apply
       const newFilterValues = { ...filterValues };
       const deletedFilter = filters.find((f) => f.id === filterId);
       if (deletedFilter) {
@@ -180,17 +214,19 @@ export default function FilterPanel({
     setNewFilterName(filter.name);
     setNewFilterDisplayName(filter.display_name);
     setNewFilterType(filter.type);
+    setNewFilterOptions(filter.options || []);
   };
 
-  const cancelEdit = () => {
+  const resetForm = () => {
     setEditingFilterId(null);
     setIsAddingFilter(false);
     setNewFilterName("");
     setNewFilterDisplayName("");
     setNewFilterType("text");
+    setNewFilterOptions([]);
+    setOptionInput("");
   };
 
-  // Handler untuk clear semua filter
   const handleClearFilters = () => {
     setLocalFilterValues({});
     onFilterValuesChange({});
@@ -200,6 +236,69 @@ export default function FilterPanel({
         type: "info",
       })
     );
+  };
+
+  const renderFilterInput = (filter) => {
+    switch (filter.type) {
+      case "boolean":
+        return (
+          <div className="flex items-center gap-2 py-2">
+            <input
+              type="checkbox"
+              checked={
+                localFilterValues[filter.name] === "true" ||
+                localFilterValues[filter.name] === true
+              }
+              onChange={(e) =>
+                handleFilterValueChange(
+                  filter.name,
+                  e.target.checked.toString()
+                )
+              }
+              className="w-4 h-4 rounded border-gray-300 text-primary-light focus:ring-primary-light"
+            />
+            <span className="text-sm text-gray-600">
+              {localFilterValues[filter.name] === "true" ||
+              localFilterValues[filter.name] === true
+                ? "Yes"
+                : "No"}
+            </span>
+          </div>
+        );
+
+      case "select":
+        return (
+          <select
+            value={localFilterValues[filter.name] || ""}
+            onChange={(e) =>
+              handleFilterValueChange(filter.name, e.target.value)
+            }
+            className="w-full rounded-md border-gray-300 shadow-sm focus:border-primary-light focus:ring-primary-light"
+          >
+            <option value="">-- Select {filter.display_name} --</option>
+            {(filter.options || []).map((option, index) => (
+              <option
+                key={index}
+                value={option}
+              >
+                {option}
+              </option>
+            ))}
+          </select>
+        );
+
+      default:
+        return (
+          <Input
+            type={filter.type}
+            placeholder={`Enter ${filter.display_name.toLowerCase()}`}
+            value={localFilterValues[filter.name] || ""}
+            onChange={(e) =>
+              handleFilterValueChange(filter.name, e.target.value)
+            }
+          />
+        );
+    }
   };
 
   return (
@@ -220,14 +319,14 @@ export default function FilterPanel({
 
       {/* Filter Input Form (Add/Edit) */}
       {!isEmbedMode && (isAddingFilter || editingFilterId) && (
-        <div className="bg-gray-50 p-3 rounded-md mb-3 space-y-2">
+        <div className="bg-gray-50 p-3 rounded-md mb-3 space-y-3">
           <div className="grid grid-cols-3 gap-2">
             <div>
               <label className="block text-xs font-medium text-gray-700 mb-1">
                 Variable Name
               </label>
               <Input
-                placeholder="e.g., kategori"
+                placeholder="e.g., is_active"
                 value={newFilterName}
                 onChange={(e) => setNewFilterName(e.target.value)}
               />
@@ -237,7 +336,7 @@ export default function FilterPanel({
                 Display Name
               </label>
               <Input
-                placeholder="e.g., Category"
+                placeholder="e.g., Is Active"
                 value={newFilterDisplayName}
                 onChange={(e) => setNewFilterDisplayName(e.target.value)}
               />
@@ -248,15 +347,70 @@ export default function FilterPanel({
               </label>
               <select
                 value={newFilterType}
-                onChange={(e) => setNewFilterType(e.target.value)}
+                onChange={(e) => {
+                  setNewFilterType(e.target.value);
+                  setNewFilterOptions([]); // Reset options saat ganti type
+                }}
                 className="w-full rounded-md border-gray-300 shadow-sm focus:border-primary-light focus:ring-primary-light"
               >
                 <option value="text">Text</option>
                 <option value="number">Number</option>
                 <option value="date">Date</option>
+                <option value="boolean">Boolean (Yes/No)</option>
+                <option value="select">Dropdown</option>
               </select>
             </div>
           </div>
+
+          {/* Options input for Select type */}
+          {newFilterType === "select" && (
+            <div>
+              <label className="block text-xs font-medium text-gray-700 mb-1">
+                Dropdown Options
+              </label>
+              <div className="flex gap-2 mb-2">
+                <Input
+                  placeholder="Enter option (e.g., Active)"
+                  value={optionInput}
+                  onChange={(e) => setOptionInput(e.target.value)}
+                  onKeyPress={(e) => {
+                    if (e.key === "Enter") {
+                      e.preventDefault();
+                      handleAddOption();
+                    }
+                  }}
+                />
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={handleAddOption}
+                  type="button"
+                >
+                  <RiAddCircleLine className="mr-1" /> Add
+                </Button>
+              </div>
+              {newFilterOptions.length > 0 && (
+                <div className="flex flex-wrap gap-2">
+                  {newFilterOptions.map((option, index) => (
+                    <span
+                      key={index}
+                      className="inline-flex items-center gap-1 px-2 py-1 bg-blue-100 text-blue-800 rounded text-sm"
+                    >
+                      {option}
+                      <button
+                        onClick={() => handleRemoveOption(index)}
+                        className="hover:text-red-600"
+                        type="button"
+                      >
+                        <RiCloseCircleLine />
+                      </button>
+                    </span>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
+
           <div className="flex gap-2">
             <Button
               size="sm"
@@ -271,7 +425,7 @@ export default function FilterPanel({
             <Button
               size="sm"
               variant="outline"
-              onClick={cancelEdit}
+              onClick={resetForm}
             >
               Cancel
             </Button>
@@ -298,15 +452,18 @@ export default function FilterPanel({
                   <span className="text-xs text-gray-500 ml-1">
                     ({filter.name})
                   </span>
+                  {filter.type === "boolean" && (
+                    <span className="text-xs text-gray-400 ml-1">
+                      - Checkbox
+                    </span>
+                  )}
+                  {filter.type === "select" && (
+                    <span className="text-xs text-gray-400 ml-1">
+                      - Dropdown
+                    </span>
+                  )}
                 </label>
-                <Input
-                  type={filter.type}
-                  placeholder={`Enter ${filter.display_name.toLowerCase()}`}
-                  value={localFilterValues[filter.name] || ""}
-                  onChange={(e) =>
-                    handleFilterValueChange(filter.name, e.target.value)
-                  }
-                />
+                {renderFilterInput(filter)}
               </div>
               {!isEmbedMode && (
                 <div className="flex gap-1">

@@ -198,6 +198,7 @@ Before starting the server, you need to set up the application's database.
         display_name VARCHAR(255) NOT NULL, -- The label users see, e.g., "Product Category"
         type VARCHAR(50) NOT NULL, -- e.g., 'text', 'date', 'number'
         operator VARCHAR(20) DEFAULT '=', -- Possible values: '=', '!=', '>', '>=', '<', '<=', 'BETWEEN', 'IN', 'LIKE', 'IS NULL', 'IS NOT NULL'
+        options JSONB DEFAULT NULL, -- JSON array for dropdown/select filters. Example: ["Option A", "Option B", "Option C"]
         created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
     );
     ```

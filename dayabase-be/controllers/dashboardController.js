@@ -88,7 +88,7 @@ class DashboardController {
 
       // Query untuk filters
       const filtersQuery = `
-      SELECT id, name, display_name, type
+      SELECT id, name, display_name, type, options
       FROM dashboard_filters
       WHERE dashboard_id = $1
       ORDER BY id ASC;
@@ -385,7 +385,7 @@ class DashboardController {
    */
   static async addFilterToDashboard(req, res) {
     const { id: dashboard_id } = req.params;
-    const { name, display_name, type } = req.body;
+    const { name, display_name, type, options } = req.body;
     const userId = req.user.id;
 
     if (!name || !display_name || !type) {
@@ -411,9 +411,21 @@ class DashboardController {
       //     .json({ message: "Cannot add filter to a dashboard you don't own." });
       // }
 
+      // options parsing
+      let parsedOptions = options;
+      if (typeof options === "string") {
+        try {
+          parsedOptions = JSON.parse(options);
+        } catch (err) {
+          return res
+            .status(400)
+            .json({ message: "Invalid JSON in 'options' field." });
+        }
+      }
+
       const newFilter = await pool.query(
-        "INSERT INTO dashboard_filters (dashboard_id, name, display_name, type) VALUES ($1, $2, $3, $4) RETURNING *",
-        [dashboard_id, name, display_name, type]
+        "INSERT INTO dashboard_filters (dashboard_id, name, display_name, type, options) VALUES ($1, $2, $3, $4, $5) RETURNING *",
+        [dashboard_id, name, display_name, type, parsedOptions]
       );
 
       // Update dashboard's updated_at timestamp
@@ -440,7 +452,7 @@ class DashboardController {
    */
   static async updateFilterOnDashboard(req, res) {
     const { id: dashboard_id, filterId } = req.params;
-    const { name, display_name, type } = req.body;
+    const { name, display_name, type, options } = req.body;
     const userId = req.user.id;
 
     if (!name || !display_name || !type) {
@@ -466,8 +478,15 @@ class DashboardController {
       // }
 
       const updatedFilter = await pool.query(
-        "UPDATE dashboard_filters SET name = $1, display_name = $2, type = $3 WHERE id = $4 AND dashboard_id = $5 RETURNING *",
-        [name, display_name, type, filterId, dashboard_id]
+        "UPDATE dashboard_filters SET name = $1, display_name = $2, type = $3, options = $4 WHERE id = $5 AND dashboard_id = $6 RETURNING *",
+        [
+          name,
+          display_name,
+          type,
+          JSON.stringify(options),
+          filterId,
+          dashboard_id,
+        ]
       );
 
       if (updatedFilter.rowCount === 0) {

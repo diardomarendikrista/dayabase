@@ -28,8 +28,11 @@ function parseSqlWithParameters(sql, parameters = {}, dbType) {
       const allValid = placeholders.every((placeholder) => {
         const varName = placeholder.replace(/[{}]/g, ""); // Dapatkan "kategori" dari "{{kategori}}"
         const value = parameters[varName];
-        // Consider empty string as invalid too
-        return value !== null && value !== undefined && value !== "";
+        // Consider empty string as invalid, but allow boolean false and number 0
+        if (value === null || value === undefined || value === "") {
+          return false;
+        }
+        return true;
       });
 
       // Jika semua valid, kembalikan kontennya (tanpa [[...]]). Jika tidak, hapus seluruh blok.

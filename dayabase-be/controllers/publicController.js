@@ -36,7 +36,7 @@ class PublicController {
 
       // Query untuk filters
       const filtersQuery = `
-        SELECT id, name, display_name, type, options
+        SELECT id, name, display_name, type, options, operator
         FROM dashboard_filters
         WHERE dashboard_id = $1
         ORDER BY id ASC;
@@ -75,5 +75,4 @@ class PublicController {
     }
   }
 }
-
 module.exports = PublicController;

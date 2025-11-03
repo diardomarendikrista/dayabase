@@ -1,4 +1,4 @@
-// pages/DashboardEditorPage/FilterPanel.jsx
+// pages/DashboardEditorPage/FilterPanel.jsx - WITH OPERATORS
 import { useState, useEffect } from "react";
 import Input from "components/atoms/Input";
 import Button from "components/atoms/Button";
@@ -12,6 +12,42 @@ import {
 import { API } from "axios/axios";
 import { useDispatch } from "react-redux";
 import { addToast } from "store/slices/toastSlice";
+import { cn } from "lib/utils";
+import Select from "components/atoms/Select";
+
+// Operator options by filter type
+// const OPERATOR_OPTIONS = {
+//   text: [
+//     { value: "=", label: "Equals (=)" },
+//     { value: "!=", label: "Not Equals (≠)" },
+//     { value: "LIKE", label: "Contains" },
+//     { value: "NOT LIKE", label: "Not Contains" },
+//     { value: "IN", label: "In List" },
+//   ],
+//   number: [
+//     { value: "=", label: "Equals (=)" },
+//     { value: "!=", label: "Not Equals (≠)" },
+//     { value: ">", label: "Greater Than (>)" },
+//     { value: ">=", label: "Greater or Equal (≥)" },
+//     { value: "<", label: "Less Than (<)" },
+//     { value: "<=", label: "Less or Equal (≤)" },
+//     { value: "BETWEEN", label: "Between (Range)" },
+//   ],
+//   date: [
+//     { value: "=", label: "Equals (=)" },
+//     { value: "!=", label: "Not Equals (≠)" },
+//     { value: ">", label: "After (>)" },
+//     { value: ">=", label: "On or After (≥)" },
+//     { value: "<", label: "Before (<)" },
+//     { value: "<=", label: "On or Before (≤)" },
+//     { value: "BETWEEN", label: "Between (Range)" },
+//   ],
+//   boolean: [{ value: "=", label: "Equals (=)" }],
+//   select: [
+//     { value: "=", label: "Equals (=)" },
+//     { value: "!=", label: "Not Equals (≠)" },
+//   ],
+// };
 
 export default function FilterPanel({
   dashboardId,
@@ -28,6 +64,7 @@ export default function FilterPanel({
   const [newFilterName, setNewFilterName] = useState("");
   const [newFilterDisplayName, setNewFilterDisplayName] = useState("");
   const [newFilterType, setNewFilterType] = useState("text");
+  const [newFilterOperator, setNewFilterOperator] = useState("=");
   const [newFilterOptions, setNewFilterOptions] = useState([]);
   const [optionInput, setOptionInput] = useState("");
 
@@ -59,6 +96,20 @@ export default function FilterPanel({
     setNewFilterOptions(newFilterOptions.filter((_, i) => i !== index));
   };
 
+  const handleTypeChange = (newType) => {
+    setNewFilterType(newType);
+    setNewFilterOptions([]);
+
+    // Set default operator for new type
+    if (newType === "number" || newType === "date") {
+      setNewFilterOperator(">=");
+    } else if (newType === "text") {
+      setNewFilterOperator("LIKE");
+    } else {
+      setNewFilterOperator("=");
+    }
+  };
+
   const handleAddFilter = async () => {
     if (!newFilterName.trim() || !newFilterDisplayName.trim()) {
       dispatch(
@@ -70,7 +121,6 @@ export default function FilterPanel({
       return;
     }
 
-    // Validate select type has options
     if (newFilterType === "select" && newFilterOptions.length === 0) {
       dispatch(
         addToast({
@@ -86,9 +136,9 @@ export default function FilterPanel({
         name: newFilterName.trim(),
         display_name: newFilterDisplayName.trim(),
         type: newFilterType,
+        operator: newFilterOperator,
       };
 
-      // Only include options for select type
       if (newFilterType === "select") {
         payload.options = newFilterOptions;
       }
@@ -144,6 +194,7 @@ export default function FilterPanel({
         name: newFilterName.trim(),
         display_name: newFilterDisplayName.trim(),
         type: newFilterType,
+        operator: newFilterOperator,
       };
 
       if (newFilterType === "select") {
@@ -214,6 +265,7 @@ export default function FilterPanel({
     setNewFilterName(filter.name);
     setNewFilterDisplayName(filter.display_name);
     setNewFilterType(filter.type);
+    setNewFilterOperator(filter.operator || "=");
     setNewFilterOptions(filter.options || []);
   };
 
@@ -223,6 +275,7 @@ export default function FilterPanel({
     setNewFilterName("");
     setNewFilterDisplayName("");
     setNewFilterType("text");
+    setNewFilterOperator("=");
     setNewFilterOptions([]);
     setOptionInput("");
   };
@@ -239,41 +292,46 @@ export default function FilterPanel({
   };
 
   const renderFilterInput = (filter) => {
-    switch (filter.type) {
-      case "boolean":
-        return (
-          <div className="flex items-center gap-2 py-2">
-            <input
-              type="checkbox"
-              checked={
-                localFilterValues[filter.name] === "true" ||
-                localFilterValues[filter.name] === true
-              }
-              onChange={(e) =>
-                handleFilterValueChange(
-                  filter.name,
-                  e.target.checked.toString()
-                )
-              }
-              className="w-4 h-4 rounded border-gray-300 text-primary-light focus:ring-primary-light"
-            />
-            <span className="text-sm text-gray-600">
-              {localFilterValues[filter.name] === "true" ||
-              localFilterValues[filter.name] === true
-                ? "Yes"
-                : "No"}
-            </span>
-          </div>
-        );
+    const operator = filter.operator || "=";
 
-      case "select":
-        return (
+    // Boolean type
+    if (filter.type === "boolean") {
+      return (
+        <div className="flex items-center gap-2 py-2">
+          <input
+            type="checkbox"
+            checked={
+              localFilterValues[filter.name] === "true" ||
+              localFilterValues[filter.name] === true
+            }
+            onChange={(e) =>
+              handleFilterValueChange(filter.name, e.target.checked.toString())
+            }
+            className="w-4 h-4 rounded border-gray-300 text-primary-light focus:ring-primary-light"
+          />
+          <span className="text-sm text-gray-600">
+            {localFilterValues[filter.name] === "true" ||
+            localFilterValues[filter.name] === true
+              ? "Yes"
+              : "No"}
+          </span>
+        </div>
+      );
+    }
+
+    // Select type
+    if (filter.type === "select") {
+      return (
+        <div className="flex gap-2">
+          {/* <span className="self-center font-mono text-gray-600 text-sm min-w-[30px]">
+            {operator}
+          </span> */}
           <select
             value={localFilterValues[filter.name] || ""}
             onChange={(e) =>
               handleFilterValueChange(filter.name, e.target.value)
             }
-            className="w-full rounded-md border-gray-300 shadow-sm focus:border-primary-light focus:ring-primary-light"
+            className="flex-1 rounded-md border-gray-300 shadow-sm focus:border-primary-light focus:ring-primary-light"
           >
             <option value="">-- Select {filter.display_name} --</option>
             {(filter.options || []).map((option, index) => (
@@ -285,21 +343,83 @@ export default function FilterPanel({
               </option>
             ))}
           </select>
-        );
+        </div>
+      );
+    }
 
-      default:
-        return (
+    // BETWEEN operator - two inputs
+    if (operator === "BETWEEN") {
+      return (
+        <div className="flex gap-2 items-center">
           <Input
             type={filter.type}
-            placeholder={`Enter ${filter.display_name.toLowerCase()}`}
+            placeholder="Min"
+            value={localFilterValues[`${filter.name}_min`] || ""}
+            onChange={(e) =>
+              handleFilterValueChange(`${filter.name}_min`, e.target.value)
+            }
+            className="flex-1"
+          />
+          <span className="text-sm text-gray-600">to</span>
+          <Input
+            type={filter.type}
+            placeholder="Max"
+            value={localFilterValues[`${filter.name}_max`] || ""}
+            onChange={(e) =>
+              handleFilterValueChange(`${filter.name}_max`, e.target.value)
+            }
+            className="flex-1"
+          />
+        </div>
+      );
+    }
+
+    // IN operator - textarea
+    if (operator === "IN") {
+      return (
+        <div>
+          <textarea
+            placeholder="Enter values, one per line or comma-separated"
             value={localFilterValues[filter.name] || ""}
             onChange={(e) =>
               handleFilterValueChange(filter.name, e.target.value)
             }
+            className="w-full rounded-md border-gray-300 shadow-sm focus:border-primary-light focus:ring-primary-light text-sm"
+            rows={3}
           />
-        );
+        </div>
+      );
     }
+
+    // IS NULL / IS NOT NULL - no input
+    if (operator === "IS NULL" || operator === "IS NOT NULL") {
+      return (
+        <div className="text-sm text-gray-600 italic py-2">
+          No input required - will check for {operator.toLowerCase()} values
+        </div>
+      );
+    }
+
+    // Default - single input with operator
+    return (
+      <div className={cn({ "flex gap-2": false })}>
+        {/* <span className="self-center font-mono text-gray-600 text-sm min-w-[30px]">{operator}</span> */}
+        <Input
+          type={filter.type}
+          placeholder={`Enter ${filter.display_name.toLowerCase()}`}
+          value={localFilterValues[filter.name] || ""}
+          onChange={(e) => handleFilterValueChange(filter.name, e.target.value)}
+          className="flex-1"
+        />
+      </div>
+    );
   };
+
+  // const getOperatorLabel = (operator) => {
+  //   const allOperators = Object.values(OPERATOR_OPTIONS).flat();
+  //   const found = allOperators.find((op) => op.value === operator);
+  //   return found ? found.label : operator;
+  // };
 
   return (
     <div className="bg-white p-4 rounded-lg shadow-md border border-gray-200 mb-4">
@@ -326,7 +446,7 @@ export default function FilterPanel({
                 Variable Name
               </label>
               <Input
-                placeholder="e.g., is_active"
+                placeholder="e.g., salary_min"
                 value={newFilterName}
                 onChange={(e) => setNewFilterName(e.target.value)}
               />
@@ -336,7 +456,7 @@ export default function FilterPanel({
                 Display Name
               </label>
               <Input
-                placeholder="e.g., Is Active"
+                placeholder="e.g., Minimum Salary"
                 value={newFilterDisplayName}
                 onChange={(e) => setNewFilterDisplayName(e.target.value)}
               />
@@ -345,21 +465,56 @@ export default function FilterPanel({
               <label className="block text-xs font-medium text-gray-700 mb-1">
                 Type
               </label>
+              <Select
+                value={newFilterType}
+                onChange={handleTypeChange}
+                options={[
+                  { value: "text", label: "Text" },
+                  { value: "number", label: "Number" },
+                  { value: "date", label: "Date" },
+                  { value: "boolean", label: "Boolean" },
+                  { value: "select", label: "Dropdown" },
+                ]}
+                placeholder="Select filter type..."
+                className="text-sm"
+              />
+            </div>
+            {/* <div>
+              <label className="block text-xs font-medium text-gray-700 mb-1">
+                Type
+              </label>
               <select
                 value={newFilterType}
-                onChange={(e) => {
-                  setNewFilterType(e.target.value);
-                  setNewFilterOptions([]); // Reset options saat ganti type
-                }}
+                onChange={(e) => handleTypeChange(e.target.value)}
                 className="w-full rounded-md border-gray-300 shadow-sm focus:border-primary-light focus:ring-primary-light"
               >
                 <option value="text">Text</option>
                 <option value="number">Number</option>
                 <option value="date">Date</option>
-                <option value="boolean">Boolean (Yes/No)</option>
+                <option value="boolean">Boolean</option>
                 <option value="select">Dropdown</option>
               </select>
-            </div>
+            </div> */}
+            {/* <div>
+              <label className="block text-xs font-medium text-gray-700 mb-1">
+                Operator
+              </label>
+              <select
+                value={newFilterOperator}
+                onChange={(e) => setNewFilterOperator(e.target.value)}
+                className="w-full rounded-md border-gray-300 shadow-sm focus:border-primary-light focus:ring-primary-light"
+                disabled={newFilterType === "boolean"}
+              >
+                {OPERATOR_OPTIONS[newFilterType]?.map((op) => (
+                  <option
+                    key={op.value}
+                    value={op.value}
+                  >
+                    {op.label}
+                  </option>
+                ))}
+              </select>
+            </div> */}
           </div>
 
           {/* Options input for Select type */}
@@ -370,7 +525,7 @@ export default function FilterPanel({
               </label>
               <div className="flex gap-2 mb-2">
                 <Input
-                  placeholder="Enter option (e.g., Active)"
+                  placeholder="Enter option"
                   value={optionInput}
                   onChange={(e) => setOptionInput(e.target.value)}
                   onKeyPress={(e) => {
@@ -452,16 +607,9 @@ export default function FilterPanel({
                   <span className="text-xs text-gray-500 ml-1">
                     ({filter.name})
                   </span>
-                  {filter.type === "boolean" && (
-                    <span className="text-xs text-gray-400 ml-1">
-                      - Checkbox
-                    </span>
-                  )}
-                  {filter.type === "select" && (
-                    <span className="text-xs text-gray-400 ml-1">
-                      - Dropdown
-                    </span>
-                  )}
+                  {/* <span className="text-xs text-blue-600 ml-1">
+                    [{getOperatorLabel(filter.operator)}]
+                  </span> */}
                 </label>
                 {renderFilterInput(filter)}
               </div>

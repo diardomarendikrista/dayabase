@@ -88,11 +88,11 @@ class DashboardController {
 
       // Query untuk filters
       const filtersQuery = `
-      SELECT id, name, display_name, type, options
-      FROM dashboard_filters
-      WHERE dashboard_id = $1
-      ORDER BY id ASC;
-    `;
+        SELECT id, name, display_name, type, options, operator
+        FROM dashboard_filters
+        WHERE dashboard_id = $1
+        ORDER BY id ASC;
+      `;
       const filtersResult = await pool.query(filtersQuery, [id]);
 
       const dashboardData = {
@@ -385,7 +385,7 @@ class DashboardController {
    */
   static async addFilterToDashboard(req, res) {
     const { id: dashboard_id } = req.params;
-    const { name, display_name, type, options } = req.body;
+    const { name, display_name, type, options, operator } = req.body;
     const userId = req.user.id;
 
     if (!name || !display_name || !type) {
@@ -411,21 +411,16 @@ class DashboardController {
       //     .json({ message: "Cannot add filter to a dashboard you don't own." });
       // }
 
-      // options parsing
-      let parsedOptions = options;
-      if (typeof options === "string") {
-        try {
-          parsedOptions = JSON.parse(options);
-        } catch (err) {
-          return res
-            .status(400)
-            .json({ message: "Invalid JSON in 'options' field." });
-        }
-      }
-
       const newFilter = await pool.query(
-        "INSERT INTO dashboard_filters (dashboard_id, name, display_name, type, options) VALUES ($1, $2, $3, $4, $5) RETURNING *",
-        [dashboard_id, name, display_name, type, parsedOptions]
+        "INSERT INTO dashboard_filters (dashboard_id, name, display_name, type, options, operator) VALUES ($1, $2, $3, $4, $5, $6) RETURNING *",
+        [
+          dashboard_id,
+          name,
+          display_name,
+          type,
+          JSON.stringify(options),
+          operator,
+        ]
       );
 
       // Update dashboard's updated_at timestamp
@@ -452,7 +447,7 @@ class DashboardController {
    */
   static async updateFilterOnDashboard(req, res) {
     const { id: dashboard_id, filterId } = req.params;
-    const { name, display_name, type, options } = req.body;
+    const { name, display_name, type, options, operator } = req.body;
     const userId = req.user.id;
 
     if (!name || !display_name || !type) {
@@ -478,12 +473,13 @@ class DashboardController {
       // }
 
       const updatedFilter = await pool.query(
-        "UPDATE dashboard_filters SET name = $1, display_name = $2, type = $3, options = $4 WHERE id = $5 AND dashboard_id = $6 RETURNING *",
+        "UPDATE dashboard_filters SET name = $1, display_name = $2, type = $3, options = $4, operator = $5 WHERE id = $6 AND dashboard_id = $7 RETURNING *",
         [
           name,
           display_name,
           type,
           JSON.stringify(options),
+          operator,
           filterId,
           dashboard_id,
         ]

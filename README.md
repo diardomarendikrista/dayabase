@@ -4,7 +4,7 @@ DayaBase is a self-hostable Business Intelligence (BI) tool designed to help you
 
 This project is a monorepo containing both the backend API and the frontend client.
 
-## ✨ Features
+## Features
 
 - **User Authentication**: Secure login system with a "first-user-is-admin" setup, followed by an invitation-only model.
 - **Role-Based Access**: Manage users with different roles (Admin, Editor, Viewer).
@@ -17,7 +17,7 @@ This project is a monorepo containing both the backend API and the frontend clie
 
 ---
 
-## 🛠️ Tech Stack
+## Tech Stack
 
 - **Backend**: Node.js with Express.js
 - **Frontend**: React with Vite for a blazing-fast development experience.
@@ -28,7 +28,7 @@ This project is a monorepo containing both the backend API and the frontend clie
 
 ---
 
-## 📋 Prerequisites
+## Prerequisites
 
 Before you begin, ensure you have the following installed on your local machine:
 
@@ -38,7 +38,7 @@ Before you begin, ensure you have the following installed on your local machine:
 
 ---
 
-## 🚀 Getting Started
+## Getting Started
 
 Follow these steps to get the project up and running on your local machine.
 
@@ -203,7 +203,7 @@ Before starting the server, you need to set up the application's database.
     );
     ```
 
-## ▶️ Running the Application
+## Running the Application
 
 You'll need to run both the backend and frontend servers simultaneously in separate terminal windows.
 
@@ -227,7 +227,7 @@ npm run start:fe
 
 The React application will start, and you can access it in your browser, based at our vite.config.js, it will run at `http://localhost:3000`.
 
-## 🧩 Notes
+## Notes
 
 You can also run the backend directly from its folder:
 

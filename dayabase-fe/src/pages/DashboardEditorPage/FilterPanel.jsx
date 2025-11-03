@@ -322,11 +322,21 @@ export default function FilterPanel({
     // Select type
     if (filter.type === "select") {
       return (
-        <div className="flex gap-2">
+        <div className={cn({ "flex gap-2": false })}>
           {/* <span className="self-center font-mono text-gray-600 text-sm min-w-[30px]">
             {operator}
           </span> */}
-          <select
+          <Select
+            value={localFilterValues[filter.name] || ""}
+            onChange={(value) => handleFilterValueChange(filter.name, value)}
+            options={(filter.options || []).map((option, index) => ({
+              value: option,
+              label: option,
+            }))}
+            placeholder={`-- Select ${filter.display_name} --`}
+            className="text-sm"
+          />
+          {/* <select
             value={localFilterValues[filter.name] || ""}
             onChange={(e) =>
               handleFilterValueChange(filter.name, e.target.value)
@@ -342,7 +352,7 @@ export default function FilterPanel({
                 {option}
               </option>
             ))}
-          </select>
+          </select> */}
         </div>
       );
     }

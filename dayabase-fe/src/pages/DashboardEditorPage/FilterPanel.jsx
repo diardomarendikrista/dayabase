@@ -1,4 +1,4 @@
-// pages/DashboardEditorPage/FilterPanel.jsx - WITH OPERATORS
+// pages/DashboardEditorPage/FilterPanel.jsx - WITH OPERATORS & SQL TEMPLATE COPY
 import { useState, useEffect } from "react";
 import Input from "components/atoms/Input";
 import Button from "components/atoms/Button";
@@ -8,6 +8,7 @@ import {
   RiPencilLine,
   RiAddCircleLine,
   RiCloseCircleLine,
+  RiFileCopyLine,
 } from "react-icons/ri";
 import { API } from "axios/axios";
 import { useDispatch } from "react-redux";
@@ -16,38 +17,38 @@ import { cn } from "lib/utils";
 import Select from "components/atoms/Select";
 
 // Operator options by filter type
-// const OPERATOR_OPTIONS = {
-//   text: [
-//     { value: "=", label: "Equals (=)" },
-//     { value: "!=", label: "Not Equals (≠)" },
-//     { value: "LIKE", label: "Contains" },
-//     { value: "NOT LIKE", label: "Not Contains" },
-//     { value: "IN", label: "In List" },
-//   ],
-//   number: [
-//     { value: "=", label: "Equals (=)" },
-//     { value: "!=", label: "Not Equals (≠)" },
-//     { value: ">", label: "Greater Than (>)" },
-//     { value: ">=", label: "Greater or Equal (≥)" },
-//     { value: "<", label: "Less Than (<)" },
-//     { value: "<=", label: "Less or Equal (≤)" },
-//     { value: "BETWEEN", label: "Between (Range)" },
-//   ],
-//   date: [
-//     { value: "=", label: "Equals (=)" },
-//     { value: "!=", label: "Not Equals (≠)" },
-//     { value: ">", label: "After (>)" },
-//     { value: ">=", label: "On or After (≥)" },
-//     { value: "<", label: "Before (<)" },
-//     { value: "<=", label: "On or Before (≤)" },
-//     { value: "BETWEEN", label: "Between (Range)" },
-//   ],
-//   boolean: [{ value: "=", label: "Equals (=)" }],
-//   select: [
-//     { value: "=", label: "Equals (=)" },
-//     { value: "!=", label: "Not Equals (≠)" },
-//   ],
-// };
+const OPERATOR_OPTIONS = {
+  text: [
+    { value: "=", label: "Equals (=)" },
+    { value: "!=", label: "Not Equals (≠)" },
+    { value: "LIKE", label: "Contains" },
+    { value: "NOT LIKE", label: "Not Contains" },
+    { value: "IN", label: "In List" },
+  ],
+  number: [
+    { value: "=", label: "Equals (=)" },
+    { value: "!=", label: "Not Equals (≠)" },
+    { value: ">", label: "Greater Than (>)" },
+    { value: ">=", label: "Greater or Equal (≥)" },
+    { value: "<", label: "Less Than (<)" },
+    { value: "<=", label: "Less or Equal (≤)" },
+    { value: "BETWEEN", label: "Between (Range)" },
+  ],
+  date: [
+    { value: "=", label: "Equals (=)" },
+    { value: "!=", label: "Not Equals (≠)" },
+    { value: ">", label: "After (>)" },
+    { value: ">=", label: "On or After (≥)" },
+    { value: "<", label: "Before (<)" },
+    { value: "<=", label: "On or Before (≤)" },
+    { value: "BETWEEN", label: "Between (Range)" },
+  ],
+  boolean: [{ value: "=", label: "Equals (=)" }],
+  select: [
+    { value: "=", label: "Equals (=)" },
+    { value: "!=", label: "Not Equals (≠)" },
+  ],
+};
 
 export default function FilterPanel({
   dashboardId,
@@ -291,6 +292,51 @@ export default function FilterPanel({
     );
   };
 
+  // Generate SQL template for filter
+  const generateSQLTemplate = (filter) => {
+    const operator = filter.operator || "=";
+
+    if (operator === "BETWEEN") {
+      return `[[AND ${filter.name} BETWEEN {{${filter.name}_min}} AND {{${filter.name}_max}}]]`;
+    } else if (operator === "LIKE") {
+      return `[[AND ${filter.name} ILIKE '%' || {{${filter.name}}} || '%']]`;
+    } else if (operator === "NOT LIKE") {
+      return `[[AND ${filter.name} NOT ILIKE '%' || {{${filter.name}}} || '%']]`;
+    } else if (operator === "IN") {
+      return `[[AND ${filter.name} IN ({{${filter.name}}})]]`;
+    } else if (operator === "IS NULL") {
+      return `AND ${filter.name} IS NULL`;
+    } else if (operator === "IS NOT NULL") {
+      return `AND ${filter.name} IS NOT NULL`;
+    } else {
+      // Default operators: =, !=, >, >=, <, <=
+      return `[[AND ${filter.name} ${operator} {{${filter.name}}}]]`;
+    }
+  };
+
+  const handleCopyTemplate = (filter) => {
+    const template = generateSQLTemplate(filter);
+    navigator.clipboard
+      .writeText(template)
+      .then(() => {
+        dispatch(
+          addToast({
+            message: `SQL template copied: ${template}`,
+            type: "success",
+          })
+        );
+      })
+      .catch((err) => {
+        console.error("Failed to copy:", err);
+        dispatch(
+          addToast({
+            message: "Failed to copy template",
+            type: "error",
+          })
+        );
+      });
+  };
+
   const renderFilterInput = (filter) => {
     const operator = filter.operator || "=";
 
@@ -323,9 +369,6 @@ export default function FilterPanel({
     if (filter.type === "select") {
       return (
         <div className={cn({ "flex gap-2": false })}>
-          {/* <span className="self-center font-mono text-gray-600 text-sm min-w-[30px]">
-            {operator}
-          </span> */}
           <Select
             value={localFilterValues[filter.name] || ""}
             onChange={(value) => handleFilterValueChange(filter.name, value)}
@@ -336,23 +379,6 @@ export default function FilterPanel({
             placeholder={`-- Select ${filter.display_name} --`}
             className="text-sm"
           />
-          {/* <select
-            value={localFilterValues[filter.name] || ""}
-            onChange={(e) =>
-              handleFilterValueChange(filter.name, e.target.value)
-            }
-            className="flex-1 rounded-md border-gray-300 shadow-sm focus:border-primary-light focus:ring-primary-light"
-          >
-            <option value="">-- Select {filter.display_name} --</option>
-            {(filter.options || []).map((option, index) => (
-              <option
-                key={index}
-                value={option}
-              >
-                {option}
-              </option>
-            ))}
-          </select> */}
         </div>
       );
     }
@@ -413,7 +439,6 @@ export default function FilterPanel({
     // Default - single input with operator
     return (
       <div className={cn({ "flex gap-2": false })}>
-        {/* <span className="self-center font-mono text-gray-600 text-sm min-w-[30px]">{operator}</span> */}
         <Input
           type={filter.type}
           placeholder={`Enter ${filter.display_name.toLowerCase()}`}
@@ -425,17 +450,17 @@ export default function FilterPanel({
     );
   };
 
-  // const getOperatorLabel = (operator) => {
-  //   const allOperators = Object.values(OPERATOR_OPTIONS).flat();
-  //   const found = allOperators.find((op) => op.value === operator);
-  //   return found ? found.label : operator;
-  // };
+  const getOperatorLabel = (operator) => {
+    const allOperators = Object.values(OPERATOR_OPTIONS).flat();
+    const found = allOperators.find((op) => op.value === operator);
+    return found ? found.label : operator;
+  };
 
   return (
     <div className="bg-white p-4 rounded-lg shadow-md border border-gray-200 mb-4">
-      <div className="flex justify-between items-center mb-3">
-        <h3 className="font-bold text-lg">Dashboard Filters</h3>
-        {!isEmbedMode && (
+      {!isEmbedMode && (
+        <div className="flex justify-between items-center mb-3">
+          <h3 className="font-bold text-lg">Dashboard Filters</h3>
           <Button
             size="sm"
             variant="outline"
@@ -444,13 +469,17 @@ export default function FilterPanel({
           >
             <RiAddLine className="mr-1" /> Add Filter
           </Button>
-        )}
-      </div>
+        </div>
+      )}
 
       {/* Filter Input Form (Add/Edit) */}
       {!isEmbedMode && (isAddingFilter || editingFilterId) && (
-        <div className="bg-gray-50 p-3 rounded-md mb-3 space-y-3">
-          <div className="grid grid-cols-3 gap-2">
+        <form
+          className="bg-gray-50 p-3 rounded-md mb-3 space-y-3"
+          onSubmit={(e) => e.preventDefault()}
+          autoComplete="off"
+        >
+          <div className="grid grid-cols-4 gap-2">
             <div>
               <label className="block text-xs font-medium text-gray-700 mb-1">
                 Variable Name
@@ -489,42 +518,22 @@ export default function FilterPanel({
                 className="text-sm"
               />
             </div>
-            {/* <div>
-              <label className="block text-xs font-medium text-gray-700 mb-1">
-                Type
-              </label>
-              <select
-                value={newFilterType}
-                onChange={(e) => handleTypeChange(e.target.value)}
-                className="w-full rounded-md border-gray-300 shadow-sm focus:border-primary-light focus:ring-primary-light"
-              >
-                <option value="text">Text</option>
-                <option value="number">Number</option>
-                <option value="date">Date</option>
-                <option value="boolean">Boolean</option>
-                <option value="select">Dropdown</option>
-              </select>
-            </div> */}
-            {/* <div>
+            <div>
               <label className="block text-xs font-medium text-gray-700 mb-1">
                 Operator
               </label>
-              <select
+              <Select
                 value={newFilterOperator}
-                onChange={(e) => setNewFilterOperator(e.target.value)}
-                className="w-full rounded-md border-gray-300 shadow-sm focus:border-primary-light focus:ring-primary-light"
+                onChange={(value) => setNewFilterOperator(value)}
+                options={OPERATOR_OPTIONS[newFilterType]?.map((op) => ({
+                  value: op.value,
+                  label: op.label,
+                }))}
+                placeholder="Select operator..."
+                className="text-sm"
                 disabled={newFilterType === "boolean"}
-              >
-                {OPERATOR_OPTIONS[newFilterType]?.map((op) => (
-                  <option
-                    key={op.value}
-                    value={op.value}
-                  >
-                    {op.label}
-                  </option>
-                ))}
-              </select>
-            </div> */}
+              />
+            </div>
           </div>
 
           {/* Options input for Select type */}
@@ -595,7 +604,7 @@ export default function FilterPanel({
               Cancel
             </Button>
           </div>
-        </div>
+        </form>
       )}
 
       {/* Active Filters List */}
@@ -605,49 +614,76 @@ export default function FilterPanel({
           {!isEmbedMode && "Click 'Add Filter' to create one."}
         </p>
       ) : (
-        <div className="space-y-3">
+        <form
+          className="space-y-3"
+          onSubmit={(e) => e.preventDefault()}
+          autoComplete="off"
+        >
           {filters.map((filter) => (
             <div
               key={filter.id}
-              className="flex items-end gap-2"
+              className="border border-gray-200 rounded-md p-3 space-y-2"
             >
-              <div className="flex-1">
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+              {/* Filter Header with Actions */}
+              <div className="flex items-center justify-between">
+                <label className="block text-sm font-medium text-gray-700">
                   {filter.display_name}
                   <span className="text-xs text-gray-500 ml-1">
                     ({filter.name})
                   </span>
-                  {/* <span className="text-xs text-blue-600 ml-1">
+                  <span className="text-xs text-blue-600 ml-1">
                     [{getOperatorLabel(filter.operator)}]
-                  </span> */}
+                  </span>
                 </label>
-                {renderFilterInput(filter)}
+                {!isEmbedMode && (
+                  <div className="flex gap-1">
+                    <Button
+                      size="icon"
+                      variant="ghost"
+                      onClick={() => handleCopyTemplate(filter)}
+                      title="Copy SQL template"
+                    >
+                      <RiFileCopyLine className="text-blue-500" />
+                    </Button>
+                    <Button
+                      size="icon"
+                      variant="ghost"
+                      onClick={() => startEditFilter(filter)}
+                      title="Edit filter"
+                      disabled={isAddingFilter || editingFilterId !== null}
+                    >
+                      <RiPencilLine />
+                    </Button>
+                    <Button
+                      size="icon"
+                      variant="ghost"
+                      onClick={() => handleDeleteFilter(filter.id)}
+                      title="Delete filter"
+                      disabled={isAddingFilter || editingFilterId !== null}
+                    >
+                      <RiDeleteBinLine className="text-red-500" />
+                    </Button>
+                  </div>
+                )}
               </div>
+
+              {/* SQL Template Preview (Collapsible) */}
               {!isEmbedMode && (
-                <div className="flex gap-1">
-                  <Button
-                    size="icon"
-                    variant="ghost"
-                    onClick={() => startEditFilter(filter)}
-                    title="Edit filter"
-                    disabled={isAddingFilter || editingFilterId !== null}
-                  >
-                    <RiPencilLine />
-                  </Button>
-                  <Button
-                    size="icon"
-                    variant="ghost"
-                    onClick={() => handleDeleteFilter(filter.id)}
-                    title="Delete filter"
-                    disabled={isAddingFilter || editingFilterId !== null}
-                  >
-                    <RiDeleteBinLine className="text-red-500" />
-                  </Button>
-                </div>
+                <details className="text-xs">
+                  <summary className="cursor-pointer text-gray-500 hover:text-gray-700 select-none">
+                    SQL Template
+                  </summary>
+                  <code className="block mt-1 p-2 bg-gray-100 rounded text-gray-700 font-mono break-all">
+                    {generateSQLTemplate(filter)}
+                  </code>
+                </details>
               )}
+
+              {/* Filter Input */}
+              <div>{renderFilterInput(filter)}</div>
             </div>
           ))}
-        </div>
+        </form>
       )}
 
       {/* Action Buttons */}

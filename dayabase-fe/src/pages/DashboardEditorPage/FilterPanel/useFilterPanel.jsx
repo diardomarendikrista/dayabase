@@ -1,4 +1,4 @@
-// pages/DashboardEditorPage/FilterPanel/hooks/useFilterPanel.jsx
+// pages/DashboardEditorPage/FilterPanel/useFilterPanel.jsx
 // Custom hook for FilterPanel business logic
 
 import { useState, useEffect } from "react";

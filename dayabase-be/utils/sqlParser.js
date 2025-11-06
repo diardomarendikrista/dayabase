@@ -29,7 +29,12 @@ function parseSqlWithParameters(sql, parameters = {}, dbType) {
         const varName = placeholder.replace(/[{}]/g, ""); // Dapatkan "kategori" dari "{{kategori}}"
         const value = parameters[varName];
         // Consider empty string as invalid, but allow boolean false and number 0
-        if (value === null || value === undefined || value === "") {
+        if (
+          value === null ||
+          value === undefined ||
+          value === "" ||
+          (Array.isArray(value) && value.length === 0)
+        ) {
           return false;
         }
         return true;
@@ -46,29 +51,42 @@ function parseSqlWithParameters(sql, parameters = {}, dbType) {
     (match, varName) => {
       const value = parameters[varName];
 
-      // Allow boolean false and number 0, but reject null, undefined, and empty string
-      if (value === null || value === undefined || value === "") {
+      if (
+        value === undefined ||
+        value === null ||
+        value === "" ||
+        (Array.isArray(value) && value.length === 0)
+      ) {
+        // Variabel ini *dibutuhkan* (tidak di dalam blok opsional yang dihapus)
+        // tapi nilainya tidak ada di 'parameters'.
         throw new Error(`Missing required parameter value for: {{${varName}}}`);
       }
 
-      // Convert boolean values to PostgreSQL boolean format
-      let finalValue = value;
-      if (value === "true" || value === true) {
-        finalValue = true;
-      } else if (value === "false" || value === false) {
-        finalValue = false;
+      // Jika value adalah array maka buat placeholder IN ($1, $2, ...)
+      if (Array.isArray(value)) {
+        const placeholders = value.map(() => {
+          if (dbType === "postgres") return `$${pgParamIndex++}`;
+          return "?";
+        });
+
+        queryValues.push(...value);
+        return placeholders.join(", ");
       }
 
       // Tambahkan nilai ke array values
-      queryValues.push(finalValue);
+      queryValues.push(value);
 
       // Kembalikan sintaks placeholder yang benar untuk driver database
       if (dbType === "postgres") {
-        return `${pgParamIndex++}`;
+        return `$${pgParamIndex++}`;
       }
       return "?"; // Default ke '?' untuk MySQL dan lainnya
     }
   );
+
+  // console.log(sqlAfterOptional, "sqlAfterOptional");
+  // console.log(finalSql, "finalSql");
+  // console.log(queryValues, "queryValues");
 
   return { finalSql, queryValues };
 }

@@ -1,10 +1,16 @@
 // pages/DashboardEditorPage/FilterPanel/FilterForm.jsx
+// Form for adding/editing filters
+
 import { useState, useEffect } from "react";
 import Input from "components/atoms/Input";
 import Button from "components/atoms/Button";
 import Select from "components/atoms/Select";
 import { RiAddCircleLine, RiCloseCircleLine } from "react-icons/ri";
-import { OPERATOR_OPTIONS, FILTER_TYPES, getDefaultOperator } from "./FilterOperators";
+import {
+  OPERATOR_OPTIONS,
+  FILTER_TYPES,
+  getDefaultOperator,
+} from "./FilterOperators";
 
 export default function FilterForm({
   editingFilter = null,
@@ -34,11 +40,17 @@ export default function FilterForm({
   }, [editingFilter]);
 
   const handleTypeChange = (newType) => {
+    let currentOptions = [];
+    if (newType === "select" || newType === "multi-select") {
+      currentOptions = editingFilter.options || [];
+    }
+    getDefaultOperator(newType);
+
     setFormData({
       ...formData,
       type: newType,
       operator: getDefaultOperator(newType),
-      options: [],
+      options: currentOptions,
     });
   };
 
@@ -131,8 +143,8 @@ export default function FilterForm({
         </div>
       </div>
 
-      {/* Options for Select type */}
-      {formData.type === "select" && (
+      {/* Options for Select/Multi-Select type */}
+      {(formData.type === "select" || formData.type === "multi-select") && (
         <div>
           <label className="block text-xs font-medium text-gray-700 mb-1">
             Dropdown Options
@@ -183,10 +195,18 @@ export default function FilterForm({
 
       {/* Actions */}
       <div className="flex gap-2">
-        <Button size="sm" type="submit">
+        <Button
+          size="sm"
+          type="submit"
+        >
           {editingFilter ? "Update" : "Add"}
         </Button>
-        <Button size="sm" variant="outline" onClick={onCancel} type="button">
+        <Button
+          size="sm"
+          variant="outline"
+          onClick={onCancel}
+          type="button"
+        >
           Cancel
         </Button>
       </div>

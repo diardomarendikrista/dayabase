@@ -1,3 +1,6 @@
+// pages/DashboardEditorPage/FilterPanel/hooks/useFilterPanel.jsx
+// Custom hook for FilterPanel business logic
+
 import { useState, useEffect } from "react";
 import { useDispatch } from "react-redux";
 import { API } from "axios/axios";
@@ -59,7 +62,10 @@ export function useFilterPanel({
       return;
     }
 
-    if (formData.type === "select" && formData.options.length === 0) {
+    if (
+      (formData.type === "select" || formData.type === "multi-select") &&
+      formData.options.length === 0
+    ) {
       dispatch(
         addToast({
           message: "Select type filter requires at least one option",
@@ -118,7 +124,10 @@ export function useFilterPanel({
       return;
     }
 
-    if (formData.type === "select" && formData.options.length === 0) {
+    if (
+      (formData.type === "select" || formData.type === "multi-select") &&
+      formData.options.length === 0
+    ) {
       dispatch(
         addToast({
           message: "Select type filter requires at least one option",
@@ -136,7 +145,7 @@ export function useFilterPanel({
         operator: formData.operator,
       };
 
-      if (formData.type === "select") {
+      if (formData.type === "select" || formData.type === "multi-select") {
         payload.options = formData.options;
       }
 

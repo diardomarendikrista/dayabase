@@ -29,6 +29,10 @@ export const OPERATOR_OPTIONS = {
     { value: "=", label: "Equals (=)" },
     { value: "!=", label: "Not Equals (≠)" },
   ],
+  "multi-select": [
+    { value: "IN", label: "In (Any of)" },
+    { value: "NOT IN", label: "Not In (None of)" },
+  ],
 };
 
 export const FILTER_TYPES = [
@@ -36,7 +40,8 @@ export const FILTER_TYPES = [
   { value: "number", label: "Number" },
   { value: "date", label: "Date" },
   { value: "boolean", label: "Boolean" },
-  { value: "select", label: "Dropdown" },
+  { value: "select", label: "Dropdown (Single)" },
+  { value: "multi-select", label: "Dropdown (Multiple)" },
 ];
 
 /**
@@ -56,6 +61,8 @@ export const getDefaultOperator = (type) => {
     return ">=";
   } else if (type === "text") {
     return "LIKE";
+  } else if (type === "multi-select") {
+    return "IN";
   }
   return "=";
 };

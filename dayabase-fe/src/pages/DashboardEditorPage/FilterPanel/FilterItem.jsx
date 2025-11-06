@@ -1,4 +1,6 @@
 // pages/DashboardEditorPage/FilterPanel/FilterItem.jsx
+// Single filter item with input and actions
+
 import Input from "components/atoms/Input";
 import Button from "components/atoms/Button";
 import Select from "components/atoms/Select";
@@ -40,7 +42,7 @@ export default function FilterItem({
       );
     }
 
-    // Select type
+    // Select type (single)
     if (filter.type === "select") {
       return (
         <Select
@@ -52,6 +54,23 @@ export default function FilterItem({
           }))}
           placeholder={`-- Select ${filter.display_name} --`}
           className="text-sm"
+        />
+      );
+    }
+
+    // Multi-select type
+    if (filter.type === "multi-select") {
+      return (
+        <Select
+          value={value[filter.name] || []}
+          onChange={(val) => onChange(filter.name, val)}
+          options={(filter.options || []).map((option) => ({
+            value: option,
+            label: option,
+          }))}
+          placeholder={`-- Select ${filter.display_name} --`}
+          className="text-sm"
+          isMulti={true}
         />
       );
     }

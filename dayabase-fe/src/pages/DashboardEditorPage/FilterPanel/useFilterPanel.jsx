@@ -17,7 +17,7 @@ export function useFilterPanel({
   const dispatch = useDispatch();
 
   const [localFilterValues, setLocalFilterValues] = useState({});
-  const [isAddingFilter, setIsAddingFilter] = useState(false);
+  const [showFilterModal, setShowFilterModal] = useState(false);
   const [editingFilter, setEditingFilter] = useState(null);
 
   // Sync local values with prop values
@@ -59,7 +59,7 @@ export function useFilterPanel({
           type: "error",
         })
       );
-      return;
+      return false;
     }
 
     if (
@@ -72,7 +72,7 @@ export function useFilterPanel({
           type: "error",
         })
       );
-      return;
+      return false;
     }
 
     try {
@@ -93,7 +93,6 @@ export function useFilterPanel({
       );
 
       onFiltersChange([...filters, response.data]);
-      setIsAddingFilter(false);
 
       dispatch(
         addToast({
@@ -101,6 +100,7 @@ export function useFilterPanel({
           type: "success",
         })
       );
+      return true;
     } catch (error) {
       console.error("Failed to add filter:", error);
       dispatch(
@@ -109,6 +109,7 @@ export function useFilterPanel({
           type: "error",
         })
       );
+      return false;
     }
   };
 
@@ -121,7 +122,7 @@ export function useFilterPanel({
           type: "error",
         })
       );
-      return;
+      return false;
     }
 
     if (
@@ -134,7 +135,7 @@ export function useFilterPanel({
           type: "error",
         })
       );
-      return;
+      return false;
     }
 
     try {
@@ -157,7 +158,6 @@ export function useFilterPanel({
       onFiltersChange(
         filters.map((f) => (f.id === editingFilter.id ? response.data : f))
       );
-      setEditingFilter(null);
 
       dispatch(
         addToast({
@@ -165,6 +165,7 @@ export function useFilterPanel({
           type: "success",
         })
       );
+      return true;
     } catch (error) {
       console.error("Failed to update filter:", error);
       dispatch(
@@ -173,6 +174,7 @@ export function useFilterPanel({
           type: "error",
         })
       );
+      return false;
     }
   };
 
@@ -234,24 +236,24 @@ export function useFilterPanel({
   };
 
   // Form submit handler
-  const handleFormSubmit = (formData) => {
+  const handleFormSubmit = async (formData) => {
+    let success = false;
     if (editingFilter) {
-      handleUpdateFilter(formData);
+      success = await handleUpdateFilter(formData);
     } else {
-      handleAddFilter(formData);
+      success = await handleAddFilter(formData);
     }
-  };
 
-  // Form cancel handler
-  const handleFormCancel = () => {
-    setIsAddingFilter(false);
-    setEditingFilter(null);
+    if (success) {
+      setEditingFilter(null);
+    }
+    return success;
   };
 
   return {
     // State
     localFilterValues,
-    isAddingFilter,
+    showFilterModal,
     editingFilter,
 
     // Filter value handlers
@@ -261,12 +263,11 @@ export function useFilterPanel({
 
     // Filter CRUD handlers
     handleFormSubmit,
-    handleFormCancel,
     handleDeleteFilter,
     handleCopyTemplate,
 
     // UI state setters
-    setIsAddingFilter,
+    setShowFilterModal,
     setEditingFilter,
   };
 }

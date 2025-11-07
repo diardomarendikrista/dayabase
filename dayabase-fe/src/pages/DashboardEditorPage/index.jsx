@@ -1,6 +1,6 @@
 // pages/DashboardEditorPage/index.jsx
 import { useState, useEffect, useCallback } from "react";
-import { useLocation, useParams } from "react-router-dom";
+import { useLocation, useParams, useNavigate } from "react-router-dom";
 import { useDispatch } from "react-redux";
 import { API } from "axios/axios";
 import { Responsive, WidthProvider } from "react-grid-layout";
@@ -15,6 +15,7 @@ import { addToast } from "store/slices/toastSlice";
 import Input from "components/atoms/Input";
 import Button from "components/atoms/Button";
 import BackButton from "components/molecules/BackButton";
+import Modal from "components/molecules/Modal";
 
 const ResponsiveGridLayout = WidthProvider(Responsive);
 
@@ -22,6 +23,7 @@ export default function DashboardViewPage() {
   const { id, token } = useParams();
   const location = useLocation();
   const dispatch = useDispatch();
+  const navigate = useNavigate();
   const isEmbedMode = location.pathname.includes("/embed/");
   const dashboardIdentifier = id || token;
 
@@ -43,6 +45,22 @@ export default function DashboardViewPage() {
   const [showModalFilterMapping, setShowModalFilterMapping] = useState(false);
   const [selectedQuestionForMapping, setSelectedQuestionForMapping] =
     useState(null);
+
+  const [showLeaveWarning, setShowLeaveWarning] = useState(false);
+  const backUrl = `/collections/${dataDashboard?.collection_id}`;
+
+  const handleBackClick = () => {
+    if (hasUnsavedChanges) {
+      setShowLeaveWarning(true);
+    } else {
+      navigate(backUrl);
+    }
+  };
+
+  const handleConfirmLeave = () => {
+    setShowLeaveWarning(false);
+    navigate(backUrl);
+  };
 
   const pushStateToHistory = (newState) => {
     const newHistory = history.slice(0, currentIndex + 1);
@@ -262,6 +280,28 @@ export default function DashboardViewPage() {
     fetchDashboardData();
   }, [fetchDashboardData]);
 
+  const currentState =
+    history.length > 0 && currentIndex > -1 ? history[currentIndex] : null;
+
+  const hasUnsavedChanges = currentState
+    ? currentIndex !== savedIndex || dashboardName !== currentState.name
+    : false;
+
+  useEffect(() => {
+    const handleBeforeUnload = (event) => {
+      event.preventDefault();
+      event.returnValue = "";
+    };
+
+    if (hasUnsavedChanges) {
+      window.addEventListener("beforeunload", handleBeforeUnload);
+    }
+
+    return () => {
+      window.removeEventListener("beforeunload", handleBeforeUnload);
+    };
+  }, [hasUnsavedChanges]);
+
   if (isLoading) return <p>Loading dashboard...</p>;
   if (history.length === 0 || currentIndex === -1)
     return (
@@ -270,20 +310,16 @@ export default function DashboardViewPage() {
       </div>
     );
 
-  const currentState = history[currentIndex];
-  const hasUnsavedChanges =
-    currentIndex !== savedIndex || dashboardName !== currentState?.name;
-
   const canUndo = currentIndex > 0;
   const canRedo = currentIndex < history.length - 1;
 
   return (
-    <div>
+    <div className="flex flex-col h-full">
       {!isEmbedMode && (
-        <div className="flex justify-between items-center mb-6">
-          <div className="flex px-2">
+        <div className="flex justify-between items-center p-4 shadow bg-white sticky top-0 z-10">
+          <div className="flex">
             <BackButton
-              to={`/collections/${dataDashboard?.collection_id}`}
+              onClick={handleBackClick}
               title={`Back to ${dataDashboard?.collection_name}`}
             />
           </div>
@@ -347,38 +383,40 @@ export default function DashboardViewPage() {
       )}
 
       {/* FILTER PANEL */}
-      <FilterPanel
-        dashboardId={id}
-        filters={filters}
-        onFiltersChange={setFilters}
-        filterValues={filterValues}
-        onFilterValuesChange={setFilterValues}
-        isEmbedMode={isEmbedMode}
-      />
+      <div className="flex-1 overflow-y-auto p-4">
+        <FilterPanel
+          dashboardId={id}
+          filters={filters}
+          onFiltersChange={setFilters}
+          filterValues={filterValues}
+          onFilterValuesChange={setFilterValues}
+          isEmbedMode={isEmbedMode}
+        />
 
-      <ResponsiveGridLayout
-        className="layout"
-        layouts={{ lg: currentState.layout }}
-        breakpoints={{ lg: 1100, md: 996, sm: 768, xs: 480, xxs: 0 }}
-        cols={{ lg: 24, md: 20, sm: 12, xs: 8, xxs: 4 }}
-        rowHeight={30}
-        onDragStop={handleLayoutChange}
-        onResizeStop={handleLayoutChange}
-        isDraggable={!isEmbedMode}
-        isResizable={!isEmbedMode}
-      >
-        {currentState.questions.map((q) => (
-          <div key={q?.instance_id?.toString()}>
-            <ChartWidget
-              questionId={q.id}
-              filterParameters={filterValues}
-              onRemove={() => handleRemoveQuestion(q.instance_id.toString())}
-              onOpenFilterMapping={() => handleOpenFilterMapping(q)}
-              isEmbedMode={isEmbedMode}
-            />
-          </div>
-        ))}
-      </ResponsiveGridLayout>
+        <ResponsiveGridLayout
+          className="layout"
+          layouts={{ lg: currentState.layout }}
+          breakpoints={{ lg: 1100, md: 996, sm: 768, xs: 480, xxs: 0 }}
+          cols={{ lg: 24, md: 20, sm: 12, xs: 8, xxs: 4 }}
+          rowHeight={30}
+          onDragStop={handleLayoutChange}
+          onResizeStop={handleLayoutChange}
+          isDraggable={!isEmbedMode}
+          isResizable={!isEmbedMode}
+        >
+          {currentState.questions.map((q) => (
+            <div key={q?.instance_id?.toString()}>
+              <ChartWidget
+                questionId={q.id}
+                filterParameters={filterValues}
+                onRemove={() => handleRemoveQuestion(q.instance_id.toString())}
+                onOpenFilterMapping={() => handleOpenFilterMapping(q)}
+                isEmbedMode={isEmbedMode}
+              />
+            </div>
+          ))}
+        </ResponsiveGridLayout>
+      </div>
 
       {!isEmbedMode && (
         <>
@@ -402,6 +440,33 @@ export default function DashboardViewPage() {
             availableFilters={filters}
             onMappingsSaved={handleFilterMappingsSaved}
           />
+
+          <Modal
+            title="Peringatan"
+            showModal={showLeaveWarning}
+            setShowModal={setShowLeaveWarning}
+          >
+            <div className="space-y-4">
+              <p>
+                Anda memiliki perubahan yang belum disimpan. Apakah Anda yakin
+                ingin keluar?
+              </p>
+              <div className="flex justify-end gap-2">
+                <Button
+                  variant="outline"
+                  onClick={() => setShowLeaveWarning(false)}
+                >
+                  Batal
+                </Button>
+                <Button
+                  variant="danger"
+                  onClick={handleConfirmLeave}
+                >
+                  Keluar
+                </Button>
+              </div>
+            </div>
+          </Modal>
         </>
       )}
     </div>

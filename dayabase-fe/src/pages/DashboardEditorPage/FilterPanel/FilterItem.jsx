@@ -16,7 +16,6 @@ export default function FilterItem({
   onEdit,
   onDelete,
   isEmbedMode,
-  disabled = false,
 }) {
   const operator = filter.operator || "=";
 
@@ -127,13 +126,34 @@ export default function FilterItem({
         placeholder={`Enter ${filter.display_name.toLowerCase()}`}
         value={value[filter.name] || ""}
         onChange={(e) => onChange(filter.name, e.target.value)}
-        className="flex-1"
+        className="w-full"
       />
     );
   };
 
+  // Ini adalah class dasar untuk setiap item filter agar bisa flex-wrap
+  const baseWrapperClasses = "flex-1 min-w-[200px] md:min-w-[240px]";
+
+  // Tampilan "Ringan" untuk mode Embed / Tampil
+  if (isEmbedMode) {
+    return (
+      <div className={cn("space-y-1", baseWrapperClasses)}>
+        <label className="block text-sm font-medium text-gray-700">
+          {filter.display_name}
+        </label>
+        <div>{renderInput()}</div>
+      </div>
+    );
+  }
+
+  // Tampilan "Berat" untuk mode Edit
   return (
-    <div className="border border-gray-200 rounded-md p-3 space-y-2">
+    <div
+      className={cn(
+        "border border-gray-200 rounded-md p-3 space-y-2",
+        baseWrapperClasses
+      )}
+    >
       {/* Header with Actions */}
       <div className="flex items-center justify-between">
         <label className="block text-sm font-medium text-gray-700">
@@ -159,7 +179,6 @@ export default function FilterItem({
               variant="ghost"
               onClick={() => onEdit(filter)}
               title="Edit filter"
-              disabled={disabled}
             >
               <RiPencilLine />
             </Button>
@@ -168,7 +187,6 @@ export default function FilterItem({
               variant="ghost"
               onClick={() => onDelete(filter.id)}
               title="Delete filter"
-              disabled={disabled}
             >
               <RiDeleteBinLine className="text-red-500" />
             </Button>

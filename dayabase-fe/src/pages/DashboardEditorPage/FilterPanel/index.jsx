@@ -3,9 +3,9 @@
 
 import Button from "components/atoms/Button";
 import { RiAddLine } from "react-icons/ri";
-import FilterForm from "./FilterForm";
 import FilterItem from "./FilterItem";
 import { useFilterPanel } from "./useFilterPanel";
+import ModalAddEditFilter from "./ModalAddEditFilter";
 
 export default function FilterPanel({
   dashboardId,
@@ -17,7 +17,7 @@ export default function FilterPanel({
 }) {
   const {
     localFilterValues,
-    isAddingFilter,
+    showFilterModal,
     editingFilter,
     handleFilterValueChange,
     handleApplyFilters,
@@ -26,7 +26,7 @@ export default function FilterPanel({
     handleFormCancel,
     handleDeleteFilter,
     handleCopyTemplate,
-    setIsAddingFilter,
+    setShowFilterModal,
     setEditingFilter,
   } = useFilterPanel({
     dashboardId,
@@ -36,7 +36,15 @@ export default function FilterPanel({
     onFilterValuesChange,
   });
 
-  const isFormDisabled = isAddingFilter || editingFilter !== null;
+  const handleAddClick = () => {
+    setEditingFilter(null); // Pastikan mode "Add"
+    setShowFilterModal(true);
+  };
+
+  const handleEditClick = (filter) => {
+    setEditingFilter(filter); // Set filter yg di-edit
+    setShowFilterModal(true);
+  };
 
   return (
     <div className="bg-white p-4 rounded-lg shadow-md border border-gray-200 mb-4">
@@ -47,21 +55,11 @@ export default function FilterPanel({
           <Button
             size="sm"
             variant="outline"
-            onClick={() => setIsAddingFilter(true)}
-            disabled={isFormDisabled}
+            onClick={handleAddClick} // <-- Ubah onClick
           >
             <RiAddLine className="mr-1" /> Add Filter
           </Button>
         </div>
-      )}
-
-      {/* Add/Edit Form */}
-      {!isEmbedMode && (isAddingFilter || editingFilter) && (
-        <FilterForm
-          editingFilter={editingFilter}
-          onSubmit={handleFormSubmit}
-          onCancel={handleFormCancel}
-        />
       )}
 
       {/* Filters List */}
@@ -72,7 +70,7 @@ export default function FilterPanel({
         </p>
       ) : (
         <form
-          className="space-y-3"
+          className="flex flex-wrap gap-4"
           onSubmit={(e) => {
             e.preventDefault();
             handleApplyFilters();
@@ -86,10 +84,9 @@ export default function FilterPanel({
               value={localFilterValues}
               onChange={handleFilterValueChange}
               onCopyTemplate={handleCopyTemplate}
-              onEdit={setEditingFilter}
+              onEdit={handleEditClick}
               onDelete={handleDeleteFilter}
               isEmbedMode={isEmbedMode}
-              disabled={isFormDisabled}
             />
           ))}
         </form>
@@ -114,6 +111,15 @@ export default function FilterPanel({
             Clear All
           </Button>
         </div>
+      )}
+
+      {!isEmbedMode && (
+        <ModalAddEditFilter
+          showModal={showFilterModal}
+          setShowModal={setShowFilterModal}
+          editingFilter={editingFilter}
+          onSubmit={handleFormSubmit} // Pass handler dari hook
+        />
       )}
     </div>
   );

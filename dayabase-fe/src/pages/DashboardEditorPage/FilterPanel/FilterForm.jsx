@@ -16,6 +16,7 @@ export default function FilterForm({
   editingFilter = null,
   onSubmit,
   onCancel,
+  isSaving = false,
 }) {
   const [formData, setFormData] = useState({
     name: "",
@@ -77,7 +78,7 @@ export default function FilterForm({
 
   return (
     <form
-      className="bg-gray-50 p-3 rounded-md mb-3 space-y-3"
+      className="bg-gray-50 p-3 rounded-md space-y-3"
       onSubmit={(e) => {
         e.preventDefault();
         handleSubmit();
@@ -198,14 +199,16 @@ export default function FilterForm({
         <Button
           size="sm"
           type="submit"
+          disabled={isSaving}
         >
-          {editingFilter ? "Update" : "Add"}
+          {isSaving ? "Saving..." : editingFilter ? "Update" : "Add"}
         </Button>
         <Button
           size="sm"
           variant="outline"
           onClick={onCancel}
           type="button"
+          disabled={isSaving}
         >
           Cancel
         </Button>

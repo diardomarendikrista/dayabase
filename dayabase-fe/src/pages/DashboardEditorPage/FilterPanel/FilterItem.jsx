@@ -4,7 +4,13 @@
 import Input from "components/atoms/Input";
 import Button from "components/atoms/Button";
 import Select from "components/atoms/Select";
-import { RiFileCopyLine, RiPencilLine, RiDeleteBinLine } from "react-icons/ri";
+import {
+  RiArrowRightSLine,
+  RiArrowDownSLine,
+  RiFileCopyLine,
+  RiPencilLine,
+  RiDeleteBinLine,
+} from "react-icons/ri";
 import { cn } from "lib/utils";
 import { getOperatorLabel, generateSQLTemplate } from "./FilterOperators";
 
@@ -169,14 +175,6 @@ export default function FilterItem({
             <Button
               size="icon"
               variant="ghost"
-              onClick={() => onCopyTemplate(filter)}
-              title="Copy SQL template"
-            >
-              <RiFileCopyLine className="text-blue-500" />
-            </Button>
-            <Button
-              size="icon"
-              variant="ghost"
               onClick={() => onEdit(filter)}
               title="Edit filter"
             >
@@ -196,9 +194,27 @@ export default function FilterItem({
 
       {/* SQL Template Preview (Collapsible) */}
       {!isEmbedMode && (
-        <details className="text-xs">
-          <summary className="cursor-pointer text-gray-500 hover:text-gray-700 select-none">
-            SQL Template
+        <details className="text-xs group">
+          <summary className="cursor-pointer text-gray-500 hover:text-gray-700 select-none flex items-center justify-between">
+            <div className="flex items-center gap-0.5">
+              <RiArrowRightSLine
+                size={16}
+                className="group-open:hidden"
+              />
+              <RiArrowDownSLine
+                size={16}
+                className="hidden group-open:block"
+              />
+              <span>SQL Template</span>
+            </div>
+            <Button
+              size="icon"
+              variant="ghost"
+              onClick={() => onCopyTemplate(filter)}
+              title="Copy SQL template"
+            >
+              <RiFileCopyLine className="text-blue-500" />
+            </Button>
           </summary>
           <code className="block mt-1 p-2 bg-gray-100 rounded text-gray-700 font-mono break-all">
             {generateSQLTemplate(filter)}

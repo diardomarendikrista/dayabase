@@ -1,5 +1,6 @@
 import Button from "components/atoms/Button";
 import Portal from "components/atoms/Portal";
+import { cn } from "lib/utils";
 import { RiCloseLine } from "react-icons/ri";
 
 export default function Modal({
@@ -25,19 +26,20 @@ export default function Modal({
     >
       {/* Lapisan Overlay Abu-abu */}
       <div
-        className={`fixed inset-0 bg-black/50 flex justify-center items-center z-50 transition-opacity duration-300 ${
-          showModal ? "" : "opacity-0 pointer-events-none"
-        }`}
+        className={cn(
+          "fixed inset-0 bg-black/50 flex justify-center items-center z-50 transition-opacity duration-300",
+          { "opacity-0 pointer-events-none": !showModal }
+        )}
         onClick={closeOnOverlayClick ? handleClose : undefined}
         aria-hidden={!showModal}
       >
         {/* Kontainer Konten Modal */}
         <div
-          className="bg-white p-6 rounded-lg shadow-xl w-full max-w-2xl"
+          className="bg-white p-6 rounded-lg shadow-xl w-full max-w-2xl max-h-[95vh] flex flex-col"
           onClick={handleContentClick}
         >
           {/* Header Modal */}
-          <div className="flex justify-between items-center mb-4 pb-4 border-b">
+          <div className="flex justify-between items-center mb-4 pb-4 border-b flex-shrink-0">
             <h2 className="text-xl font-bold">{title}</h2>
             <Button
               onClick={handleClose}
@@ -49,7 +51,7 @@ export default function Modal({
             </Button>
           </div>
 
-          <div>{children}</div>
+          <div className="overflow-y-auto">{children}</div>
         </div>
       </div>
     </Portal>

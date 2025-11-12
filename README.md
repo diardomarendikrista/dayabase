@@ -167,6 +167,34 @@ Before starting the server, you need to set up the application's database.
         updated_by_user_id INT REFERENCES users(id) ON DELETE SET NULL
     );
 
+    -- Table to store question click behaviors
+    CREATE TABLE IF NOT EXISTS question_click_behaviors (
+        id SERIAL PRIMARY KEY,
+        question_id INT NOT NULL REFERENCES questions(id) ON DELETE CASCADE,
+        enabled BOOLEAN DEFAULT FALSE NOT NULL,
+        action VARCHAR(50), -- 'link_to_question', 'link_to_dashboard', 'external_url'
+        target_id INT, -- for link_to_question/dashboard (bisa NULL jika external_url)
+        target_url TEXT, -- for external_url
+        pass_column VARCHAR(255),
+        target_param VARCHAR(255),
+        created_at TIMESTAMP DEFAULT NOW() NOT NULL,
+        updated_at TIMESTAMP DEFAULT NOW() NOT NULL,
+
+        -- Constraints
+        CONSTRAINT unique_question_behavior UNIQUE(question_id),
+        CONSTRAINT check_action_values CHECK (action IN ('link_to_question', 'link_to_dashboard', 'external_url')),
+        CONSTRAINT check_target_or_url CHECK (
+            (action = 'external_url' AND target_url IS NOT NULL) OR
+            (action IN ('link_to_question', 'link_to_dashboard') AND target_id IS NOT NULL) OR
+            enabled = FALSE
+        )
+    );
+
+    -- index for question click behaviors
+    CREATE INDEX idx_click_behaviors_question_id ON question_click_behaviors(question_id);
+    CREATE INDEX idx_click_behaviors_enabled ON question_click_behaviors(enabled) WHERE enabled = TRUE;
+    CREATE INDEX idx_click_behaviors_target_id ON question_click_behaviors(target_id) WHERE target_id IS NOT NULL;
+
     -- Table to store dashboards
     CREATE TABLE dashboards (
         id SERIAL PRIMARY KEY,

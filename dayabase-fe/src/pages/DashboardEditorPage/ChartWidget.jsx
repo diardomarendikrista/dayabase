@@ -177,6 +177,17 @@ export default function ChartWidget({
               data={results}
               savedState={question.chart_config}
               isDashboard={true}
+              clickBehavior={question.click_behavior} // NEW: Pass click behavior
+              onRowClick={(row, targetUrl) => {
+                // Handle navigation based on context
+                if (isEmbedMode) {
+                  // In embed mode, open in new tab
+                  window.open(targetUrl, "_blank");
+                } else {
+                  // In normal mode, use window.location for navigation
+                  window.location.href = targetUrl;
+                }
+              }}
             />
           </div>
         );

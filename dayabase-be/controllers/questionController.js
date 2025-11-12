@@ -76,34 +76,73 @@ class QuestionController {
   }
 
   /**
-   * @description Mengambil detail satu pertanyaan beserta konfigurasi koneksinya
-   * @route GET /api/questions/:id
+   * @description Get question with click behavior (for dashboard/public view)
+   * @route GET /api/questions/:id (modify existing method)
    */
   static async getQuestionById(req, res) {
     const { id } = req.params;
     try {
       const queryText = `
-      SELECT 
-        q.id, q.name, q.sql_query, q.chart_type, q.chart_config, q.updated_at,
-        c.id as connection_id, c.connection_name, c.db_type, c.host, c.port, c.db_user, c.database_name,
-        col.id as collection_id, col.name as collection_name
-      FROM questions q
-      JOIN database_connections c ON q.connection_id = c.id
-      JOIN collections col ON q.collection_id = col.id
-      WHERE q.id = $1;
-    `;
+        SELECT 
+          q.id, q.name, q.sql_query, q.chart_type, q.chart_config, q.updated_at,
+          c.id as connection_id, c.connection_name, c.db_type, c.host, c.port, c.db_user, c.database_name,
+          col.id as collection_id, col.name as collection_name,
+          qcb.enabled as click_enabled,
+          qcb.action as click_action,
+          qcb.target_id as click_target_id,
+          qcb.target_url as click_target_url,
+          qcb.pass_column as click_pass_column,
+          qcb.target_param as click_target_param
+        FROM questions q
+        JOIN database_connections c ON q.connection_id = c.id
+        LEFT JOIN collections col ON q.collection_id = col.id
+        LEFT JOIN question_click_behaviors qcb ON q.id = qcb.question_id
+        WHERE q.id = $1;
+      `;
       const questionResult = await pool.query(queryText, [id]);
 
       if (questionResult.rows.length === 0) {
         return res.status(404).json({ message: "Question not found" });
       }
 
-      res.status(200).json(questionResult.rows[0]);
+      const row = questionResult.rows[0];
+
+      // Structure the response with click_behavior as nested object
+      const response = {
+        id: row.id,
+        name: row.name,
+        sql_query: row.sql_query,
+        chart_type: row.chart_type,
+        chart_config: row.chart_config,
+        updated_at: row.updated_at,
+        connection_id: row.connection_id,
+        connection_name: row.connection_name,
+        db_type: row.db_type,
+        host: row.host,
+        port: row.port,
+        db_user: row.db_user,
+        database_name: row.database_name,
+        collection_id: row.collection_id,
+        collection_name: row.collection_name,
+        click_behavior: row.click_enabled
+          ? {
+              enabled: row.click_enabled,
+              action: row.click_action,
+              target_id: row.click_target_id,
+              target_url: row.click_target_url,
+              pass_column: row.click_pass_column,
+              target_param: row.click_target_param,
+            }
+          : null,
+      };
+
+      res.status(200).json(response);
     } catch (error) {
       console.error(`Error fetching question ${id}:`, error);
-      res
-        .status(500)
-        .json({ message: "Failed to fetch question", error: error.message });
+      res.status(500).json({
+        message: "Failed to fetch question",
+        error: error.message,
+      });
     }
   }
 
@@ -187,6 +226,260 @@ class QuestionController {
       res
         .status(500)
         .json({ message: "Failed to update question", error: error.message });
+    }
+  }
+
+  /**
+   * @description Update or create click behavior configuration
+   * @route PUT /api/questions/:id/click-behavior
+   */
+  static async updateClickBehavior(req, res) {
+    const { id: question_id } = req.params;
+    const {
+      enabled,
+      action,
+      target_id,
+      target_url,
+      pass_column,
+      target_param,
+    } = req.body;
+    const userId = req.user.id;
+
+    // Validation
+    if (enabled && !action) {
+      return res.status(400).json({
+        message: "Action is required when click behavior is enabled.",
+      });
+    }
+
+    if (enabled && action !== "external_url" && !target_id) {
+      return res.status(400).json({
+        message: "Target ID is required for this action type.",
+      });
+    }
+
+    if (enabled && action === "external_url" && !target_url) {
+      return res.status(400).json({
+        message: "Target URL is required for external URL action.",
+      });
+    }
+
+    const client = await pool.connect();
+    try {
+      await client.query("BEGIN");
+
+      // Verify question exists
+      const questionCheck = await client.query(
+        "SELECT id FROM questions WHERE id = $1",
+        [question_id]
+      );
+
+      if (questionCheck.rowCount === 0) {
+        await client.query("ROLLBACK");
+        return res.status(404).json({ message: "Question not found." });
+      }
+
+      // Check if click behavior already exists
+      const existingBehavior = await client.query(
+        "SELECT id FROM question_click_behaviors WHERE question_id = $1",
+        [question_id]
+      );
+
+      let result;
+
+      if (existingBehavior.rowCount > 0) {
+        // UPDATE existing
+        result = await client.query(
+          `UPDATE question_click_behaviors 
+           SET enabled = $1, action = $2, target_id = $3, target_url = $4, 
+               pass_column = $5, target_param = $6
+           WHERE question_id = $7 
+           RETURNING *`,
+          [
+            enabled,
+            enabled ? action : null,
+            enabled ? target_id : null,
+            enabled ? target_url : null,
+            enabled ? pass_column : null,
+            enabled ? target_param : null,
+            question_id,
+          ]
+        );
+      } else {
+        // INSERT new
+        result = await client.query(
+          `INSERT INTO question_click_behaviors 
+           (question_id, enabled, action, target_id, target_url, pass_column, target_param)
+           VALUES ($1, $2, $3, $4, $5, $6, $7)
+           RETURNING *`,
+          [
+            question_id,
+            enabled,
+            enabled ? action : null,
+            enabled ? target_id : null,
+            enabled ? target_url : null,
+            enabled ? pass_column : null,
+            enabled ? target_param : null,
+          ]
+        );
+      }
+
+      // Update question's updated_at
+      await client.query(
+        "UPDATE questions SET updated_by_user_id = $1, updated_at = NOW() WHERE id = $2",
+        [userId, question_id]
+      );
+
+      await client.query("COMMIT");
+
+      res.status(200).json(result.rows[0]);
+    } catch (error) {
+      await client.query("ROLLBACK");
+      console.error(
+        `Failed to update click behavior for question ${question_id}:`,
+        error
+      );
+      res.status(500).json({
+        message: "Failed to update click behavior",
+        error: error.message,
+      });
+    } finally {
+      client.release();
+    }
+  }
+
+  /**
+   * @description Get click behavior configuration
+   * @route GET /api/questions/:id/click-behavior
+   */
+  static async getClickBehavior(req, res) {
+    const { id: question_id } = req.params;
+
+    try {
+      const result = await pool.query(
+        `SELECT qcb.* 
+         FROM question_click_behaviors qcb
+         WHERE qcb.question_id = $1`,
+        [question_id]
+      );
+
+      if (result.rows.length === 0) {
+        // Return default empty config if no behavior configured
+        return res.status(200).json({
+          question_id: parseInt(question_id),
+          enabled: false,
+          action: null,
+          target_id: null,
+          target_url: null,
+          pass_column: null,
+          target_param: null,
+        });
+      }
+
+      res.status(200).json(result.rows[0]);
+    } catch (error) {
+      console.error(
+        `Failed to get click behavior for question ${question_id}:`,
+        error
+      );
+      res.status(500).json({
+        message: "Failed to get click behavior",
+        error: error.message,
+      });
+    }
+  }
+
+  /**
+   * @description Delete click behavior
+   * @route DELETE /api/questions/:id/click-behavior
+   */
+  static async deleteClickBehavior(req, res) {
+    const { id: question_id } = req.params;
+
+    try {
+      const result = await pool.query(
+        "DELETE FROM question_click_behaviors WHERE question_id = $1 RETURNING *",
+        [question_id]
+      );
+
+      if (result.rowCount === 0) {
+        return res.status(404).json({
+          message: "No click behavior found for this question.",
+        });
+      }
+
+      res.status(200).json({
+        message: "Click behavior deleted successfully.",
+      });
+    } catch (error) {
+      console.error(
+        `Failed to delete click behavior for question ${question_id}:`,
+        error
+      );
+      res.status(500).json({
+        message: "Failed to delete click behavior",
+        error: error.message,
+      });
+    }
+  }
+
+  /**
+   * @description Validate target (question/dashboard) exists
+   * @route POST /api/questions/validate-target
+   */
+  static async validateTarget(req, res) {
+    const { action, target_id } = req.body;
+
+    if (!action || !target_id) {
+      return res.status(400).json({
+        message: "Action and target_id are required.",
+      });
+    }
+
+    try {
+      let tableName;
+      let itemType;
+
+      if (action === "link_to_question") {
+        tableName = "questions";
+        itemType = "question";
+      } else if (action === "link_to_dashboard") {
+        tableName = "dashboards";
+        itemType = "dashboard";
+      } else if (action === "external_url") {
+        // External URL doesn't need validation
+        return res.status(200).json({
+          valid: true,
+          message: "External URL action doesn't require target validation.",
+        });
+      } else {
+        return res.status(400).json({
+          message: "Invalid action type.",
+        });
+      }
+
+      const result = await pool.query(
+        `SELECT id, name FROM ${tableName} WHERE id = $1`,
+        [target_id]
+      );
+
+      if (result.rows.length === 0) {
+        return res.status(404).json({
+          message: `Target ${itemType} not found.`,
+          valid: false,
+        });
+      }
+
+      res.status(200).json({
+        valid: true,
+        target: result.rows[0],
+      });
+    } catch (error) {
+      console.error("Failed to validate target:", error);
+      res.status(500).json({
+        message: "Failed to validate target",
+        error: error.message,
+      });
     }
   }
 }

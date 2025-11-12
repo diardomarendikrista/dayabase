@@ -1,3 +1,4 @@
+// components/organisms/charts/PivotTable.jsx
 import {
   useMemo,
   useRef,
@@ -6,11 +7,23 @@ import {
   useImperativeHandle,
 } from "react";
 import { AgGridReact } from "ag-grid-react";
+import { useNavigate } from "react-router-dom";
 import * as XLSX from "xlsx";
 
 const PivotTable = forwardRef(
-  ({ data, savedState, onStateChange, isDashboard = false }, ref) => {
+  (
+    {
+      data,
+      savedState,
+      onStateChange,
+      isDashboard = false,
+      clickBehavior = null,
+      onRowClick = null,
+    },
+    ref
+  ) => {
     const gridRef = useRef();
+    const navigate = useNavigate();
 
     const defaultColDef = useMemo(
       () => ({
@@ -71,6 +84,48 @@ const PivotTable = forwardRef(
       [savedState]
     );
 
+    // Handle row click for drill-down
+    const handleRowClick = useCallback(
+      (event) => {
+        if (!clickBehavior || !clickBehavior.enabled) return;
+
+        const rowData = event.data;
+        if (!rowData) return;
+
+        const { action, target_id, pass_column, target_param } = clickBehavior;
+
+        // Get value from clicked row
+        const paramValue = rowData[pass_column];
+
+        if (paramValue === undefined || paramValue === null) {
+          console.warn(
+            `Column "${pass_column}" not found or is null in row data`
+          );
+          return;
+        }
+
+        // Build target URL with parameter
+        let targetUrl;
+        if (action === "link_to_question") {
+          targetUrl = `/questions/${target_id}?${target_param}=${encodeURIComponent(paramValue)}`;
+        } else if (action === "link_to_dashboard") {
+          // For dashboard, pass as filter parameter
+          targetUrl = `/dashboards/${target_id}?${target_param}=${encodeURIComponent(paramValue)}`;
+        }
+
+        if (targetUrl) {
+          if (onRowClick) {
+            // Allow parent to handle navigation
+            onRowClick(rowData, targetUrl);
+          } else {
+            // Default: navigate directly
+            navigate(targetUrl);
+          }
+        }
+      },
+      [clickBehavior, navigate, onRowClick]
+    );
+
     const onBtnExport = useCallback(() => {
       if (!XLSX) {
         alert(
@@ -121,6 +176,9 @@ const PivotTable = forwardRef(
       exportToExcel: onBtnExport,
     }));
 
+    // Add cursor pointer style if clickable
+    const rowClass = clickBehavior?.enabled ? "cursor-pointer" : "";
+
     return (
       <div className="h-full w-full flex flex-col">
         <div className="ag-theme-alpine flex-grow">
@@ -136,6 +194,8 @@ const PivotTable = forwardRef(
             onColumnRowGroupChanged={
               onStateChange ? handleStateChange : undefined
             }
+            onRowClicked={clickBehavior?.enabled ? handleRowClick : undefined}
+            rowClass={rowClass}
           />
         </div>
       </div>

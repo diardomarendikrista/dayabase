@@ -1,6 +1,8 @@
 // pages/DashboardEditorPage/ChartWidget.jsx
+
 import { useState, useEffect, useMemo, useRef } from "react";
 import { API } from "axios/axios";
+import { useParams, useLocation } from "react-router-dom";
 import useMeasure from "react-use-measure";
 import { MdDragIndicator } from "react-icons/md";
 import { IoMdClose } from "react-icons/io";
@@ -20,6 +22,9 @@ export default function ChartWidget({
   onOpenFilterMapping,
   isEmbedMode,
 }) {
+  const { token } = useParams();
+  const location = useLocation();
+
   const [question, setQuestion] = useState(null);
   const [results, setResults] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -32,22 +37,48 @@ export default function ChartWidget({
     const loadAndRunQuestion = async () => {
       setIsLoading(true);
       setError(null);
+
       try {
-        const qResponse = await API.get(`/api/questions/${questionId}`);
-        const qDetails = qResponse.data;
-        setQuestion(qDetails);
+        let qDetails;
 
-        const queryResponse = await API.post("/api/query/run", {
-          sql: qDetails.sql_query,
-          connectionId: qDetails.connection_id,
-          parameters: filterParameters,
-        });
+        // if embed
+        if (isEmbedMode && token) {
+          // Use public endpoint
+          const qResponse = await API.get(
+            `/api/public/dashboards/${token}/questions/${questionId}`
+          );
+          qDetails = qResponse.data;
 
-        if (queryResponse.data && queryResponse.data.length > 0) {
-          setResults(queryResponse.data);
+          // Run query via public endpoint
+          const queryResponse = await API.post(
+            `/api/public/dashboards/${token}/questions/${questionId}/run`,
+            { parameters: filterParameters }
+          );
+
+          if (queryResponse.data && queryResponse.data.length > 0) {
+            setResults(queryResponse.data);
+          } else {
+            setResults([]);
+          }
         } else {
-          setResults([]);
+          // Use authenticated endpoints (original logic)
+          const qResponse = await API.get(`/api/questions/${questionId}`);
+          qDetails = qResponse.data;
+
+          const queryResponse = await API.post("/api/query/run", {
+            sql: qDetails.sql_query,
+            connectionId: qDetails.connection_id,
+            parameters: filterParameters,
+          });
+
+          if (queryResponse.data && queryResponse.data.length > 0) {
+            setResults(queryResponse.data);
+          } else {
+            setResults([]);
+          }
         }
+
+        setQuestion(qDetails);
       } catch (err) {
         setError(err.response?.data?.message || "Failed to load widget data.");
         console.error("Widget error:", err);
@@ -55,8 +86,9 @@ export default function ChartWidget({
         setIsLoading(false);
       }
     };
+
     loadAndRunQuestion();
-  }, [questionId, filterParameters]);
+  }, [questionId, filterParameters, isEmbedMode, token]);
 
   const transformedData = useMemo(() => {
     if (!question || !question.chart_config || results.length === 0)
@@ -169,6 +201,7 @@ export default function ChartWidget({
           </div>
         );
       case "pivot":
+      case "table":
       default:
         return (
           <div style={{ width: "100%", height: "100%" }}>
@@ -177,14 +210,11 @@ export default function ChartWidget({
               data={results}
               savedState={question.chart_config}
               isDashboard={true}
-              clickBehavior={question.click_behavior} // NEW: Pass click behavior
+              clickBehavior={question.click_behavior}
               onRowClick={(row, targetUrl) => {
-                // Handle navigation based on context
                 if (isEmbedMode) {
-                  // In embed mode, open in new tab
                   window.open(targetUrl, "_blank");
                 } else {
-                  // In normal mode, use window.location for navigation
                   window.location.href = targetUrl;
                 }
               }}
@@ -196,7 +226,7 @@ export default function ChartWidget({
 
   return (
     <div className="bg-white rounded-lg shadow-md border border-gray-200 h-full w-full flex flex-col relative group overflow-hidden">
-      {/* HEADER - Draggable area */}
+      {/* HEADER */}
       <div
         className={cn(
           "flex items-center justify-between px-3 py-2 flex-shrink-0 widget-drag-handle",

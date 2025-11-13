@@ -4,6 +4,13 @@ const router = express.Router();
 const PublicController = require("../controllers/publicController");
 
 router.get("/dashboards/:token", PublicController.getPublicDashboardByToken);
-// router.post("/query/run/:token", PublicController.runPublicQuery);
+router.get(
+  "/dashboards/:token/questions/:questionId",
+  PublicController.getPublicQuestion
+);
+router.post(
+  "/dashboards/:token/questions/:questionId/run",
+  PublicController.runPublicQuery
+);
 
 module.exports = router;

@@ -107,7 +107,8 @@ const PivotTable = forwardRef(
         // Build target URL with parameter
         let targetUrl;
         if (action === "link_to_question") {
-          targetUrl = `/questions/${target_id}?${target_param}=${encodeURIComponent(paramValue)}`;
+          // Navigate to VIEW mode, not editor
+          targetUrl = `/questions/${target_id}/view?${target_param}=${encodeURIComponent(paramValue)}`;
         } else if (action === "link_to_dashboard") {
           // For dashboard, pass as filter parameter
           targetUrl = `/dashboards/${target_id}?${target_param}=${encodeURIComponent(paramValue)}`;

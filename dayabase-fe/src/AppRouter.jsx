@@ -12,6 +12,7 @@ import UserManagementPage from "./pages/UserManagementPage";
 import HomePage from "pages/Home";
 import CollectionPage from "pages/CollectionsPage";
 import Error404Page from "components/organisms/Errors/Error404Page";
+import QuestionViewPage from "./pages/QuestionViewPage";
 
 // AppRouter sekarang menerima `needsSetup` sebagai prop
 export default function AppRouter({ needsSetup }) {
@@ -74,6 +75,11 @@ export default function AppRouter({ needsSetup }) {
                 path="/questions/:id"
                 element={<QuestionEditorPage />}
               />
+              <Route
+                path="/questions/:id/view"
+                element={<QuestionViewPage />}
+              />
+
               <Route
                 path="/settings/connections"
                 element={<ConnectionsPage />}

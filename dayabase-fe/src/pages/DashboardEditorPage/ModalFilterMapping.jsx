@@ -7,6 +7,16 @@ import { API } from "axios/axios";
 import { useDispatch } from "react-redux";
 import { addToast } from "store/slices/toastSlice";
 
+/**
+ * ModalFilterMapping
+ *
+ * @param {boolean} showModal - flag to open this modal
+ * @param {Function} setShowModal - function to open/close this modal
+ * @param {string} dashboardId - id
+ * @param {Object} questionInstance - question
+ * @param {Function} availableFilters - filters for this question
+ * @param {Function} onMappingsSaved - handle after save, do something
+ */
 export default function ModalFilterMapping({
   showModal,
   setShowModal,
@@ -15,7 +25,7 @@ export default function ModalFilterMapping({
   availableFilters,
   onMappingsSaved,
 }) {
-  const [questionDetails, setQuestionDetails] = useState(null);
+  const [questionDetails, setQuestionDetails] = useState(null); // belum dipake, lupa kemarin mau diapain :')
   const [columns, setColumns] = useState([]);
   const [mappings, setMappings] = useState({});
   const [isLoading, setIsLoading] = useState(true);

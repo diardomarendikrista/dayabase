@@ -1,20 +1,24 @@
 // pages/DashboardEditorPage/ChartWidget.jsx
-
-import { useState, useEffect, useMemo, useRef } from "react";
+import { useState, useEffect, useRef } from "react";
 import { API } from "axios/axios";
-import { useParams, useLocation } from "react-router-dom";
+import { useParams } from "react-router-dom";
 import useMeasure from "react-use-measure";
 import { MdDragIndicator } from "react-icons/md";
 import { IoMdClose } from "react-icons/io";
 import { FaFileExcel } from "react-icons/fa";
 import { RiFilterLine } from "react-icons/ri";
-
-import BarChart from "components/organisms/charts/BarChart";
-import LineChart from "components/organisms/charts/LineChart";
-import DonutChart from "components/organisms/charts/DonutChart";
 import { cn } from "lib/utils";
-import PivotTable from "components/organisms/charts/PivotTable";
+import ChartRenderer from "components/organisms/ChatRenderer";
 
+/**
+ * ChartWidget
+ *
+ * @param {string} questionId - id
+ * @param {Object} filterParameters - fill with filter parameters
+ * @param {Function} onRemove - handle delete chart
+ * @param {Function} onOpenFilterMapping - handle open filter mapping (for pivot table drill down)
+ * @param {Function} isEmbedMode - Mode public
+ */
 export default function ChartWidget({
   questionId,
   filterParameters = {},
@@ -23,7 +27,6 @@ export default function ChartWidget({
   isEmbedMode,
 }) {
   const { token } = useParams();
-  const location = useLocation();
 
   const [question, setQuestion] = useState(null);
   const [results, setResults] = useState([]);
@@ -41,27 +44,21 @@ export default function ChartWidget({
       try {
         let qDetails;
 
-        // if embed
         if (isEmbedMode && token) {
-          // Use public endpoint
+          // Public endpoint
           const qResponse = await API.get(
             `/api/public/dashboards/${token}/questions/${questionId}`
           );
           qDetails = qResponse.data;
 
-          // Run query via public endpoint
           const queryResponse = await API.post(
             `/api/public/dashboards/${token}/questions/${questionId}/run`,
             { parameters: filterParameters }
           );
 
-          if (queryResponse.data && queryResponse.data.length > 0) {
-            setResults(queryResponse.data);
-          } else {
-            setResults([]);
-          }
+          setResults(queryResponse.data || []);
         } else {
-          // Use authenticated endpoints (original logic)
+          // Authenticated endpoint
           const qResponse = await API.get(`/api/questions/${questionId}`);
           qDetails = qResponse.data;
 
@@ -71,11 +68,7 @@ export default function ChartWidget({
             parameters: filterParameters,
           });
 
-          if (queryResponse.data && queryResponse.data.length > 0) {
-            setResults(queryResponse.data);
-          } else {
-            setResults([]);
-          }
+          setResults(queryResponse.data || []);
         }
 
         setQuestion(qDetails);
@@ -90,59 +83,24 @@ export default function ChartWidget({
     loadAndRunQuestion();
   }, [questionId, filterParameters, isEmbedMode, token]);
 
-  const transformedData = useMemo(() => {
-    if (!question || !question.chart_config || results.length === 0)
-      return null;
-
-    const { category, value, values } = question.chart_config;
-
-    if (!category) return null;
-
-    // Untuk Pie Chart - tetap single value
-    if (question.chart_type === "pie") {
-      if (!value) return null;
-      return {
-        seriesData: results.map((row) => ({
-          name: row[category],
-          value: row[value],
-        })),
-      };
-    }
-
-    // Untuk Bar dan Line Chart - support multi values
-    const valueColumns = values || (value ? [value] : null);
-
-    if (
-      !valueColumns ||
-      !Array.isArray(valueColumns) ||
-      valueColumns.length === 0
-    ) {
-      return null;
-    }
-
-    return {
-      xAxisData: results.map((row) => row[category]),
-      seriesData: valueColumns.map((valueColumn) => ({
-        name: valueColumn,
-        data: results.map((row) => row[valueColumn]),
-      })),
-    };
-  }, [results, question]);
-
   const renderContent = () => {
-    if (isLoading)
+    if (isLoading) {
       return (
         <div className="flex items-center justify-center h-full">
           <p className="text-center text-gray-500">Loading...</p>
         </div>
       );
-    if (error)
+    }
+
+    if (error) {
       return (
         <div className="flex items-center justify-center h-full">
           <p className="text-center text-red-500">{error}</p>
         </div>
       );
-    if (!question)
+    }
+
+    if (!question) {
       return (
         <div className="flex items-center justify-center h-full">
           <p className="text-center text-gray-500">
@@ -150,6 +108,7 @@ export default function ChartWidget({
           </p>
         </div>
       );
+    }
 
     if (width < 50 || height < 50) {
       return (
@@ -162,66 +121,26 @@ export default function ChartWidget({
     const headerHeight = 40;
     const padding = 24;
 
-    const chartProps = {
-      ...transformedData,
-      width: width - padding,
-      height: height - headerHeight - padding,
-    };
-
-    const containerStyle = {
-      width: "100%",
-      height: "100%",
-      display: "flex",
-      alignItems: "center",
-      justifyContent: "center",
-    };
-
-    switch (question.chart_type) {
-      case "bar":
-        return (
-          <div style={containerStyle}>
-            {transformedData && (
-              <BarChart
-                {...chartProps}
-                xAxisRotate="auto"
-              />
-            )}
-          </div>
-        );
-      case "line":
-        return (
-          <div style={containerStyle}>
-            {transformedData && <LineChart {...chartProps} />}
-          </div>
-        );
-      case "pie":
-        return (
-          <div style={containerStyle}>
-            {transformedData && <DonutChart {...chartProps} />}
-          </div>
-        );
-      case "pivot":
-      case "table":
-      default:
-        return (
-          <div style={{ width: "100%", height: "100%" }}>
-            <PivotTable
-              ref={pivotTableRef}
-              data={results}
-              savedState={question.chart_config}
-              isDashboard={true}
-              clickBehavior={question.click_behavior}
-              onRowClick={(row, targetUrl) => {
-                if (isEmbedMode) {
-                  window.open(targetUrl, "_blank");
-                } else {
-                  window.location.href = targetUrl;
-                }
-              }}
-            />
-          </div>
-        );
-    }
+    return (
+      <ChartRenderer
+        ref={pivotTableRef}
+        chartType={question.chart_type}
+        data={results}
+        chartConfig={question.chart_config}
+        savedState={question.chart_config}
+        isDashboard={true}
+        clickBehavior={question.click_behavior}
+        onRowClick={(row, targetUrl) => {
+          if (isEmbedMode) {
+            window.open(targetUrl, "_blank");
+          } else {
+            window.location.href = targetUrl;
+          }
+        }}
+        width={width - padding}
+        height={height - headerHeight - padding}
+      />
+    );
   };
 
   return (
@@ -242,9 +161,7 @@ export default function ChartWidget({
           {question?.name || "Loading..."}
         </h3>
 
-        {/* Action Buttons Container */}
         <div className="flex items-center gap-1">
-          {/* Export Excel Button - Hanya untuk Pivot/Table */}
           {(question?.chart_type === "pivot" ||
             question?.chart_type === "table") && (
             <button
@@ -253,9 +170,7 @@ export default function ChartWidget({
                 e.preventDefault();
                 pivotTableRef.current?.exportToExcel();
               }}
-              onMouseDown={(e) => {
-                e.stopPropagation();
-              }}
+              onMouseDown={(e) => e.stopPropagation()}
               className="p-1 rounded-full text-gray-500 hover:bg-green-100 hover:text-green-700 pointer-events-auto transition-colors"
               title="Export to Excel"
               style={{ pointerEvents: "auto" }}
@@ -264,7 +179,6 @@ export default function ChartWidget({
             </button>
           )}
 
-          {/* Filter Mapping Button - Hanya di Edit Mode */}
           {!isEmbedMode && onOpenFilterMapping && (
             <button
               onClick={(e) => {
@@ -272,9 +186,7 @@ export default function ChartWidget({
                 e.preventDefault();
                 onOpenFilterMapping();
               }}
-              onMouseDown={(e) => {
-                e.stopPropagation();
-              }}
+              onMouseDown={(e) => e.stopPropagation()}
               className="p-1 rounded-full text-gray-500 hover:bg-blue-100 hover:text-blue-700 pointer-events-auto transition-colors"
               title="Configure Filter Mappings"
               style={{ pointerEvents: "auto" }}
@@ -283,7 +195,6 @@ export default function ChartWidget({
             </button>
           )}
 
-          {/* Drag & Remove Icons - Hanya di Edit Mode */}
           {!isEmbedMode && onRemove && (
             <>
               <div className="text-gray-400 pointer-events-none ml-1">
@@ -296,9 +207,7 @@ export default function ChartWidget({
                   e.preventDefault();
                   onRemove();
                 }}
-                onMouseDown={(e) => {
-                  e.stopPropagation();
-                }}
+                onMouseDown={(e) => e.stopPropagation()}
                 className="p-1 bg-gray-200 rounded-full text-gray-600 hover:bg-red-500 hover:text-white transition-all pointer-events-auto cursor-pointer"
                 title="Remove from Dashboard"
                 style={{ pointerEvents: "auto" }}
@@ -314,13 +223,8 @@ export default function ChartWidget({
       <div
         ref={ref}
         className="flex-1 min-h-0 w-full relative"
-        style={{
-          pointerEvents: "auto",
-          userSelect: "auto",
-        }}
-        onMouseDown={(e) => {
-          e.stopPropagation();
-        }}
+        style={{ pointerEvents: "auto", userSelect: "auto" }}
+        onMouseDown={(e) => e.stopPropagation()}
       >
         <div className="absolute inset-3 overflow-hidden">
           {renderContent()}

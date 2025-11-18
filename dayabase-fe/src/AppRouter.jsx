@@ -48,6 +48,10 @@ export default function AppRouter({ needsSetup }) {
             element={<DashboardViewPage />}
           />
           <Route
+            path="/embed/dashboards/:token/questions/:id/view"
+            element={<QuestionViewPage />}
+          />
+          <Route
             path="*"
             element={<Error404Page />}
           />

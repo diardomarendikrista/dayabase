@@ -149,7 +149,7 @@ export default function VisualizationPanel({
         </button>
       )}
 
-      {/* Chart Renderer - SINGLE COMPONENT! 🎉 */}
+      {/* Chart Renderer */}
       <div style={{ height: isPivotOrTable ? "400px" : "500px" }}>
         <ChartRenderer
           ref={pivotTableRef}

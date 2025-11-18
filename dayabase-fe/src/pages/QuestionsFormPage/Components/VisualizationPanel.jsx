@@ -14,14 +14,12 @@ export default function VisualizationPanel({
   chartConfig,
   onChartConfigChange,
 }) {
-  // ✅ HOOKS FIRST - Always call in same order!
   const pivotTableRef = useRef(null);
 
   const columnOptions = useMemo(() => {
     return columns.map((col) => ({ value: col, label: col }));
   }, [columns]);
 
-  // ✅ THEN early returns AFTER hooks
   if (error) {
     return (
       <div className="mt-8 bg-red-100 border-red-400 text-red-700 p-4 rounded-md">
@@ -38,7 +36,6 @@ export default function VisualizationPanel({
     return null;
   }
 
-  // ✅ Rest of component logic
   const handleCategoryChange = (value) => {
     onChartConfigChange((prev) => ({ ...prev, category: value }));
   };

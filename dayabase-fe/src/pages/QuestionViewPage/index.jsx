@@ -41,7 +41,7 @@ export default function QuestionViewPage() {
         let qDetails;
 
         if (isEmbedMode && token) {
-          // PUBLIC MODE
+          // PUBLIC MODE: Use public endpoints with token
           const qResponse = await API.get(
             `/api/public/dashboards/${token}/questions/${questionId}`
           );
@@ -54,7 +54,7 @@ export default function QuestionViewPage() {
 
           setResults(queryResponse.data || []);
         } else {
-          // AUTHENTICATED MODE
+          // AUTHENTICATED MODE: Use protected endpoints
           const qResponse = await API.get(`/api/questions/${questionId}`);
           qDetails = qResponse.data;
 
@@ -197,27 +197,6 @@ export default function QuestionViewPage() {
               savedState={question.chart_config}
               isDashboard={false}
               clickBehavior={question.click_behavior}
-              onRowClick={(row, targetUrl) => {
-                // Handle nested drill-down
-                if (isEmbedMode && token) {
-                  // For embed mode, rebuild URL with token
-                  const url = new URL(targetUrl, window.location.origin);
-                  const path = url.pathname;
-                  const params = url.search;
-
-                  if (path.startsWith("/questions/")) {
-                    const targetQuestionId = path.split("/")[2];
-                    navigate(
-                      `/embed/dashboards/${token}/questions/${targetQuestionId}/view${params}`
-                    );
-                  } else {
-                    navigate(targetUrl);
-                  }
-                } else {
-                  // Authenticated mode
-                  navigate(targetUrl);
-                }
-              }}
               width={isPivotOrTable ? undefined : 900}
               height={isPivotOrTable ? undefined : 500}
             />

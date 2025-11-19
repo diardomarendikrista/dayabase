@@ -1,4 +1,5 @@
 // components/organisms/charts/PivotTable.jsx
+// Centralized navigation logic - parents just pass config, no handlers!
 import {
   useMemo,
   useRef,
@@ -7,7 +8,7 @@ import {
   useImperativeHandle,
 } from "react";
 import { AgGridReact } from "ag-grid-react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useParams, useLocation } from "react-router-dom";
 import * as XLSX from "xlsx";
 
 const PivotTable = forwardRef(
@@ -18,12 +19,15 @@ const PivotTable = forwardRef(
       onStateChange,
       isDashboard = false,
       clickBehavior = null,
-      onRowClick = null,
     },
     ref
   ) => {
     const gridRef = useRef();
     const navigate = useNavigate();
+    const { token } = useParams();
+    const location = useLocation();
+
+    const isEmbedMode = location.pathname.includes("/embed/");
 
     const defaultColDef = useMemo(
       () => ({
@@ -84,7 +88,6 @@ const PivotTable = forwardRef(
       [savedState]
     );
 
-    // Handle row click for drill-down
     const handleRowClick = useCallback(
       (event) => {
         if (!clickBehavior || !clickBehavior.enabled) return;
@@ -104,27 +107,38 @@ const PivotTable = forwardRef(
           return;
         }
 
-        // Build target URL with parameter
         let targetUrl;
+
         if (action === "link_to_question") {
-          // Navigate to VIEW mode, not editor
-          targetUrl = `/questions/${target_id}/view?${target_param}=${encodeURIComponent(paramValue)}`;
+          if (isEmbedMode && token) {
+            // Embed mode: use public route with token
+            targetUrl = `/embed/dashboards/${token}/questions/${target_id}/view?${target_param}=${encodeURIComponent(paramValue)}`;
+          } else {
+            // Authenticated mode: use protected route
+            targetUrl = `/questions/${target_id}/view?${target_param}=${encodeURIComponent(paramValue)}`;
+          }
         } else if (action === "link_to_dashboard") {
-          // For dashboard, pass as filter parameter
-          targetUrl = `/dashboards/${target_id}?${target_param}=${encodeURIComponent(paramValue)}`;
+          if (isEmbedMode && token) {
+            // Embed mode: stay in embed context
+            targetUrl = `/embed/dashboards/${token}?${target_param}=${encodeURIComponent(paramValue)}`;
+          } else {
+            // Authenticated mode: navigate to dashboard
+            targetUrl = `/dashboards/${target_id}?${target_param}=${encodeURIComponent(paramValue)}`;
+          }
         }
 
         if (targetUrl) {
-          if (onRowClick) {
-            // Allow parent to handle navigation
-            onRowClick(rowData, targetUrl);
+          // Different navigation behavior based on context
+          if (isEmbedMode && isDashboard) {
+            // window.open(targetUrl, "_blank");
+            navigate(targetUrl);
           } else {
-            // Default: navigate directly
+            // All other cases: navigate in same window
             navigate(targetUrl);
           }
         }
       },
-      [clickBehavior, navigate, onRowClick]
+      [clickBehavior, navigate, isEmbedMode, token, isDashboard]
     );
 
     const onBtnExport = useCallback(() => {

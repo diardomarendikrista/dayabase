@@ -130,13 +130,6 @@ export default function ChartWidget({
         savedState={question.chart_config}
         isDashboard={true}
         clickBehavior={question.click_behavior}
-        onRowClick={(row, targetUrl) => {
-          if (isEmbedMode) {
-            window.open(targetUrl, "_blank");
-          } else {
-            window.location.href = targetUrl;
-          }
-        }}
         width={width - padding}
         height={height - headerHeight - padding}
       />

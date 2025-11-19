@@ -79,6 +79,40 @@ class PublicController {
   }
 
   /**
+   * Helper DrillDown: Check if question is accessible from dashboard
+   * A question is accessible if:
+   * 1. It's directly in the dashboard, OR
+   * 2. It's a click behavior target of any question in the dashboard
+   */
+  static async isQuestionAccessible(dashboardId, questionId) {
+    // Check if question is directly in dashboard
+    const directCheck = await pool.query(
+      `SELECT dq.question_id 
+       FROM dashboard_questions dq
+       WHERE dq.dashboard_id = $1 AND dq.question_id = $2`,
+      [dashboardId, questionId]
+    );
+
+    if (directCheck.rows.length > 0) {
+      return true; // Question is in dashboard
+    }
+
+    // Check if question is a drill-down target from any question in dashboard
+    const drillDownCheck = await pool.query(
+      `SELECT qcb.target_id
+       FROM dashboard_questions dq
+       JOIN question_click_behaviors qcb ON dq.question_id = qcb.question_id
+       WHERE dq.dashboard_id = $1 
+         AND qcb.enabled = TRUE
+         AND qcb.action = 'link_to_question'
+         AND qcb.target_id = $2`,
+      [dashboardId, questionId]
+    );
+
+    return drillDownCheck.rows.length > 0; // Question is a drill-down target
+  }
+
+  /**
    * @description Get question details for public dashboard
    * @route GET /api/public/dashboards/:token/questions/:questionId
    */
@@ -86,7 +120,7 @@ class PublicController {
     const { token, questionId } = req.params;
 
     try {
-      // 1. Verify dashboard is public and token is valid
+      // Verify dashboard is public and token is valid
       const dashboardCheck = await pool.query(
         `SELECT d.id, d.name 
          FROM dashboards d
@@ -102,17 +136,14 @@ class PublicController {
 
       const dashboardId = dashboardCheck.rows[0].id;
 
-      // 2. Verify question belongs to this dashboard
-      const questionCheck = await pool.query(
-        `SELECT dq.question_id 
-         FROM dashboard_questions dq
-         WHERE dq.dashboard_id = $1 AND dq.question_id = $2`,
-        [dashboardId, questionId]
+      const isAccessible = await PublicController.isQuestionAccessible(
+        dashboardId,
+        questionId
       );
 
-      if (questionCheck.rows.length === 0) {
+      if (!isAccessible) {
         return res.status(403).json({
-          message: "Question does not belong to this dashboard.",
+          message: "Question is not accessible from this dashboard.",
         });
       }
 
@@ -184,7 +215,7 @@ class PublicController {
     let targetConnection;
 
     try {
-      // 1. Verify dashboard is public
+      // Verify dashboard is public
       const dashboardCheck = await pool.query(
         `SELECT d.id FROM dashboards d
          WHERE d.public_token = $1 AND d.public_sharing_enabled = TRUE`,
@@ -199,16 +230,14 @@ class PublicController {
 
       const dashboardId = dashboardCheck.rows[0].id;
 
-      // 2. Verify question belongs to dashboard
-      const questionCheck = await pool.query(
-        `SELECT dq.question_id FROM dashboard_questions dq
-         WHERE dq.dashboard_id = $1 AND dq.question_id = $2`,
-        [dashboardId, questionId]
+      const isAccessible = await PublicController.isQuestionAccessible(
+        dashboardId,
+        questionId
       );
 
-      if (questionCheck.rows.length === 0) {
+      if (!isAccessible) {
         return res.status(403).json({
-          message: "Question does not belong to this dashboard.",
+          message: "Question is not accessible from this dashboard.",
         });
       }
 

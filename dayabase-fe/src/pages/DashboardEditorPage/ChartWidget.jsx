@@ -160,6 +160,9 @@ export default function ChartWidget({
             <Link
               to={`/questions/${questionId}`}
               target="_blank"
+              onClick={(e) => {
+                e.stopPropagation();
+              }}
               className={cn(
                 "inline-flex items-center justify-center h-8 w-8 rounded-full transition-colors",
                 "text-gray-500",

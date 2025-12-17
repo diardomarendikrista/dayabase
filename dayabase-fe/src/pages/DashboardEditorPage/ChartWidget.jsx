@@ -1,14 +1,15 @@
 // pages/DashboardEditorPage/ChartWidget.jsx
 import { useState, useEffect, useRef } from "react";
 import { API } from "axios/axios";
-import { useParams } from "react-router-dom";
+import { Link, useParams } from "react-router-dom";
 import useMeasure from "react-use-measure";
-import { MdDragIndicator } from "react-icons/md";
+import ChartRenderer from "components/organisms/ChatRenderer";
+import Button from "components/atoms/Button";
+import { cn } from "lib/utils";
+import { MdDragIndicator, MdEdit } from "react-icons/md";
 import { IoMdClose } from "react-icons/io";
 import { FaFileExcel } from "react-icons/fa";
 import { RiFilterLine } from "react-icons/ri";
-import { cn } from "lib/utils";
-import ChartRenderer from "components/organisms/ChatRenderer";
 
 /**
  * ChartWidget
@@ -155,37 +156,56 @@ export default function ChartWidget({
         </h3>
 
         <div className="flex items-center gap-1">
+          {!isEmbedMode && (
+            <Link
+              to={`/questions/${questionId}`}
+              target="_blank"
+              className={cn(
+                "inline-flex items-center justify-center h-8 w-8 rounded-full transition-colors",
+                "text-gray-500",
+                "hover:bg-amber-100 hover:text-amber-700"
+              )}
+              title="Edit Question"
+            >
+              <MdEdit />
+            </Link>
+          )}
+
           {(question?.chart_type === "pivot" ||
             question?.chart_type === "table") && (
-            <button
+            <Button
+              variant="ghost" // Gunakan variant ghost agar transparan
+              size="icon" // Gunakan size icon (biasanya h-9 w-9 atau sesuaikan)
+              className="h-8 w-8 rounded-full text-gray-500 hover:bg-green-100 hover:text-green-700"
               onClick={(e) => {
                 e.stopPropagation();
                 e.preventDefault();
                 pivotTableRef.current?.exportToExcel();
               }}
               onMouseDown={(e) => e.stopPropagation()}
-              className="p-1 rounded-full text-gray-500 hover:bg-green-100 hover:text-green-700 pointer-events-auto transition-colors"
               title="Export to Excel"
               style={{ pointerEvents: "auto" }}
             >
               <FaFileExcel />
-            </button>
+            </Button>
           )}
 
           {!isEmbedMode && onOpenFilterMapping && (
-            <button
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-8 w-8 rounded-full text-gray-500 hover:bg-blue-100 hover:text-blue-700"
               onClick={(e) => {
                 e.stopPropagation();
                 e.preventDefault();
                 onOpenFilterMapping();
               }}
               onMouseDown={(e) => e.stopPropagation()}
-              className="p-1 rounded-full text-gray-500 hover:bg-blue-100 hover:text-blue-700 pointer-events-auto transition-colors"
               title="Configure Filter Mappings"
               style={{ pointerEvents: "auto" }}
             >
               <RiFilterLine />
-            </button>
+            </Button>
           )}
 
           {!isEmbedMode && onRemove && (
@@ -194,19 +214,21 @@ export default function ChartWidget({
                 <MdDragIndicator />
               </div>
 
-              <button
+              <Button
+                variant="ghost"
+                size="icon"
                 onClick={(e) => {
                   e.stopPropagation();
                   e.preventDefault();
                   onRemove();
                 }}
                 onMouseDown={(e) => e.stopPropagation()}
-                className="p-1 bg-gray-200 rounded-full text-gray-600 hover:bg-red-500 hover:text-white transition-all pointer-events-auto cursor-pointer"
+                className="h-8 w-8 bg-gray-200 rounded-full text-gray-600 hover:bg-red-500 hover:text-white"
                 title="Remove from Dashboard"
                 style={{ pointerEvents: "auto" }}
               >
                 <IoMdClose />
-              </button>
+              </Button>
             </>
           )}
         </div>

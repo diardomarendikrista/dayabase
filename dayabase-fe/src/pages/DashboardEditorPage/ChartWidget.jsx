@@ -160,7 +160,7 @@ export default function ChartWidget({
             <Link
               to={`/questions/${questionId}`}
               target="_blank"
-              onClick={(e) => {
+              onMouseDown={(e) => {
                 e.stopPropagation();
               }}
               className={cn(

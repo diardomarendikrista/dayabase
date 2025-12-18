@@ -136,7 +136,7 @@ export default function QuestionViewPage() {
 
   const containerClass = isEmbedMode
     ? "mx-auto px-4"
-    : "max-w-7xl mx-auto";
+    : "mx-auto";
 
   return (
     <div className={wrapperClass}>

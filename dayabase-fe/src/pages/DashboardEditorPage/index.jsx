@@ -47,19 +47,23 @@ export default function DashboardViewPage() {
     useState(null);
 
   const [showLeaveWarning, setShowLeaveWarning] = useState(false);
-  const backUrl = `/collections/${dataDashboard?.collection_id}`;
+
+  const previousLocation = location.state?.from;
+  const backLabel = location.state?.label;
+  const defaultBackUrl = `/collections/${dataDashboard?.collection_id}`;
+  const targetBackUrl = previousLocation || defaultBackUrl;
 
   const handleBackClick = () => {
     if (hasUnsavedChanges) {
       setShowLeaveWarning(true);
     } else {
-      navigate(backUrl);
+      navigate(targetBackUrl);
     }
   };
 
   const handleConfirmLeave = () => {
     setShowLeaveWarning(false);
-    navigate(backUrl);
+    navigate(targetBackUrl);
   };
 
   const pushStateToHistory = (newState) => {
@@ -83,9 +87,24 @@ export default function DashboardViewPage() {
 
       console.log("Dashboard data:", data);
 
+      // bagian dari drilldown
+      const currentParams = new URLSearchParams(location.search);
+      const initialFilters = {};
+      if (data.filters && data.filters.length > 0) {
+        currentParams.forEach((value, key) => {
+          const isFilterExist = data.filters.find((f) => f.name === key);
+          if (isFilterExist) {
+            // Decode value agar %20 jadi spasi, dsb (URLSearchParams biasanya auto, tapi untuk jaga2)
+            initialFilters[key] = value;
+          }
+        });
+      }
+
+      // kalau tidak drilldown maka kesini langsung
       setDashboardName(data.name);
       setDataDashboard(data);
       setFilters(data.filters || []); // Set filters dari backend
+      setFilterValues(initialFilters);
 
       const initialLayout = data.questions.map((q) => ({
         ...q.layout,
@@ -106,7 +125,7 @@ export default function DashboardViewPage() {
     } finally {
       setIsLoading(false);
     }
-  }, [dashboardIdentifier, isEmbedMode]);
+  }, [dashboardIdentifier, isEmbedMode, location.search]);
 
   const handleLayoutChange = (newLayout) => {
     if (isEmbedMode) return;
@@ -320,7 +339,7 @@ export default function DashboardViewPage() {
           <div className="flex">
             <BackButton
               onClick={handleBackClick}
-              title={`Back to ${dataDashboard?.collection_name}`}
+              title={backLabel || `Back to ${dataDashboard?.collection_name}`}
             />
           </div>
           <div className="flex-1">

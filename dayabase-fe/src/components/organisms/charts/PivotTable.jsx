@@ -134,11 +134,16 @@ const PivotTable = forwardRef(
             navigate(targetUrl);
           } else {
             // All other cases: navigate in same window
-            navigate(targetUrl);
+            navigate(targetUrl, {
+              state: {
+                from: location.pathname + location.search, // Simpan path + query params saat ini
+                label: "Back to Previous Dashboard",
+              },
+            });
           }
         }
       },
-      [clickBehavior, navigate, isEmbedMode, token, isDashboard]
+      [clickBehavior, navigate, isEmbedMode, token, isDashboard, location]
     );
 
     const onBtnExport = useCallback(() => {

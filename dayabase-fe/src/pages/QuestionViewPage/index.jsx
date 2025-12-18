@@ -132,10 +132,10 @@ export default function QuestionViewPage() {
   };
 
   // Wrapper classes based on mode
-  const wrapperClass = isEmbedMode ? "min-h-screen bg-gray-50 py-8" : "";
+  const wrapperClass = isEmbedMode ? "w-full min-h-screen bg-gray-50 py-8" : "";
 
   const containerClass = isEmbedMode
-    ? "max-w-7xl mx-auto px-4"
+    ? "mx-auto px-4"
     : "max-w-7xl mx-auto";
 
   return (

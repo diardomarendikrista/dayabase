@@ -7,6 +7,7 @@ import Select from "components/atoms/Select";
 import Input from "components/atoms/Input";
 import { useDispatch } from "react-redux";
 import { addToast } from "store/slices/toastSlice";
+import { RiAddLine, RiDeleteBinLine } from "react-icons/ri"; // Tambah icon delete
 
 export default function ModalClickBehavior({
   showModal,
@@ -22,10 +23,10 @@ export default function ModalClickBehavior({
   const [enabled, setEnabled] = useState(false);
   const [action, setAction] = useState("link_to_question");
   const [targetId, setTargetId] = useState("");
-  const [passColumn, setPassColumn] = useState("");
-  const [targetParam, setTargetParam] = useState("");
+  const [parameterMappings, setParameterMappings] = useState([
+    { passColumn: "", targetParam: "" },
+  ]);
 
-  // Available targets
   const [questions, setQuestions] = useState([]);
   const [dashboards, setDashboards] = useState([]);
 
@@ -52,15 +53,21 @@ export default function ModalClickBehavior({
           setEnabled(behavior.enabled);
           setAction(behavior.action || "link_to_question");
           setTargetId(behavior.target_id || "");
-          setPassColumn(behavior.pass_column || "");
-          setTargetParam(behavior.target_param || "");
+
+          if (
+            behavior.parameter_mappings &&
+            Array.isArray(behavior.parameter_mappings)
+          ) {
+            setParameterMappings(behavior.parameter_mappings);
+          } else {
+            setParameterMappings([{ passColumn: "", targetParam: "" }]);
+          }
         } else {
-          // Reset to defaults
+          // Reset defaults
           setEnabled(false);
           setAction("link_to_question");
           setTargetId("");
-          setPassColumn("");
-          setTargetParam("");
+          setParameterMappings([{ passColumn: "", targetParam: "" }]);
         }
 
         // Fetch available questions and dashboards
@@ -73,7 +80,7 @@ export default function ModalClickBehavior({
         setQuestions(questionsRes.data.filter((q) => q.id !== questionId));
         setDashboards(dashboardsRes.data);
       } catch (error) {
-        console.error("Failed to fetch click behavior data:", error);
+        console.error("Failed to fetch settings:", error);
         dispatch(
           addToast({
             message: "Failed to load click behavior settings",
@@ -86,34 +93,44 @@ export default function ModalClickBehavior({
     };
 
     fetchData();
-  }, [showModal, questionId, dispatch]);
+  }, [showModal, questionId]);
+
+  // --- Helper Functions untuk Dynamic Input ---
+  const handleAddMapping = () => {
+    setParameterMappings([
+      ...parameterMappings,
+      { passColumn: "", targetParam: "" },
+    ]);
+  };
+
+  const handleRemoveMapping = (index) => {
+    const newMappings = parameterMappings.filter((_, i) => i !== index);
+    setParameterMappings(newMappings);
+  };
+
+  const handleMappingChange = (index, field, value) => {
+    const newMappings = [...parameterMappings];
+    newMappings[index][field] = value;
+    setParameterMappings(newMappings);
+  };
+  // ------------------------------------------
 
   const handleSave = async () => {
     // Validation
     if (enabled && !targetId) {
-      dispatch(
-        addToast({
-          message: "Please select a target",
-          type: "error",
-        })
-      );
+      dispatch(addToast({ message: "Please select a target", type: "error" }));
       return;
     }
 
-    if (enabled && !passColumn) {
-      dispatch(
-        addToast({
-          message: "Please specify which column to pass",
-          type: "error",
-        })
-      );
-      return;
-    }
+    // Validasi mapping tidak boleh kosong
+    const validMappings = parameterMappings.filter(
+      (m) => m.passColumn && m.targetParam
+    );
 
-    if (enabled && !targetParam) {
+    if (enabled && validMappings.length === 0) {
       dispatch(
         addToast({
-          message: "Please specify target parameter name",
+          message: "Please add at least one valid parameter mapping",
           type: "error",
         })
       );
@@ -126,9 +143,9 @@ export default function ModalClickBehavior({
         enabled,
         action: enabled ? action : null,
         target_id: enabled ? targetId : null,
-        target_url: null, // Not used in Phase 1
-        pass_column: enabled ? passColumn : null,
-        target_param: enabled ? targetParam : null,
+
+        // Kirim sebagai JSON object/array.
+        parameter_mappings: enabled ? validMappings : [],
       });
 
       dispatch(
@@ -137,17 +154,9 @@ export default function ModalClickBehavior({
           type: "success",
         })
       );
-
       setShowModal(false);
     } catch (error) {
-      console.error("Failed to save click behavior:", error);
-      dispatch(
-        addToast({
-          message:
-            error.response?.data?.message || "Failed to save click behavior",
-          type: "error",
-        })
-      );
+      dispatch(addToast({ message: "Failed to save", type: "error" }));
     } finally {
       setIsSaving(false);
     }
@@ -166,9 +175,7 @@ export default function ModalClickBehavior({
       closeOnOverlayClick={false}
     >
       {isLoading ? (
-        <div className="text-center py-8">
-          <p className="text-gray-500">Loading...</p>
-        </div>
+        <div className="text-center py-8">Loading...</div>
       ) : (
         <div className="space-y-4">
           {/* Info Box */}
@@ -192,114 +199,129 @@ export default function ModalClickBehavior({
             />
             <label
               htmlFor="enable-click"
-              className="font-medium text-gray-900 cursor-pointer"
+              className="font-medium cursor-pointer"
             >
-              Enable click behavior on table rows
+              Enable click behavior
             </label>
           </div>
 
           {enabled && (
             <>
-              {/* Action Type */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Action Type
-                </label>
-                <Select
-                  value={action}
-                  onChange={setAction}
-                  options={actionOptions}
-                />
-              </div>
-
-              {/* Target Selection */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Target{" "}
-                  {action === "link_to_question" ? "Question" : "Dashboard"}
-                </label>
-                <Select
-                  value={targetId}
-                  onChange={setTargetId}
-                  options={targetOptions}
-                  placeholder={`Select ${action === "link_to_question" ? "question" : "dashboard"}...`}
-                />
-                <p className="text-xs text-gray-500 mt-1">
-                  User will be redirected to this{" "}
-                  {action === "link_to_question" ? "question" : "dashboard"}{" "}
-                  when clicking a row
-                </p>
-              </div>
-
-              {/* Pass Column */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Column to Pass
-                  <span className="text-xs text-gray-500 font-normal ml-2">
-                    (from this question's result)
-                  </span>
-                </label>
-                <Input
-                  value={passColumn}
-                  onChange={(e) => setPassColumn(e.target.value)}
-                  placeholder="e.g., id, user_id, customer_id"
-                />
-                <p className="text-xs text-gray-500 mt-1">
-                  This column's value will be passed when user clicks a row
-                </p>
-              </div>
-
-              {/* Target Parameter */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Target Parameter Name
-                  <span className="text-xs text-gray-500 font-normal ml-2">
-                    (parameter name in target's SQL query)
-                  </span>
-                </label>
-                <Input
-                  value={targetParam}
-                  onChange={(e) => setTargetParam(e.target.value)}
-                  placeholder="e.g., user_id, customer_id"
-                />
-                <p className="text-xs text-gray-500 mt-1">
-                  Target SQL should have:{" "}
-                  <code className="bg-gray-100 px-1 py-0.5 rounded text-xs">
-                    WHERE column = {`{{${targetParam}}}`}
-                  </code>
-                </p>
-              </div>
-
-              {/* Example Preview */}
-              <div className="bg-green-50 border border-green-200 rounded-md p-3">
-                <p className="text-sm font-medium text-green-900 mb-2">
-                  📋 Example Flow:
-                </p>
-                <div className="text-xs text-green-800 space-y-1 font-mono">
-                  <p>1. User clicks row with {passColumn || "column"}=123</p>
-                  <p>
-                    2. Navigate to{" "}
-                    {action === "link_to_question" ? "Question" : "Dashboard"} #
-                    {targetId || "X"}
-                  </p>
-                  <p>3. Parameter passed: {targetParam || "param"}=123</p>
-                  {action === "link_to_question" && (
-                    <p className="text-green-700 mt-2">
-                      → URL: /questions/{targetId || "X"}?
-                      {targetParam || "param"}=123
-                    </p>
-                  )}
-                  {action === "link_to_dashboard" && (
-                    <p className="text-green-700 mt-2">
-                      → Opens dashboard with filter applied
-                    </p>
-                  )}
+              {/* Action & Target Select */}
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium mb-1">
+                    Action Type
+                  </label>
+                  <Select
+                    value={action}
+                    onChange={setAction}
+                    options={actionOptions}
+                  />
                 </div>
+                <div>
+                  <label className="block text-sm font-medium mb-1">
+                    Target
+                  </label>
+                  <Select
+                    value={targetId}
+                    onChange={setTargetId}
+                    options={targetOptions}
+                    placeholder="Select target..."
+                  />
+                </div>
+              </div>
+
+              {/* DYNAMIC MAPPING SECTION */}
+              <div className="border-t pt-4 mt-2">
+                <label className="block text-sm font-bold text-gray-800 mb-2">
+                  Parameter Mappings
+                </label>
+                <p className="text-xs text-gray-500 mb-3">
+                  Map columns from this question's result to the target's
+                  filters/parameters.
+                </p>
+
+                <div className="space-y-3">
+                  {parameterMappings.map((mapping, index) => (
+                    <div
+                      key={index}
+                      className="flex gap-2 items-end bg-gray-50 p-2 rounded border"
+                    >
+                      <div className="flex-1">
+                        <label className="text-xs text-gray-500 font-medium">
+                          Source Column
+                        </label>
+                        <Input
+                          value={mapping.passColumn}
+                          onChange={(e) =>
+                            handleMappingChange(
+                              index,
+                              "passColumn",
+                              e.target.value
+                            )
+                          }
+                          placeholder="e.g., region_name"
+                          className="mt-1 h-8 text-sm"
+                        />
+                      </div>
+                      <div className="flex items-center justify-center pb-2 text-gray-400">
+                        →
+                      </div>
+                      <div className="flex-1">
+                        <label className="text-xs text-gray-500 font-medium">
+                          Target Param
+                        </label>
+                        <Input
+                          value={mapping.targetParam}
+                          onChange={(e) =>
+                            handleMappingChange(
+                              index,
+                              "targetParam",
+                              e.target.value
+                            )
+                          }
+                          placeholder="e.g., region"
+                          className="mt-1 h-8 text-sm"
+                        />
+                      </div>
+                      <Button
+                        variant="danger"
+                        size="icon"
+                        className="h-8 w-8 mb-[1px]"
+                        onClick={() => handleRemoveMapping(index)}
+                        disabled={parameterMappings.length === 1} // Prevent deleting last row
+                        title="Remove mapping"
+                      >
+                        <RiDeleteBinLine />
+                      </Button>
+                    </div>
+                  ))}
+                </div>
+
+                <div className="mt-3">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={handleAddMapping}
+                    className="w-full border-dashed border-2 hover:border-primary hover:bg-blue-50"
+                  >
+                    <RiAddLine className="mr-2" /> Add Another Parameter
+                  </Button>
+                </div>
+              </div>
+
+              {/* Preview Logic */}
+              <div className="bg-green-50 border border-green-200 rounded-md p-3 text-xs text-green-800 font-mono">
+                Example URL: ...?
+                {parameterMappings
+                  .filter((m) => m.targetParam)
+                  .map((m) => `${m.targetParam}=value`)
+                  .join("&")}
               </div>
             </>
           )}
 
-          {/* Action Buttons */}
           <div className="flex justify-end gap-2 pt-4 border-t">
             <Button
               variant="outline"

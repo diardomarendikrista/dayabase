@@ -3,6 +3,7 @@ const pool = require("../config/db");
 const { decrypt } = require("../utils/crypto");
 const { connectToDatabase } = require("../config/databaseConnector");
 const { parseSqlWithParameters } = require("../utils/sqlParser");
+const QuestionService = require("../services/QuestionService");
 
 class PublicController {
   /**
@@ -80,9 +81,6 @@ class PublicController {
 
   /**
    * Helper DrillDown: Check if question is accessible from dashboard
-   * A question is accessible if:
-   * 1. It's directly in the dashboard, OR
-   * 2. It's a click behavior target of any question in the dashboard
    */
   static async isQuestionAccessible(dashboardId, questionId) {
     // Check if question is directly in dashboard
@@ -136,6 +134,7 @@ class PublicController {
 
       const dashboardId = dashboardCheck.rows[0].id;
 
+      // Cek Akses (Logic unik Public - Drilldown check)
       const isAccessible = await PublicController.isQuestionAccessible(
         dashboardId,
         questionId
@@ -147,33 +146,30 @@ class PublicController {
         });
       }
 
-      // 3. Get question details with click behavior
-      const questionQuery = `
-        SELECT 
-          q.id, q.name, q.sql_query, q.chart_type, q.chart_config,
-          c.id as connection_id, c.connection_name, c.db_type, 
-          c.host, c.port, c.db_user, c.database_name, c.password_encrypted,
-          qcb.enabled as click_enabled,
-          qcb.action as click_action,
-          qcb.target_id as click_target_id,
-          qcb.target_url as click_target_url,
-          qcb.pass_column as click_pass_column,
-          qcb.target_param as click_target_param
-        FROM questions q
-        JOIN database_connections c ON q.connection_id = c.id
-        LEFT JOIN question_click_behaviors qcb ON q.id = qcb.question_id
-        WHERE q.id = $1
-      `;
+      // Panggil Service (Query Pusat)
+      const row = await QuestionService.getQuestionDetail(questionId);
 
-      const questionResult = await pool.query(questionQuery, [questionId]);
-
-      if (questionResult.rows.length === 0) {
+      if (!row) {
         return res.status(404).json({ message: "Question not found." });
       }
 
-      const row = questionResult.rows[0];
+      // -- FORMATTING & SANITIZING RESPONSE --
+      // Compatibility Logic
+      let mappings = row.click_parameter_mappings;
+      if (
+        (!mappings || mappings.length === 0) &&
+        row.click_pass_column &&
+        row.click_target_param
+      ) {
+        mappings = [
+          {
+            passColumn: row.click_pass_column,
+            targetParam: row.click_target_param,
+          },
+        ];
+      }
 
-      // Structure response (without sensitive connection details)
+      // Susun Response
       const response = {
         id: row.id,
         name: row.name,
@@ -187,8 +183,10 @@ class PublicController {
               action: row.click_action,
               target_id: row.click_target_id,
               target_url: row.click_target_url,
-              pass_column: row.click_pass_column,
-              target_param: row.click_target_param,
+              parameter_mappings: mappings || [],
+              target_token: row.click_target_public_enabled
+                ? row.click_target_token
+                : null,
             }
           : null,
       };

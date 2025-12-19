@@ -1,5 +1,6 @@
 // controllers/questionController.js
 const pool = require("../config/db");
+const QuestionService = require("../services/QuestionService");
 
 class QuestionController {
   /**
@@ -82,32 +83,29 @@ class QuestionController {
   static async getQuestionById(req, res) {
     const { id } = req.params;
     try {
-      const queryText = `
-        SELECT 
-          q.id, q.name, q.sql_query, q.chart_type, q.chart_config, q.updated_at,
-          c.id as connection_id, c.connection_name, c.db_type, c.host, c.port, c.db_user, c.database_name,
-          col.id as collection_id, col.name as collection_name,
-          qcb.enabled as click_enabled,
-          qcb.action as click_action,
-          qcb.target_id as click_target_id,
-          qcb.target_url as click_target_url,
-          qcb.pass_column as click_pass_column,
-          qcb.target_param as click_target_param
-        FROM questions q
-        JOIN database_connections c ON q.connection_id = c.id
-        LEFT JOIN collections col ON q.collection_id = col.id
-        LEFT JOIN question_click_behaviors qcb ON q.id = qcb.question_id
-        WHERE q.id = $1;
-      `;
-      const questionResult = await pool.query(queryText, [id]);
+      // Panggil Service (Query Pusat)
+      const row = await QuestionService.getQuestionDetail(id);
 
-      if (questionResult.rows.length === 0) {
+      if (!row) {
         return res.status(404).json({ message: "Question not found" });
       }
 
-      const row = questionResult.rows[0];
+      // 1. Compatibility Logic untuk parameter mappings
+      let mappings = row.click_parameter_mappings;
+      if (
+        (!mappings || mappings.length === 0) &&
+        row.click_pass_column &&
+        row.click_target_param
+      ) {
+        mappings = [
+          {
+            passColumn: row.click_pass_column,
+            targetParam: row.click_target_param,
+          },
+        ];
+      }
 
-      // Structure the response with click_behavior as nested object
+      // 2. Susun Object Response
       const response = {
         id: row.id,
         name: row.name,
@@ -115,6 +113,8 @@ class QuestionController {
         chart_type: row.chart_type,
         chart_config: row.chart_config,
         updated_at: row.updated_at,
+
+        // Info Connection
         connection_id: row.connection_id,
         connection_name: row.connection_name,
         db_type: row.db_type,
@@ -122,16 +122,25 @@ class QuestionController {
         port: row.port,
         db_user: row.db_user,
         database_name: row.database_name,
+        // password_encrypted TIDAK DIKIRIM ke frontend admin
+
+        // Info Collection
         collection_id: row.collection_id,
         collection_name: row.collection_name,
+
+        // Info Click Behavior
         click_behavior: row.click_enabled
           ? {
               enabled: row.click_enabled,
               action: row.click_action,
               target_id: row.click_target_id,
               target_url: row.click_target_url,
-              pass_column: row.click_pass_column,
-              target_param: row.click_target_param,
+              parameter_mappings: mappings || [],
+
+              // Kirim token target jika dashboard tujuan PUBLIC
+              target_token: row.click_target_public_enabled
+                ? row.click_target_token
+                : null,
             }
           : null,
       };
@@ -235,14 +244,8 @@ class QuestionController {
    */
   static async updateClickBehavior(req, res) {
     const { id: question_id } = req.params;
-    const {
-      enabled,
-      action,
-      target_id,
-      target_url,
-      pass_column,
-      target_param,
-    } = req.body;
+    const { enabled, action, target_id, target_url, parameter_mappings } =
+      req.body;
     const userId = req.user.id;
 
     // Validation
@@ -258,10 +261,13 @@ class QuestionController {
       });
     }
 
-    if (enabled && action === "external_url" && !target_url) {
-      return res.status(400).json({
-        message: "Target URL is required for external URL action.",
-      });
+    // Validasi parameter_mappings harus array jika enabled
+    if (enabled && action !== "external_url") {
+      if (!parameter_mappings || !Array.isArray(parameter_mappings)) {
+        return res
+          .status(400)
+          .json({ message: "Parameter mappings must be an array." });
+      }
     }
 
     const client = await pool.connect();
@@ -286,22 +292,21 @@ class QuestionController {
       );
 
       let result;
+      const mappingsJson = JSON.stringify(parameter_mappings || []);
 
       if (existingBehavior.rowCount > 0) {
         // UPDATE existing
         result = await client.query(
           `UPDATE question_click_behaviors 
-           SET enabled = $1, action = $2, target_id = $3, target_url = $4, 
-               pass_column = $5, target_param = $6
-           WHERE question_id = $7 
+           SET enabled = $1, action = $2, target_id = $3, target_url = $4, parameter_mappings = $5
+           WHERE question_id = $6 
            RETURNING *`,
           [
             enabled,
             enabled ? action : null,
             enabled ? target_id : null,
             enabled ? target_url : null,
-            enabled ? pass_column : null,
-            enabled ? target_param : null,
+            mappingsJson,
             question_id,
           ]
         );
@@ -309,8 +314,8 @@ class QuestionController {
         // INSERT new
         result = await client.query(
           `INSERT INTO question_click_behaviors 
-           (question_id, enabled, action, target_id, target_url, pass_column, target_param)
-           VALUES ($1, $2, $3, $4, $5, $6, $7)
+           (question_id, enabled, action, target_id, target_url, parameter_mappings)
+           VALUES ($1, $2, $3, $4, $5, $6)
            RETURNING *`,
           [
             question_id,
@@ -318,8 +323,7 @@ class QuestionController {
             enabled ? action : null,
             enabled ? target_id : null,
             enabled ? target_url : null,
-            enabled ? pass_column : null,
-            enabled ? target_param : null,
+            mappingsJson,
           ]
         );
       }
@@ -356,27 +360,42 @@ class QuestionController {
     const { id: question_id } = req.params;
 
     try {
+      // Ambil kolom parameter_mappings juga
       const result = await pool.query(
-        `SELECT qcb.* 
-         FROM question_click_behaviors qcb
+        `SELECT qcb.* FROM question_click_behaviors qcb
          WHERE qcb.question_id = $1`,
         [question_id]
       );
 
       if (result.rows.length === 0) {
-        // Return default empty config if no behavior configured
         return res.status(200).json({
           question_id: parseInt(question_id),
           enabled: false,
           action: null,
           target_id: null,
           target_url: null,
-          pass_column: null,
-          target_param: null,
+          parameter_mappings: [],
         });
       }
 
-      res.status(200).json(result.rows[0]);
+      const row = result.rows[0];
+      let mappings = row.parameter_mappings;
+
+      // Fallback compatibility logic
+      if (
+        (!mappings || mappings.length === 0) &&
+        row.pass_column &&
+        row.target_param
+      ) {
+        mappings = [
+          { passColumn: row.pass_column, targetParam: row.target_param },
+        ];
+      }
+
+      res.status(200).json({
+        ...row,
+        parameter_mappings: mappings || [],
+      });
     } catch (error) {
       console.error(
         `Failed to get click behavior for question ${question_id}:`,

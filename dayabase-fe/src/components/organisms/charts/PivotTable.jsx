@@ -95,48 +95,55 @@ const PivotTable = forwardRef(
         const rowData = event.data;
         if (!rowData) return;
 
-        const { action, target_id, pass_column, target_param } = clickBehavior;
+        const { action, target_id, parameter_mappings } = clickBehavior;
 
-        // Get value from clicked row
-        const paramValue = rowData[pass_column];
+        // Build Query String from multiple mappings
+        const params = new URLSearchParams();
 
-        if (paramValue === undefined || paramValue === null) {
-          console.warn(
-            `Column "${pass_column}" not found or is null in row data`
-          );
-          return;
+        if (parameter_mappings && Array.isArray(parameter_mappings)) {
+          parameter_mappings.forEach((mapping) => {
+            const val = rowData[mapping.passColumn];
+            if (val !== undefined && val !== null) {
+              params.append(mapping.targetParam, val);
+            }
+          });
         }
 
+        const queryString = params.toString();
         let targetUrl;
 
         if (action === "link_to_question") {
           if (isEmbedMode && token) {
-            // Embed mode: use public route with token
-            targetUrl = `/embed/dashboards/${token}/questions/${target_id}/view?${target_param}=${encodeURIComponent(paramValue)}`;
+            targetUrl = `/embed/dashboards/${token}/questions/${target_id}/view?${queryString}`;
           } else {
-            // Authenticated mode: use protected route
-            targetUrl = `/questions/${target_id}/view?${target_param}=${encodeURIComponent(paramValue)}`;
+            targetUrl = `/questions/${target_id}/view?${queryString}`;
           }
         } else if (action === "link_to_dashboard") {
           if (isEmbedMode && token) {
-            // Embed mode: stay in embed context
-            targetUrl = `/embed/dashboards/${token}?${target_param}=${encodeURIComponent(paramValue)}`;
+            const targetToken = clickBehavior.target_token;
+
+            if (targetToken) {
+              targetUrl = `/embed/dashboards/${targetToken}?${queryString}`;
+            } else {
+              alert(
+                "Dashboard tujuan belum dipublikasikan (Sharing not enabled)."
+              );
+              return;
+            }
           } else {
-            // Authenticated mode: navigate to dashboard
-            targetUrl = `/dashboards/${target_id}?${target_param}=${encodeURIComponent(paramValue)}`;
+            targetUrl = `/dashboards/${target_id}?${queryString}`;
           }
         }
 
         if (targetUrl) {
-          // Different navigation behavior based on context
           if (isEmbedMode && isDashboard) {
-            // window.open(targetUrl, "_blank");
+            // window.open(targetUrl, "_blank"); // Optional: Open in new tab
             navigate(targetUrl);
           } else {
-            // All other cases: navigate in same window
+            // Pass state 'from' for back button logic
             navigate(targetUrl, {
               state: {
-                from: location.pathname + location.search, // Simpan path + query params saat ini
+                from: location.pathname + location.search,
                 label: "Back to Previous Dashboard",
               },
             });

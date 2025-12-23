@@ -13,7 +13,6 @@ export default function QuestionEditorPage() {
     setSql,
     connections,
     selectedConnectionId,
-    setSelectedConnectionId,
     results,
     columns,
     isLoading,
@@ -25,6 +24,7 @@ export default function QuestionEditorPage() {
     setChartConfig,
     transformedData,
     handleRunQuery,
+    handleConnectionChange,
     handleSaveQuestion,
   } = useQuestionEditor();
 
@@ -48,14 +48,7 @@ export default function QuestionEditorPage() {
       <QueryEditorForm
         connections={connections}
         selectedConnectionId={selectedConnectionId}
-        onConnectionChange={(value) => {
-          setSelectedConnectionId(value);
-          if (errors.selectedConnectionId) {
-            const newErrors = { ...errors };
-            delete newErrors.selectedConnectionId;
-            setErrors(newErrors);
-          }
-        }}
+        onConnectionChange={handleConnectionChange}
         sql={sql}
         onSqlChange={(e) => setSql(e.target.value)}
         error={errors.selectedConnectionId}

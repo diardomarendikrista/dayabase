@@ -4,6 +4,8 @@ import { useDispatch } from "react-redux";
 import { useParams, useNavigate, useLocation } from "react-router-dom";
 import { addToast } from "store/slices/toastSlice";
 
+const STORAGE_KEY_CONN = "dayabase_last_connection_id";
+
 export function useQuestionEditor() {
   const { id } = useParams();
   const navigate = useNavigate();
@@ -25,6 +27,20 @@ export function useQuestionEditor() {
   const [chartType, setChartType] = useState("pivot"); // Default ke pivot
   const [chartConfig, setChartConfig] = useState({});
   const [dataQuestion, setDataQuestion] = useState({});
+
+  const handleConnectionChange = (value) => {
+    setSelectedConnectionId(value);
+
+    if (value) {
+      localStorage.setItem(STORAGE_KEY_CONN, value);
+    }
+
+    if (errors.selectedConnectionId) {
+      const newErrors = { ...errors };
+      delete newErrors.selectedConnectionId;
+      setErrors(newErrors);
+    }
+  };
 
   const handleRunQuery = async (options = {}) => {
     const { newSql, newConnectionId, isInitialLoad = false } = options;
@@ -245,8 +261,24 @@ export function useQuestionEditor() {
       setColumns([]);
       setChartType("pivot");
       setChartConfig({}); // Default ke pivot
-      if (connections.length > 0) setSelectedConnectionId(connections[0].id);
     };
+
+    // logic default connection pakai localstorage
+    if (connections.length > 0) {
+      const lastConnId = localStorage.getItem(STORAGE_KEY_CONN);
+
+      // Cek apakah ID di storage valid (masih ada di list connections),
+      const foundConnection = connections.find(
+        (c) => c.id.toString() === lastConnId
+      );
+
+      if (foundConnection) {
+        setSelectedConnectionId(foundConnection.id);
+      } else {
+        // Jika tidak ada di storage atau ID invalid (misal dihapus), fallback ke yang pertama
+        setSelectedConnectionId(connections[0].id);
+      }
+    }
 
     if (id) {
       const fetchQuestionData = async () => {
@@ -274,7 +306,9 @@ export function useQuestionEditor() {
           });
         }
       };
-      fetchQuestionData();
+      if (connections.length > 0) {
+        fetchQuestionData();
+      }
     } else {
       resetState();
     }
@@ -301,6 +335,7 @@ export function useQuestionEditor() {
     setChartConfig,
     transformedData,
     handleRunQuery,
+    handleConnectionChange,
     handleSaveQuestion,
   };
 }

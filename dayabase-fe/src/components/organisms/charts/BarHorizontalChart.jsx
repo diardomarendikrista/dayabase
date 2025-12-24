@@ -57,6 +57,7 @@ export default function HorizontalBarChart({
       <ReactECharts
         option={getChartOptions()}
         style={{ height: height, width: "100%" }}
+        notMerge={true} // ini debug buat data nyangkut ketika multiple data dihapus (force refresh)
       />
     </div>
   );

@@ -29,6 +29,7 @@ const customStyles = {
     ...provided,
     color: "#9ca3af",
   }),
+  menuPortal: (base) => ({ ...base, zIndex: 9999 }),
 };
 
 export default function Select({
@@ -39,6 +40,7 @@ export default function Select({
   placeholder = "Select an option...",
   className,
   isMulti = false,
+  usePortal = true,
   ...props
 }) {
   const id = useId();
@@ -91,6 +93,7 @@ export default function Select({
         styles={customStyles}
         className={cn("w-full", className)}
         isMulti={isMulti}
+        menuPortalTarget={usePortal ? document.body : null}
         {...props}
       />
     </div>

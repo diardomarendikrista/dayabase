@@ -161,6 +161,7 @@ export default function BarChart({
       <ReactECharts
         option={getChartOptions()}
         style={{ height: height, width: width }}
+        notMerge={true} // ini debug buat data nyangkut ketika multiple data dihapus (force refresh)
       />
     </div>
   );

@@ -89,6 +89,7 @@ export default function LineChart({
     <ReactECharts
       option={options}
       style={{ height: height, width: width }}
+      notMerge={true} // ini debug buat data nyangkut ketika multiple data dihapus (force refresh)
     />
   );
 }

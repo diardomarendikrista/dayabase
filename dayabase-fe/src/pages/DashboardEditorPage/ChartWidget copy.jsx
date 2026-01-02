@@ -23,8 +23,6 @@ import { RiFilterLine } from "react-icons/ri";
 export default function ChartWidget({
   questionId,
   filterParameters = {},
-  availableFilters = [],
-  dashboardMappings = {},
   onRemove,
   onOpenFilterMapping,
   isEmbedMode,
@@ -48,60 +46,32 @@ export default function ChartWidget({
         let qDetails;
 
         if (isEmbedMode && token) {
+          // Public endpoint
           const qResponse = await API.get(
             `/api/public/dashboards/${token}/questions/${questionId}`
           );
           qDetails = qResponse.data;
+
+          const queryResponse = await API.post(
+            `/api/public/dashboards/${token}/questions/${questionId}/run`,
+            { parameters: filterParameters }
+          );
+
+          setResults(queryResponse.data || []);
         } else {
+          // Authenticated endpoint
           const qResponse = await API.get(`/api/questions/${questionId}`);
           qDetails = qResponse.data;
-        }
 
-        // LOGIC MAPPING
-        const mappedParameters = { ...filterParameters };
-        const mappings = dashboardMappings || {};
-
-        console.log("FIXED Mappings Source:", mappings);
-
-        // Loop konfigurasi mapping
-        Object.keys(mappings).forEach((filterId) => {
-          const targetSqlVariable = mappings[filterId]; // "salary_min"
-
-          // 1. Cari Filter Object berdasarkan ID untuk mendapatkan variable name-nya
-          const filterObj = availableFilters.find(
-            (f) => f.id.toString() === filterId.toString()
-          );
-
-          if (filterObj) {
-            const sourceVariableName = filterObj.name; // "min_value"
-
-            // 2. Cek apakah ada value untuk variable name tersebut
-            if (filterParameters[sourceVariableName] !== undefined) {
-              // 3. Mapping: set parameter baru dengan nama target
-              mappedParameters[targetSqlVariable] =
-                filterParameters[sourceVariableName];
-            }
-          }
-        });
-        // Query menggunakan 'mappedParameters'
-        let queryResponse;
-
-        if (isEmbedMode && token) {
-          // Public endpoint execution
-          queryResponse = await API.post(
-            `/api/public/dashboards/${token}/questions/${questionId}/run`,
-            { parameters: mappedParameters }
-          );
-        } else {
-          // Authenticated endpoint execution
-          queryResponse = await API.post("/api/query/run", {
+          const queryResponse = await API.post("/api/query/run", {
             sql: qDetails.sql_query,
             connectionId: qDetails.connection_id,
-            parameters: mappedParameters,
+            parameters: filterParameters,
           });
+
+          setResults(queryResponse.data || []);
         }
 
-        setResults(queryResponse.data || []);
         setQuestion(qDetails);
       } catch (err) {
         setError(err.response?.data?.message || "Failed to load widget data.");
@@ -112,14 +82,7 @@ export default function ChartWidget({
     };
 
     loadAndRunQuestion();
-  }, [
-    questionId,
-    filterParameters,
-    availableFilters,
-    dashboardMappings,
-    isEmbedMode,
-    token,
-  ]);
+  }, [questionId, filterParameters, isEmbedMode, token]);
 
   const renderContent = () => {
     if (isLoading) {

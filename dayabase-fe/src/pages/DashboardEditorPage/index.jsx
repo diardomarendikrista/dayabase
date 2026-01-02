@@ -428,6 +428,8 @@ export default function DashboardViewPage() {
               <ChartWidget
                 questionId={q.id}
                 filterParameters={filterValues}
+                availableFilters={filters}
+                dashboardMappings={q.filter_mappings}
                 onRemove={() => handleRemoveQuestion(q.instance_id.toString())}
                 onOpenFilterMapping={() => handleOpenFilterMapping(q)}
                 isEmbedMode={isEmbedMode}

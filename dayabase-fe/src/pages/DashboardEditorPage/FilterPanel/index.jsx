@@ -6,6 +6,7 @@ import { RiAddLine } from "react-icons/ri";
 import FilterItem from "./FilterItem";
 import { useFilterPanel } from "./useFilterPanel";
 import ModalAddEditFilter from "./ModalAddEditFilter";
+import { cn } from "lib/utils";
 
 export default function FilterPanel({
   dashboardId,
@@ -47,7 +48,12 @@ export default function FilterPanel({
   };
 
   return (
-    <div className="bg-white p-4 rounded-lg shadow-md border border-gray-200 mb-4">
+    <div
+      className={cn(
+        "bg-white p-4 rounded-lg shadow-md border border-gray-200 mb-4",
+        { hidden: isEmbedMode && filters.length === 0 }
+      )}
+    >
       {/* Header */}
       {!isEmbedMode && (
         <div className="flex justify-between items-center mb-3">
@@ -55,7 +61,7 @@ export default function FilterPanel({
           <Button
             size="sm"
             variant="outline"
-            onClick={handleAddClick} // <-- Ubah onClick
+            onClick={handleAddClick}
           >
             <RiAddLine className="mr-1" /> Add Filter
           </Button>

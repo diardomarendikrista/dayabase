@@ -94,9 +94,10 @@ const ChartRenderer = forwardRef(
               seriesData={transformedData.seriesData}
               xAxisName={chartConfig.category}
               yAxisName="Values"
-              width={width}
+              minWidth={width}
               height={height}
               xAxisRotate="auto"
+              clickBehavior={clickBehavior}
             />
           </div>
         );
@@ -112,8 +113,9 @@ const ChartRenderer = forwardRef(
             <LineChart
               xAxisData={transformedData.xAxisData}
               seriesData={transformedData.seriesData}
-              width={width}
+              minWidth={width}
               height={height}
+              clickBehavior={clickBehavior}
             />
           </div>
         );
@@ -128,8 +130,9 @@ const ChartRenderer = forwardRef(
           >
             <DonutChart
               seriesData={transformedData.seriesData}
-              width={width}
+              minWidth={width}
               height={height}
+              clickBehavior={clickBehavior}
             />
           </div>
         );

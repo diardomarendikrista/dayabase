@@ -130,7 +130,7 @@ export default function BarChart({
     xAxis: {
       type: "category",
       data: xAxisData,
-      name: xAxisName,
+      // name: xAxisName,
       nameLocation: "middle",
       nameGap: calculateRotation > 0 ? 50 : 30,
       axisLabel: {
@@ -147,7 +147,7 @@ export default function BarChart({
     },
     yAxis: {
       type: "value",
-      name: yAxisName,
+      // name: yAxisName,
       nameLocation: "middle",
       nameGap: 50,
     },

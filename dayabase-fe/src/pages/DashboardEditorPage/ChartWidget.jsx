@@ -61,13 +61,13 @@ export default function ChartWidget({
         const mappedParameters = { ...filterParameters };
         const mappings = dashboardMappings || {};
 
-        console.log("FIXED Mappings Source:", mappings);
+        // console.log("FIXED Mappings Source:", mappings);
 
         // Loop konfigurasi mapping
         Object.keys(mappings).forEach((filterId) => {
           const targetSqlVariable = mappings[filterId]; // "salary_min"
 
-          // 1. Cari Filter Object berdasarkan ID untuk mendapatkan variable name-nya
+          // Cari Filter Object berdasarkan ID untuk mendapatkan variable name-nya
           const filterObj = availableFilters.find(
             (f) => f.id.toString() === filterId.toString()
           );
@@ -75,9 +75,9 @@ export default function ChartWidget({
           if (filterObj) {
             const sourceVariableName = filterObj.name; // "min_value"
 
-            // 2. Cek apakah ada value untuk variable name tersebut
+            // Cek apakah ada value untuk variable name tersebut
             if (filterParameters[sourceVariableName] !== undefined) {
-              // 3. Mapping: set parameter baru dengan nama target
+              // Mapping: set parameter baru dengan nama target
               mappedParameters[targetSqlVariable] =
                 filterParameters[sourceVariableName];
             }

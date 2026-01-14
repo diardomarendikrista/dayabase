@@ -10,8 +10,9 @@ import {
 import { AgGridReact } from "ag-grid-react";
 import { useNavigate, useParams, useLocation } from "react-router-dom";
 import * as XLSX from "xlsx";
+import { formatDateCell } from "lib/utils";
 
-const PivotTable = forwardRef(
+const TableWidget = forwardRef(
   (
     {
       data,
@@ -47,6 +48,7 @@ const PivotTable = forwardRef(
         headerName:
           key.charAt(0).toUpperCase() + key.slice(1).replace(/_/g, " "),
         field: key,
+        valueFormatter: (params) => formatDateCell(params.value),
       }));
     }, [data]);
 
@@ -90,6 +92,12 @@ const PivotTable = forwardRef(
 
     const handleRowClick = useCallback(
       (event) => {
+        // if selecting text, do not trigger click
+        const selection = window.getSelection();
+        if (selection && selection.toString().length > 0) {
+          return;
+        }
+
         if (!clickBehavior || !clickBehavior.enabled) return;
 
         const rowData = event.data;
@@ -132,6 +140,13 @@ const PivotTable = forwardRef(
             }
           } else {
             targetUrl = `/dashboards/${target_id}?${queryString}`;
+          }
+        } else if (action === "link_to_url") {
+          let finalUrl = clickBehavior.target_url;
+          if (finalUrl) {
+            finalUrl = finalUrl.replace("{{value}}", event.value);
+            window.open(finalUrl, "_blank");
+            return;
           }
         }
 
@@ -186,7 +201,14 @@ const PivotTable = forwardRef(
         if (node.group) return;
         const rowData = [];
         visibleColumns.forEach((col) => {
+          // Ambil raw value
           const value = node.data[col.getColDef().field];
+
+          // NOTE: Jika ingin hasil export Excel juga terformat tanggalnya:
+          // const formattedValue = formatDateCell(value);
+          // rowData.push(formattedValue);
+
+          // Saat ini kita push raw value agar di Excel tetap dikenali sebagai data (bukan teks)
           rowData.push(value !== null && value !== undefined ? value : "");
         });
         dataToExport.push(rowData);
@@ -223,6 +245,9 @@ const PivotTable = forwardRef(
             }
             onRowClicked={clickBehavior?.enabled ? handleRowClick : undefined}
             rowClass={rowClass}
+            enableBrowserTooltips={true}
+            enableCellTextSelection={true}
+            ensureDomOrder={true}
           />
         </div>
       </div>
@@ -230,4 +255,4 @@ const PivotTable = forwardRef(
   }
 );
 
-export default PivotTable;
+export default TableWidget;

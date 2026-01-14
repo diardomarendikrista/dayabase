@@ -1,6 +1,7 @@
 import ReactECharts from "echarts-for-react";
 import { useMemo } from "react";
 import { useChartClick } from "./hooks/useChartClick";
+import { formatChartValue } from "lib/utils";
 
 export default function BarChart({
   title,
@@ -66,7 +67,7 @@ export default function BarChart({
         label: {
           show: true,
           position: "top",
-          formatter: (params) => params.value.toLocaleString("id-ID"),
+          formatter: (params) => formatChartValue(params.value),
         },
         // Warna berbeda untuk tiap series
         itemStyle: {

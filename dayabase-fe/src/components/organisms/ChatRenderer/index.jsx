@@ -2,8 +2,11 @@ import { useMemo, forwardRef } from "react";
 import BarChart from "components/organisms/charts/BarChart";
 import LineChart from "components/organisms/charts/LineChart";
 import DonutChart from "components/organisms/charts/DonutChart";
-import PivotTable from "components/organisms/charts/PivotTable";
+import TableWidget from "components/organisms/charts/TableWidget";
 import EmptyState from "./EmptyState";
+
+const DATA_LIMIT_CHARTS = 2000; // Batas aman untuk grafik
+const DATA_LIMIT_TABLE = 10000; // Batas aman untuk tabel
 
 /**
  * Universal Chart Renderer
@@ -37,6 +40,29 @@ const ChartRenderer = forwardRef(
     },
     ref
   ) => {
+    // SAFETY CHECK: DATA LIMIT
+    const isTable = chartType === "table" || chartType === "pivot";
+    const limit = isTable ? DATA_LIMIT_TABLE : DATA_LIMIT_CHARTS;
+
+    if (data && data.length > limit) {
+      return (
+        <div className="flex flex-col items-center justify-center h-full text-gray-500 p-4 text-center">
+          <RiErrorWarningLine
+            size={48}
+            className="text-amber-500 mb-2"
+          />
+          <h4 className="font-bold text-gray-700">Data Too Large to Display</h4>
+          <p className="text-sm mt-1">
+            We found <b>{data.length.toLocaleString()} rows</b>. Browser
+            performance may suffer.
+          </p>
+          <p className="text-sm mt-2 bg-amber-50 text-amber-800 px-3 py-1 rounded border border-amber-200">
+            Please use filters to reduce data below {limit.toLocaleString()}.
+          </p>
+        </div>
+      );
+    }
+
     // Transform data for bar/line/pie charts
     const transformedData = useMemo(() => {
       if (!chartConfig?.category || !data || data.length === 0) {
@@ -145,7 +171,7 @@ const ChartRenderer = forwardRef(
             className={className}
             style={{ width: "100%", height: "100%" }}
           >
-            <PivotTable
+            <TableWidget
               ref={ref}
               data={data}
               savedState={savedState || chartConfig}

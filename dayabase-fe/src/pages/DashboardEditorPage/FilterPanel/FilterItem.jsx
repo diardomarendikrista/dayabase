@@ -87,7 +87,7 @@ export default function FilterItem({
           <Input
             type={filter.type}
             placeholder="Min"
-            value={value[`${filter.name}_min`] || ""}
+            value={value[`${filter.name}_min`] ?? ""}
             onChange={(e) => onChange(`${filter.name}_min`, e.target.value)}
             className="flex-1"
           />
@@ -95,7 +95,7 @@ export default function FilterItem({
           <Input
             type={filter.type}
             placeholder="Max"
-            value={value[`${filter.name}_max`] || ""}
+            value={value[`${filter.name}_max`] ?? ""}
             onChange={(e) => onChange(`${filter.name}_max`, e.target.value)}
             className="flex-1"
           />

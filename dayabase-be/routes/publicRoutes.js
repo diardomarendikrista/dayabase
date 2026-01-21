@@ -3,7 +3,7 @@ const router = express.Router();
 
 const PublicController = require("../controllers/publicController");
 
-router.get("/dashboards/:token", PublicController.getPublicDashboardByToken);
+router.get("/dashboards/:token", PublicController.getPublicDashboard);
 router.get(
   "/dashboards/:token/questions/:questionId",
   PublicController.getPublicQuestion

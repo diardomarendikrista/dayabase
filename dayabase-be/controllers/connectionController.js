@@ -1,6 +1,7 @@
 // controllers/connectionController.js
 const { encrypt } = require("../utils/crypto");
 const pool = require("../config/db"); // Koneksi ke DB dayabase_app
+const logger = require("../utils/logger");
 
 class ConnectionController {
   /**
@@ -33,31 +34,24 @@ class ConnectionController {
         .json({ message: "All connection fields are required." });
     }
 
-    try {
-      const password_encrypted = encrypt(password);
+    const password_encrypted = encrypt(password);
 
-      const newConnection = await pool.query(
-        `INSERT INTO database_connections 
+    const newConnection = await pool.query(
+      `INSERT INTO database_connections 
          (connection_name, db_type, host, port, db_user, password_encrypted, database_name) 
          VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING id, connection_name, db_type, host, port, db_user, database_name`,
-        [
-          connection_name,
-          db_type,
-          host,
-          port,
-          db_user,
-          password_encrypted,
-          database_name,
-        ]
-      );
+      [
+        connection_name,
+        db_type,
+        host,
+        port,
+        db_user,
+        password_encrypted,
+        database_name,
+      ]
+    );
 
-      res.status(201).json(newConnection.rows[0]);
-    } catch (error) {
-      console.error("Error creating connection:", error);
-      res
-        .status(500)
-        .json({ message: "Failed to create connection", error: error.message });
-    }
+    res.status(201).json(newConnection.rows[0]);
   }
 
   /**
@@ -65,17 +59,10 @@ class ConnectionController {
    * @route GET /api/connections
    */
   static async getAllConnections(req, res) {
-    try {
-      const allConnections = await pool.query(
-        "SELECT id, connection_name, db_type, host, port, db_user, database_name, created_at FROM database_connections ORDER BY created_at DESC"
-      );
-      res.status(200).json(allConnections.rows);
-    } catch (error) {
-      console.error("Error fetching connections:", error);
-      res
-        .status(500)
-        .json({ message: "Failed to fetch connections", error: error.message });
-    }
+    const allConnections = await pool.query(
+      "SELECT id, connection_name, db_type, host, port, db_user, database_name, created_at FROM database_connections ORDER BY created_at DESC"
+    );
+    res.status(200).json(allConnections.rows);
   }
 
   /**
@@ -84,23 +71,17 @@ class ConnectionController {
    */
   static async getConnectionById(req, res) {
     const { id } = req.params;
-    try {
-      const connection = await pool.query(
-        "SELECT id, connection_name, db_type, host, port, db_user, database_name, created_at FROM database_connections WHERE id = $1",
-        [id]
-      );
 
-      if (connection.rows.length === 0) {
-        return res.status(404).json({ message: "Connection not found." });
-      }
+    const connection = await pool.query(
+      "SELECT id, connection_name, db_type, host, port, db_user, database_name, created_at FROM database_connections WHERE id = $1",
+      [id]
+    );
 
-      res.status(200).json(connection.rows[0]);
-    } catch (error) {
-      console.error(`Error fetching connection ${id}:`, error);
-      res
-        .status(500)
-        .json({ message: "Failed to fetch connection.", error: error.message });
+    if (connection.rows.length === 0) {
+      return res.status(404).json({ message: "Connection not found." });
     }
+
+    res.status(200).json(connection.rows[0]);
   }
 
   /**
@@ -135,10 +116,7 @@ class ConnectionController {
             "Cannot delete this connection because it is still being used by one or more questions.",
         });
       }
-      console.error(`Error deleting connection ${id}:`, error);
-      res
-        .status(500)
-        .json({ message: "Failed to delete connection", error: error.message });
+      throw error;
     }
   }
 
@@ -171,59 +149,52 @@ class ConnectionController {
         .json({ message: "All fields except password are required." });
     }
 
-    try {
-      let query;
-      let values;
+    let query;
+    let values;
 
-      if (password) {
-        // Jika ada password baru, enkripsi dan update semuanya
-        const password_encrypted = encrypt(password);
-        query = `
+    if (password) {
+      // Jika ada password baru, enkripsi dan update semuanya
+      const password_encrypted = encrypt(password);
+      query = `
           UPDATE database_connections 
           SET connection_name = $1, db_type = $2, host = $3, port = $4, db_user = $5, password_encrypted = $6, database_name = $7
           WHERE id = $8 RETURNING id, connection_name, db_type, host, port, db_user, database_name`;
-        values = [
-          connection_name,
-          db_type,
-          host,
-          port,
-          db_user,
-          password_encrypted,
-          database_name,
-          id,
-        ];
-      } else {
-        // Jika tidak ada password baru, jangan update kolom password
-        query = `
+      values = [
+        connection_name,
+        db_type,
+        host,
+        port,
+        db_user,
+        password_encrypted,
+        database_name,
+        id,
+      ];
+    } else {
+      // Jika tidak ada password baru, jangan update kolom password
+      query = `
           UPDATE database_connections 
           SET connection_name = $1, db_type = $2, host = $3, port = $4, db_user = $5, database_name = $6
           WHERE id = $7 RETURNING id, connection_name, db_type, host, port, db_user, database_name`;
-        values = [
-          connection_name,
-          db_type,
-          host,
-          port,
-          db_user,
-          database_name,
-          id,
-        ];
-      }
-
-      const updatedConnection = await pool.query(query, values);
-
-      if (updatedConnection.rows.length === 0) {
-        return res
-          .status(404)
-          .json({ message: "Connection not found, nothing to update." });
-      }
-
-      res.status(200).json(updatedConnection.rows[0]);
-    } catch (error) {
-      console.error(`Error updating connection ${id}:`, error);
-      res
-        .status(500)
-        .json({ message: "Failed to update connection", error: error.message });
+      values = [
+        connection_name,
+        db_type,
+        host,
+        port,
+        db_user,
+        database_name,
+        id,
+      ];
     }
+
+    const updatedConnection = await pool.query(query, values);
+
+    if (updatedConnection.rows.length === 0) {
+      return res
+        .status(404)
+        .json({ message: "Connection not found, nothing to update." });
+    }
+
+    res.status(200).json(updatedConnection.rows[0]);
   }
 }
 

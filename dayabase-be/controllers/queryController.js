@@ -1,8 +1,8 @@
-// controllers/queryController.js
 const { decrypt } = require("../utils/crypto");
 const { connectToDatabase } = require("../config/databaseConnector");
 const appDbPool = require("../config/db");
 const { parseSqlWithParameters } = require("../utils/sqlParser");
+const logger = require("../utils/logger");
 
 class QueryController {
   static async runQuery(req, res) {
@@ -66,7 +66,14 @@ class QueryController {
       }
 
       // Decrypt password dan setup koneksi
-      const decryptedPassword = decrypt(connDetails.password_encrypted);
+      let decryptedPassword;
+      try {
+        decryptedPassword = decrypt(connDetails.password_encrypted);
+      } catch (err) {
+        logger.error("Failed to decrypt password:", err);
+        return res.status(500).json({ message: "Decryption failed." });
+      }
+
       const dbConfig = {
         dbType: connDetails.db_type,
         host: connDetails.host,
@@ -99,17 +106,14 @@ class QueryController {
       }
 
       res.status(200).json(rows);
-    } catch (error) {
-      console.error("Error executing query:", error);
-      res
-        .status(500)
-        .json({ message: "Failed to execute query", error: error.message });
     } finally {
       // 6. Tutup koneksi
-      if (targetConnection && targetConnection.end) {
-        await targetConnection.end();
-      } else if (targetConnection && targetConnection.close) {
-        await targetConnection.close();
+      if (targetConnection) {
+        if (targetConnection.end) {
+          await targetConnection.end();
+        } else if (targetConnection.destroy) {
+          targetConnection.destroy();
+        }
       }
     }
   }

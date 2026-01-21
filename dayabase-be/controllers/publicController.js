@@ -1,74 +1,119 @@
-// controllers/publicController.js
 const pool = require("../config/db");
 const { decrypt } = require("../utils/crypto");
-const { connectToDatabase } = require("../config/databaseConnector");
-const { parseSqlWithParameters } = require("../utils/sqlParser");
-const QuestionService = require("../services/QuestionService");
+const { connectToDatabase } = require("../config/databaseConnector"); // Kept at top
+const { parseSqlWithParameters } = require("../utils/sqlParser"); // Kept at top
+const logger = require("../utils/logger"); // Added logger
 
 class PublicController {
   /**
-   * @description Mengambil data dashboard publik berdasarkan token
-   * @route GET /api/public/dashboards/:token
+   * @description Get Public Dashboard Data by Token
+   * @route GET /api/public/dashboard/:token
    */
-  static async getPublicDashboardByToken(req, res) {
+  static async getPublicDashboard(req, res) {
     const { token } = req.params;
+
     try {
-      // Query untuk dashboard dan questions
-      const queryText = `
-        SELECT 
-          d.id as dashboard_id, 
-          d.name, 
-          d.description,
+      // 1. Validasi Token & Ambil Info Dashboard
+      const dashboardQuery = `
+        SELECT id, name, description, public_sharing_enabled, public_token
+        FROM dashboards
+        WHERE public_token = $1
+      `;
+      const dashboardRes = await pool.query(dashboardQuery, [token]);
+
+      if (dashboardRes.rows.length === 0) {
+        return res.status(404).json({ message: "Dashboard not found." });
+      }
+
+      const dashboard = dashboardRes.rows[0];
+
+      if (!dashboard.public_sharing_enabled) {
+        return res
+          .status(403)
+          .json({ message: "This dashboard is not publicly shared." });
+      }
+
+      // 2. Ambil Filters (jika ada)
+      const filtersQuery = `
+        SELECT id, name, display_name, type, options, operator
+        FROM dashboard_filters
+        WHERE dashboard_id = $1
+        ORDER BY id ASC
+      `;
+      const filtersRes = await pool.query(filtersQuery, [dashboard.id]);
+
+      // 3. Ambil Questions yang ada di dashboard ini
+      const questionsQuery = `
+        SELECT
           dq.id as instance_id,
           dq.question_id,
           dq.layout_config,
           dq.filter_mappings,
           q.name as question_name,
-          q.chart_type
-        FROM dashboards d
-        LEFT JOIN dashboard_questions dq ON d.id = dq.dashboard_id
-        LEFT JOIN questions q ON dq.question_id = q.id
-        WHERE d.public_token = $1 AND d.public_sharing_enabled = TRUE;
-      `;
-      const result = await pool.query(queryText, [token]);
+          q.chart_type,
+          qcb.enabled as click_enabled,
+          qcb.action as click_action,
+        qcb.target_id as click_target_id,
+        qcb.target_url as click_target_url,
+        d_target.public_sharing_enabled as click_target_public_enabled,
+        d_target.public_token as click_target_token,
+        qcb.parameter_mappings as click_parameter_mappings
+        FROM dashboard_questions dq
+        JOIN questions q ON dq.question_id = q.id
+        LEFT JOIN question_click_behaviors qcb ON q.id = qcb.question_id
+        LEFT JOIN dashboards d_target ON qcb.target_id = d_target.id
+        WHERE dq.dashboard_id = $1
+        `;
+      const questionsRes = await pool.query(questionsQuery, [dashboard.id]);
 
-      if (result.rows.length === 0) {
-        return res.status(404).json({
-          message: "Dashboard publik tidak ditemukan atau tidak aktif.",
-        });
-      }
+      const questions = questionsRes.rows.map((row) => {
+        // Compatibility logic for old click behavior
+        let mappings = row.click_parameter_mappings;
+        if (
+          (!mappings || mappings.length === 0) &&
+          row.click_pass_column &&
+          row.click_target_param
+        ) {
+          mappings = [
+            {
+              passColumn: row.click_pass_column,
+              targetParam: row.click_target_param,
+            },
+          ];
+        }
 
-      // Query untuk filters
-      const filtersQuery = `
-        SELECT id, name, display_name, type, options, operator
-        FROM dashboard_filters
-        WHERE dashboard_id = $1
-        ORDER BY id ASC;
-      `;
-      const dashboardId = result.rows[0].dashboard_id;
-      const filtersResult = await pool.query(filtersQuery, [dashboardId]);
+        return {
+          instance_id: row.instance_id,
+          id: row.question_id,
+          name: row.question_name,
+          chart_type: row.chart_type,
+          layout: row.layout_config,
+          filter_mappings: row.filter_mappings || {},
+          click_behavior: row.click_enabled
+            ? {
+              enabled: row.click_enabled,
+              action: row.click_action,
+              target_id: row.click_target_id,
+              target_url: row.click_target_url,
+              parameter_mappings: mappings || [],
+              target_token: row.click_target_public_enabled
+                ? row.click_target_token
+                : null,
+            }
+            : null,
+        };
+      });
 
-      const processedDashboardData = {
-        id: result.rows[0].dashboard_id,
-        name: result.rows[0].name,
-        description: result.rows[0].description,
-        filters: filtersResult.rows,
-        questions: result.rows[0].question_id
-          ? result.rows.map((row) => ({
-              instance_id: row.instance_id,
-              id: row.question_id,
-              name: row.question_name,
-              chart_type: row.chart_type,
-              layout: row.layout_config,
-              filter_mappings: row.filter_mappings || {},
-            }))
-          : [],
-      };
-
-      res.status(200).json(processedDashboardData);
+      res.status(200).json({
+        id: dashboard.id,
+        name: dashboard.name,
+        description: dashboard.description,
+        filters: filtersRes.rows,
+        questions,
+      });
     } catch (error) {
-      console.error(
-        `[PUBLIC_CONTROLLER_ERROR] Gagal mengambil dashboard publik dengan token ${token}:`,
+      logger.error(
+        `[PUBLIC_CONTROLLER_ERROR] Gagal mengambil dashboard publik dengan token ${token}: `,
         error
       );
       res.status(500).json({
@@ -85,7 +130,7 @@ class PublicController {
   static async isQuestionAccessible(dashboardId, questionId) {
     // Check if question is directly in dashboard
     const directCheck = await pool.query(
-      `SELECT dq.question_id 
+      `SELECT dq.question_id
        FROM dashboard_questions dq
        WHERE dq.dashboard_id = $1 AND dq.question_id = $2`,
       [dashboardId, questionId]
@@ -100,7 +145,7 @@ class PublicController {
       `SELECT qcb.target_id
        FROM dashboard_questions dq
        JOIN question_click_behaviors qcb ON dq.question_id = qcb.question_id
-       WHERE dq.dashboard_id = $1 
+       WHERE dq.dashboard_id = $1
          AND qcb.enabled = TRUE
          AND qcb.action = 'link_to_question'
          AND qcb.target_id = $2`,
@@ -146,28 +191,44 @@ class PublicController {
         });
       }
 
-      // Panggil Service (Query Pusat)
-      const row = await QuestionService.getQuestionDetail(questionId);
+      // Query Question Detail with Click Behavior
+      // NOTE: User's original code queried questions table for click_*, but schema has it in question_click_behaviors
+      const queryText = `
+        SELECT 
+          q.id, 
+          q.name, 
+          q.sql_query, 
+          q.chart_type, 
+          q.chart_config, 
+          q.connection_id,
+          
+          qcb.enabled as click_enabled,
+          qcb.action as click_action,
+          qcb.target_id as click_target_id,
+          qcb.target_url as click_target_url,
+          qcb.parameter_mappings as click_parameter_mappings,
+          
+          d_target.public_token as click_target_token,
+          d_target.public_sharing_enabled as click_target_public_enabled
 
-      if (!row) {
+        FROM questions q
+        LEFT JOIN question_click_behaviors qcb ON q.id = qcb.question_id
+        LEFT JOIN dashboards d_target ON qcb.target_id = d_target.id
+        WHERE q.id = $1
+      `;
+
+      const result = await pool.query(queryText, [questionId]);
+
+      if (result.rows.length === 0) {
         return res.status(404).json({ message: "Question not found." });
       }
+
+      const row = result.rows[0];
 
       // -- FORMATTING & SANITIZING RESPONSE --
       // Compatibility Logic
       let mappings = row.click_parameter_mappings;
-      if (
-        (!mappings || mappings.length === 0) &&
-        row.click_pass_column &&
-        row.click_target_param
-      ) {
-        mappings = [
-          {
-            passColumn: row.click_pass_column,
-            targetParam: row.click_target_param,
-          },
-        ];
-      }
+      // Note: Removed fallback to q.click_pass_column since those cols don't exist
 
       // Susun Response
       const response = {
@@ -179,15 +240,15 @@ class PublicController {
         connection_id: row.connection_id,
         click_behavior: row.click_enabled
           ? {
-              enabled: row.click_enabled,
-              action: row.click_action,
-              target_id: row.click_target_id,
-              target_url: row.click_target_url,
-              parameter_mappings: mappings || [],
-              target_token: row.click_target_public_enabled
-                ? row.click_target_token
-                : null,
-            }
+            enabled: row.click_enabled,
+            action: row.click_action,
+            target_id: row.click_target_id,
+            target_url: row.click_target_url,
+            parameter_mappings: mappings || [],
+            target_token: row.click_target_public_enabled
+              ? row.click_target_token
+              : null,
+          }
           : null,
       };
 
@@ -203,7 +264,7 @@ class PublicController {
   }
 
   /**
-   * @description Run query for public dashboard question
+   * @description Run query for public dashboard question (with parameters supported)
    * @route POST /api/public/dashboards/:token/questions/:questionId/run
    */
   static async runPublicQuery(req, res) {
@@ -242,8 +303,8 @@ class PublicController {
       // 3. Get question and connection details
       const questionQuery = `
         SELECT q.sql_query, q.connection_id,
-               c.db_type, c.host, c.port, c.db_user, 
-               c.database_name, c.password_encrypted
+              c.db_type, c.host, c.port, c.db_user,
+              c.database_name, c.password_encrypted
         FROM questions q
         JOIN database_connections c ON q.connection_id = c.id
         WHERE q.id = $1
@@ -292,7 +353,7 @@ class PublicController {
       const limit = 1000;
       let execSql = finalSql;
       if (!/limit\s+\d+/i.test(sqlWithoutComments)) {
-        execSql = `${finalSql.trim()} LIMIT ${limit}`;
+        execSql = `${finalSql.trim()} LIMIT ${limit} `;
       }
 
       // 7. Setup connection and execute
@@ -315,31 +376,28 @@ class PublicController {
           rows = pgResult.rows;
           break;
         case "mysql":
-          const [mysqlRows] = await targetConnection.execute(
-            execSql,
-            queryValues
-          );
+          const [mysqlRows] = await targetConnection.execute(execSql, queryValues);
           rows = mysqlRows;
           break;
         default:
-          throw new Error(
-            `Execution logic for ${dbConfig.dbType} not implemented.`
-          );
+          return res.status(400).json({ message: "Unsupported database type." });
       }
 
       res.status(200).json(rows);
     } catch (error) {
-      console.error("Error executing public query:", error);
+      logger.error("Error executing public query:", error);
       res.status(500).json({
         message: "Failed to execute query",
-        error:
-          process.env.NODE_ENV === "development" ? error.message : undefined,
+        error: error.message,
       });
     } finally {
-      if (targetConnection && targetConnection.end) {
-        await targetConnection.end();
-      } else if (targetConnection && targetConnection.close) {
-        await targetConnection.close();
+      if (targetConnection) {
+        // Close connection based on type
+        if (targetConnection.end) {
+          await targetConnection.end();
+        } else if (targetConnection.destroy) { // For MySQL connections
+          targetConnection.destroy();
+        }
       }
     }
   }

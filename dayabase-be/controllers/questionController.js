@@ -1,6 +1,7 @@
 // controllers/questionController.js
 const pool = require("../config/db");
 const QuestionService = require("../services/QuestionService");
+const logger = require("../utils/logger");
 
 class QuestionController {
   /**
@@ -26,27 +27,20 @@ class QuestionController {
       });
     }
 
-    try {
-      const newQuestion = await pool.query(
-        "INSERT INTO questions (name, sql_query, chart_type, chart_config, connection_id, collection_id, updated_by_user_id) VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING *",
-        [
-          name,
-          sql_query,
-          chart_type,
-          JSON.stringify(chart_config),
-          connection_id,
-          collection_id || null,
-          userId,
-        ]
-      );
+    const newQuestion = await pool.query(
+      "INSERT INTO questions (name, sql_query, chart_type, chart_config, connection_id, collection_id, updated_by_user_id) VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING *",
+      [
+        name,
+        sql_query,
+        chart_type,
+        JSON.stringify(chart_config),
+        connection_id,
+        collection_id || null,
+        userId,
+      ]
+    );
 
-      res.status(201).json(newQuestion.rows[0]);
-    } catch (error) {
-      console.error("Error creating question:", error);
-      res
-        .status(500)
-        .json({ message: "Failed to create question", error: error.message });
-    }
+    res.status(201).json(newQuestion.rows[0]);
   }
 
   /**
@@ -55,25 +49,19 @@ class QuestionController {
    */
   static async getAllQuestions(req, res) {
     const { collectionId } = req.query;
-    try {
-      let queryText = "SELECT id, name, chart_type, created_at FROM questions";
-      const queryParams = [];
 
-      if (collectionId) {
-        queryText += " WHERE collection_id = $1 OR collection_id IS NULL";
-        queryParams.push(collectionId);
-      }
+    let queryText = "SELECT id, name, chart_type, created_at FROM questions";
+    const queryParams = [];
 
-      queryText += " ORDER BY name ASC";
-
-      const allQuestions = await pool.query(queryText, queryParams);
-      res.status(200).json(allQuestions.rows);
-    } catch (error) {
-      console.error("Error fetching questions:", error);
-      res
-        .status(500)
-        .json({ message: "Failed to fetch questions", error: error.message });
+    if (collectionId) {
+      queryText += " WHERE collection_id = $1 OR collection_id IS NULL";
+      queryParams.push(collectionId);
     }
+
+    queryText += " ORDER BY name ASC";
+
+    const allQuestions = await pool.query(queryText, queryParams);
+    res.status(200).json(allQuestions.rows);
   }
 
   /**
@@ -82,77 +70,70 @@ class QuestionController {
    */
   static async getQuestionById(req, res) {
     const { id } = req.params;
-    try {
-      // Panggil Service (Query Pusat)
-      const row = await QuestionService.getQuestionDetail(id);
 
-      if (!row) {
-        return res.status(404).json({ message: "Question not found" });
-      }
+    // Panggil Service (Query Pusat)
+    const row = await QuestionService.getQuestionDetail(id);
 
-      // 1. Compatibility Logic untuk parameter mappings
-      let mappings = row.click_parameter_mappings;
-      if (
-        (!mappings || mappings.length === 0) &&
-        row.click_pass_column &&
-        row.click_target_param
-      ) {
-        mappings = [
-          {
-            passColumn: row.click_pass_column,
-            targetParam: row.click_target_param,
-          },
-        ];
-      }
-
-      // 2. Susun Object Response
-      const response = {
-        id: row.id,
-        name: row.name,
-        sql_query: row.sql_query,
-        chart_type: row.chart_type,
-        chart_config: row.chart_config,
-        updated_at: row.updated_at,
-
-        // Info Connection
-        connection_id: row.connection_id,
-        connection_name: row.connection_name,
-        db_type: row.db_type,
-        host: row.host,
-        port: row.port,
-        db_user: row.db_user,
-        database_name: row.database_name,
-        // password_encrypted TIDAK DIKIRIM ke frontend admin
-
-        // Info Collection
-        collection_id: row.collection_id,
-        collection_name: row.collection_name,
-
-        // Info Click Behavior
-        click_behavior: row.click_enabled
-          ? {
-              enabled: row.click_enabled,
-              action: row.click_action,
-              target_id: row.click_target_id,
-              target_url: row.click_target_url,
-              parameter_mappings: mappings || [],
-
-              // Kirim token target jika dashboard tujuan PUBLIC
-              target_token: row.click_target_public_enabled
-                ? row.click_target_token
-                : null,
-            }
-          : null,
-      };
-
-      res.status(200).json(response);
-    } catch (error) {
-      console.error(`Error fetching question ${id}:`, error);
-      res.status(500).json({
-        message: "Failed to fetch question",
-        error: error.message,
-      });
+    if (!row) {
+      return res.status(404).json({ message: "Question not found" });
     }
+
+    // 1. Compatibility Logic untuk parameter mappings
+    let mappings = row.click_parameter_mappings;
+    if (
+      (!mappings || mappings.length === 0) &&
+      row.click_pass_column &&
+      row.click_target_param
+    ) {
+      mappings = [
+        {
+          passColumn: row.click_pass_column,
+          targetParam: row.click_target_param,
+        },
+      ];
+    }
+
+    // 2. Susun Object Response
+    const response = {
+      id: row.id,
+      name: row.name,
+      sql_query: row.sql_query,
+      chart_type: row.chart_type,
+      chart_config: row.chart_config,
+      updated_at: row.updated_at,
+
+      // Info Connection
+      connection_id: row.connection_id,
+      connection_name: row.connection_name,
+      db_type: row.db_type,
+      host: row.host,
+      port: row.port,
+      db_user: row.db_user,
+      database_name: row.database_name,
+      // password_encrypted TIDAK DIKIRIM ke frontend admin
+
+      // Info Collection
+      collection_id: row.collection_id,
+      collection_name: row.collection_name,
+
+      // Info Click Behavior
+      click_behavior: row.click_enabled
+        ? {
+          enabled: row.click_enabled,
+          action: row.click_action,
+          target_id: row.click_target_id,
+          target_url: row.click_target_url,
+          parameter_mappings: mappings || [],
+
+          // Kirim token target jika dashboard tujuan PUBLIC
+          target_token: row.click_target_public_enabled
+            ? row.click_target_token
+            : null,
+        }
+        : null,
+    };
+
+    res.status(200).json(response);
   }
 
   /**
@@ -161,28 +142,22 @@ class QuestionController {
    */
   static async deleteQuestion(req, res) {
     const { id } = req.params;
-    try {
-      const deleteOp = await pool.query(
-        "DELETE FROM questions WHERE id = $1 RETURNING *",
-        [id]
-      );
 
-      // Cek apakah ada baris yang dihapus
-      if (deleteOp.rowCount === 0) {
-        return res
-          .status(404)
-          .json({ message: "Question not found, nothing to delete." });
-      }
+    const deleteOp = await pool.query(
+      "DELETE FROM questions WHERE id = $1 RETURNING *",
+      [id]
+    );
 
-      res
-        .status(200)
-        .json({ message: `Question with id ${id} deleted successfully.` });
-    } catch (error) {
-      console.error(`Error deleting question ${id}:`, error);
-      res
-        .status(500)
-        .json({ message: "Failed to delete question", error: error.message });
+    // Cek apakah ada baris yang dihapus
+    if (deleteOp.rowCount === 0) {
+      return res
+        .status(404)
+        .json({ message: "Question not found, nothing to delete." });
     }
+
+    res
+      .status(200)
+      .json({ message: `Question with id ${id} deleted successfully.` });
   }
 
   /**
@@ -200,9 +175,8 @@ class QuestionController {
       return res.status(400).json({ message: "All fields are required" });
     }
 
-    try {
-      const updatedQuestion = await pool.query(
-        `UPDATE questions 
+    const updatedQuestion = await pool.query(
+      `UPDATE questions 
          SET 
            name = $1, 
            sql_query = $2, 
@@ -212,30 +186,24 @@ class QuestionController {
            updated_by_user_id = $6
          WHERE id = $7 
          RETURNING *`,
-        [
-          name,
-          sql_query,
-          chart_type,
-          JSON.stringify(chart_config),
-          connection_id,
-          userId,
-          id,
-        ]
-      );
+      [
+        name,
+        sql_query,
+        chart_type,
+        JSON.stringify(chart_config),
+        connection_id,
+        userId,
+        id,
+      ]
+    );
 
-      if (updatedQuestion.rows.length === 0) {
-        return res
-          .status(404)
-          .json({ message: "Question not found, nothing to update." });
-      }
-
-      res.status(200).json(updatedQuestion.rows[0]);
-    } catch (error) {
-      console.error(`Error updating question ${id}:`, error);
-      res
-        .status(500)
-        .json({ message: "Failed to update question", error: error.message });
+    if (updatedQuestion.rows.length === 0) {
+      return res
+        .status(404)
+        .json({ message: "Question not found, nothing to update." });
     }
+
+    res.status(200).json(updatedQuestion.rows[0]);
   }
 
   /**
@@ -339,14 +307,8 @@ class QuestionController {
       res.status(200).json(result.rows[0]);
     } catch (error) {
       await client.query("ROLLBACK");
-      console.error(
-        `Failed to update click behavior for question ${question_id}:`,
-        error
-      );
-      res.status(500).json({
-        message: "Failed to update click behavior",
-        error: error.message,
-      });
+      // Re-throw so the global error handler gets it
+      throw error;
     } finally {
       client.release();
     }
@@ -359,53 +321,42 @@ class QuestionController {
   static async getClickBehavior(req, res) {
     const { id: question_id } = req.params;
 
-    try {
-      // Ambil kolom parameter_mappings juga
-      const result = await pool.query(
-        `SELECT qcb.* FROM question_click_behaviors qcb
+    // Ambil kolom parameter_mappings juga
+    const result = await pool.query(
+      `SELECT qcb.* FROM question_click_behaviors qcb
          WHERE qcb.question_id = $1`,
-        [question_id]
-      );
+      [question_id]
+    );
 
-      if (result.rows.length === 0) {
-        return res.status(200).json({
-          question_id: parseInt(question_id),
-          enabled: false,
-          action: null,
-          target_id: null,
-          target_url: null,
-          parameter_mappings: [],
-        });
-      }
-
-      const row = result.rows[0];
-      let mappings = row.parameter_mappings;
-
-      // Fallback compatibility logic
-      if (
-        (!mappings || mappings.length === 0) &&
-        row.pass_column &&
-        row.target_param
-      ) {
-        mappings = [
-          { passColumn: row.pass_column, targetParam: row.target_param },
-        ];
-      }
-
-      res.status(200).json({
-        ...row,
-        parameter_mappings: mappings || [],
-      });
-    } catch (error) {
-      console.error(
-        `Failed to get click behavior for question ${question_id}:`,
-        error
-      );
-      res.status(500).json({
-        message: "Failed to get click behavior",
-        error: error.message,
+    if (result.rows.length === 0) {
+      return res.status(200).json({
+        question_id: parseInt(question_id),
+        enabled: false,
+        action: null,
+        target_id: null,
+        target_url: null,
+        parameter_mappings: [],
       });
     }
+
+    const row = result.rows[0];
+    let mappings = row.parameter_mappings;
+
+    // Fallback compatibility logic
+    if (
+      (!mappings || mappings.length === 0) &&
+      row.pass_column &&
+      row.target_param
+    ) {
+      mappings = [
+        { passColumn: row.pass_column, targetParam: row.target_param },
+      ];
+    }
+
+    res.status(200).json({
+      ...row,
+      parameter_mappings: mappings || [],
+    });
   }
 
   /**
@@ -415,31 +366,20 @@ class QuestionController {
   static async deleteClickBehavior(req, res) {
     const { id: question_id } = req.params;
 
-    try {
-      const result = await pool.query(
-        "DELETE FROM question_click_behaviors WHERE question_id = $1 RETURNING *",
-        [question_id]
-      );
+    const result = await pool.query(
+      "DELETE FROM question_click_behaviors WHERE question_id = $1 RETURNING *",
+      [question_id]
+    );
 
-      if (result.rowCount === 0) {
-        return res.status(404).json({
-          message: "No click behavior found for this question.",
-        });
-      }
-
-      res.status(200).json({
-        message: "Click behavior deleted successfully.",
-      });
-    } catch (error) {
-      console.error(
-        `Failed to delete click behavior for question ${question_id}:`,
-        error
-      );
-      res.status(500).json({
-        message: "Failed to delete click behavior",
-        error: error.message,
+    if (result.rowCount === 0) {
+      return res.status(404).json({
+        message: "No click behavior found for this question.",
       });
     }
+
+    res.status(200).json({
+      message: "Click behavior deleted successfully.",
+    });
   }
 
   /**
@@ -455,51 +395,43 @@ class QuestionController {
       });
     }
 
-    try {
-      let tableName;
-      let itemType;
+    let tableName;
+    let itemType;
 
-      if (action === "link_to_question") {
-        tableName = "questions";
-        itemType = "question";
-      } else if (action === "link_to_dashboard") {
-        tableName = "dashboards";
-        itemType = "dashboard";
-      } else if (action === "external_url") {
-        // External URL doesn't need validation
-        return res.status(200).json({
-          valid: true,
-          message: "External URL action doesn't require target validation.",
-        });
-      } else {
-        return res.status(400).json({
-          message: "Invalid action type.",
-        });
-      }
-
-      const result = await pool.query(
-        `SELECT id, name FROM ${tableName} WHERE id = $1`,
-        [target_id]
-      );
-
-      if (result.rows.length === 0) {
-        return res.status(404).json({
-          message: `Target ${itemType} not found.`,
-          valid: false,
-        });
-      }
-
-      res.status(200).json({
+    if (action === "link_to_question") {
+      tableName = "questions";
+      itemType = "question";
+    } else if (action === "link_to_dashboard") {
+      tableName = "dashboards";
+      itemType = "dashboard";
+    } else if (action === "external_url") {
+      // External URL doesn't need validation
+      return res.status(200).json({
         valid: true,
-        target: result.rows[0],
+        message: "External URL action doesn't require target validation.",
       });
-    } catch (error) {
-      console.error("Failed to validate target:", error);
-      res.status(500).json({
-        message: "Failed to validate target",
-        error: error.message,
+    } else {
+      return res.status(400).json({
+        message: "Invalid action type.",
       });
     }
+
+    const result = await pool.query(
+      `SELECT id, name FROM ${tableName} WHERE id = $1`,
+      [target_id]
+    );
+
+    if (result.rows.length === 0) {
+      return res.status(404).json({
+        message: `Target ${itemType} not found.`,
+        valid: false,
+      });
+    }
+
+    res.status(200).json({
+      valid: true,
+      target: result.rows[0],
+    });
   }
 }
 

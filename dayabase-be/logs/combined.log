@@ -1,0 +1,44 @@
+{"level":"info","message":"Example app listening on http://localhost:4013","service":"dayabase-be","timestamp":"2026-01-21T04:56:58.544Z"}
+{"level":"info","message":"Example app listening on http://localhost:4013","service":"dayabase-be","timestamp":"2026-01-21T04:57:03.225Z"}
+{"level":"info","message":"Example app listening on http://localhost:4013","service":"dayabase-be","timestamp":"2026-01-21T04:57:29.845Z"}
+{"level":"info","message":"\u001b[0mOPTIONS /api/auth/me \u001b[32m204\u001b[0m 5.197 ms - 0\u001b[0m","service":"dayabase-be","timestamp":"2026-01-21T04:57:34.334Z"}
+{"level":"info","message":"\u001b[0mGET /api/auth/me \u001b[36m304\u001b[0m 11.290 ms - -\u001b[0m","service":"dayabase-be","timestamp":"2026-01-21T04:57:34.347Z"}
+{"level":"info","message":"\u001b[0mOPTIONS /api/collections \u001b[32m204\u001b[0m 0.936 ms - 0\u001b[0m","service":"dayabase-be","timestamp":"2026-01-21T04:57:34.398Z"}
+{"level":"info","message":"\u001b[0mOPTIONS /api/collections/1 \u001b[32m204\u001b[0m 0.448 ms - 0\u001b[0m","service":"dayabase-be","timestamp":"2026-01-21T04:57:34.400Z"}
+{"level":"info","message":"\u001b[0mGET /api/collections \u001b[36m304\u001b[0m 5.710 ms - -\u001b[0m","service":"dayabase-be","timestamp":"2026-01-21T04:57:34.407Z"}
+{"level":"info","message":"\u001b[0mGET /api/collections/1 \u001b[36m304\u001b[0m 45.345 ms - -\u001b[0m","service":"dayabase-be","timestamp":"2026-01-21T04:57:34.449Z"}
+{"level":"info","message":"\u001b[0mOPTIONS /api/dashboards?collectionId=1 \u001b[32m204\u001b[0m 0.339 ms - 0\u001b[0m","service":"dayabase-be","timestamp":"2026-01-21T04:57:34.471Z"}
+{"level":"info","message":"\u001b[0mGET /api/dashboards?collectionId=1 \u001b[36m304\u001b[0m 3.199 ms - -\u001b[0m","service":"dayabase-be","timestamp":"2026-01-21T04:57:34.477Z"}
+{"level":"info","message":"\u001b[0mOPTIONS /api/auth/me \u001b[32m204\u001b[0m 0.981 ms - 0\u001b[0m","service":"dayabase-be","timestamp":"2026-01-21T04:57:49.872Z"}
+{"level":"info","message":"\u001b[0mGET /api/auth/me \u001b[36m304\u001b[0m 37.666 ms - -\u001b[0m","service":"dayabase-be","timestamp":"2026-01-21T04:57:49.915Z"}
+{"level":"info","message":"\u001b[0mOPTIONS /api/collections \u001b[32m204\u001b[0m 0.456 ms - 0\u001b[0m","service":"dayabase-be","timestamp":"2026-01-21T04:57:49.936Z"}
+{"level":"info","message":"\u001b[0mOPTIONS /api/collections/1 \u001b[32m204\u001b[0m 0.208 ms - 0\u001b[0m","service":"dayabase-be","timestamp":"2026-01-21T04:57:49.938Z"}
+{"level":"info","message":"\u001b[0mGET /api/collections \u001b[36m304\u001b[0m 5.145 ms - -\u001b[0m","service":"dayabase-be","timestamp":"2026-01-21T04:57:49.945Z"}
+{"level":"info","message":"\u001b[0mGET /api/collections/1 \u001b[36m304\u001b[0m 39.847 ms - -\u001b[0m","service":"dayabase-be","timestamp":"2026-01-21T04:57:49.983Z"}
+{"level":"info","message":"\u001b[0mOPTIONS /api/dashboards?collectionId=1 \u001b[32m204\u001b[0m 0.309 ms - 0\u001b[0m","service":"dayabase-be","timestamp":"2026-01-21T04:57:50.000Z"}
+{"level":"info","message":"\u001b[0mGET /api/dashboards?collectionId=1 \u001b[36m304\u001b[0m 2.548 ms - -\u001b[0m","service":"dayabase-be","timestamp":"2026-01-21T04:57:50.005Z"}
+{"level":"info","message":"\u001b[0mOPTIONS /api/collections/2 \u001b[32m204\u001b[0m 0.421 ms - 0\u001b[0m","service":"dayabase-be","timestamp":"2026-01-21T04:58:41.355Z"}
+{"level":"info","message":"\u001b[0mGET /api/collections/2 \u001b[36m304\u001b[0m 42.580 ms - -\u001b[0m","service":"dayabase-be","timestamp":"2026-01-21T04:58:41.401Z"}
+{"level":"info","message":"\u001b[0mOPTIONS /api/dashboards?collectionId=2 \u001b[32m204\u001b[0m 0.375 ms - 0\u001b[0m","service":"dayabase-be","timestamp":"2026-01-21T04:58:41.414Z"}
+{"level":"info","message":"\u001b[0mGET /api/dashboards?collectionId=2 \u001b[36m304\u001b[0m 3.257 ms - -\u001b[0m","service":"dayabase-be","timestamp":"2026-01-21T04:58:41.431Z"}
+{"level":"info","message":"\u001b[0mOPTIONS /api/dashboards/3 \u001b[32m204\u001b[0m 0.342 ms - 0\u001b[0m","service":"dayabase-be","timestamp":"2026-01-21T04:59:13.091Z"}
+{"level":"info","message":"\u001b[0mGET /api/dashboards/3 \u001b[32m200\u001b[0m 46.646 ms - 1885\u001b[0m","service":"dayabase-be","timestamp":"2026-01-21T04:59:13.140Z"}
+{"level":"info","message":"\u001b[0mOPTIONS /api/questions/4 \u001b[32m204\u001b[0m 0.235 ms - 0\u001b[0m","service":"dayabase-be","timestamp":"2026-01-21T04:59:13.200Z"}
+{"level":"info","message":"\u001b[0mOPTIONS /api/questions/12 \u001b[32m204\u001b[0m 0.233 ms - 0\u001b[0m","service":"dayabase-be","timestamp":"2026-01-21T04:59:13.201Z"}
+{"level":"info","message":"\u001b[0mOPTIONS /api/questions/17 \u001b[32m204\u001b[0m 0.329 ms - 0\u001b[0m","service":"dayabase-be","timestamp":"2026-01-21T04:59:13.203Z"}
+{"level":"info","message":"\u001b[0mOPTIONS /api/questions/2 \u001b[32m204\u001b[0m 0.290 ms - 0\u001b[0m","service":"dayabase-be","timestamp":"2026-01-21T04:59:13.205Z"}
+{"level":"info","message":"\u001b[0mOPTIONS /api/questions/5 \u001b[32m204\u001b[0m 0.230 ms - 0\u001b[0m","service":"dayabase-be","timestamp":"2026-01-21T04:59:13.206Z"}
+{"level":"info","message":"\u001b[0mOPTIONS /api/questions/1 \u001b[32m204\u001b[0m 0.271 ms - 0\u001b[0m","service":"dayabase-be","timestamp":"2026-01-21T04:59:13.212Z"}
+{"level":"info","message":"\u001b[0mGET /api/questions/4 \u001b[36m304\u001b[0m 13.120 ms - -\u001b[0m","service":"dayabase-be","timestamp":"2026-01-21T04:59:13.221Z"}
+{"level":"info","message":"\u001b[0mGET /api/questions/1 \u001b[36m304\u001b[0m 3.799 ms - -\u001b[0m","service":"dayabase-be","timestamp":"2026-01-21T04:59:13.226Z"}
+{"level":"info","message":"\u001b[0mOPTIONS /api/query/run \u001b[32m204\u001b[0m 0.412 ms - 0\u001b[0m","service":"dayabase-be","timestamp":"2026-01-21T04:59:13.229Z"}
+{"level":"info","message":"\u001b[0mGET /api/questions/12 \u001b[36m304\u001b[0m 399.168 ms - -\u001b[0m","service":"dayabase-be","timestamp":"2026-01-21T04:59:13.609Z"}
+{"level":"info","message":"\u001b[0mGET /api/questions/2 \u001b[36m304\u001b[0m 395.971 ms - -\u001b[0m","service":"dayabase-be","timestamp":"2026-01-21T04:59:13.609Z"}
+{"level":"info","message":"\u001b[0mGET /api/questions/17 \u001b[32m200\u001b[0m 400.100 ms - 828\u001b[0m","service":"dayabase-be","timestamp":"2026-01-21T04:59:13.611Z"}
+{"level":"info","message":"\u001b[0mGET /api/questions/5 \u001b[36m304\u001b[0m 393.376 ms - -\u001b[0m","service":"dayabase-be","timestamp":"2026-01-21T04:59:13.611Z"}
+{"level":"info","message":"\u001b[0mPOST /api/query/run \u001b[32m200\u001b[0m 218.223 ms - 725\u001b[0m","service":"dayabase-be","timestamp":"2026-01-21T04:59:13.838Z"}
+{"level":"info","message":"\u001b[0mPOST /api/query/run \u001b[32m200\u001b[0m 250.303 ms - 861\u001b[0m","service":"dayabase-be","timestamp":"2026-01-21T04:59:13.845Z"}
+{"level":"info","message":"\u001b[0mPOST /api/query/run \u001b[32m200\u001b[0m 616.281 ms - 208\u001b[0m","service":"dayabase-be","timestamp":"2026-01-21T04:59:13.847Z"}
+{"level":"info","message":"\u001b[0mPOST /api/query/run \u001b[32m200\u001b[0m 234.593 ms - 725\u001b[0m","service":"dayabase-be","timestamp":"2026-01-21T04:59:13.848Z"}
+{"level":"info","message":"\u001b[0mPOST /api/query/run \u001b[32m200\u001b[0m 231.903 ms - 208\u001b[0m","service":"dayabase-be","timestamp":"2026-01-21T04:59:13.849Z"}
+{"level":"info","message":"\u001b[0mPOST /api/query/run \u001b[32m200\u001b[0m 712.816 ms - 725\u001b[0m","service":"dayabase-be","timestamp":"2026-01-21T04:59:14.328Z"}

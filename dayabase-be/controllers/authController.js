@@ -1,6 +1,4 @@
-const bcrypt = require("bcrypt");
-const jwt = require("jsonwebtoken");
-const pool = require("../config/db");
+const AuthService = require("../services/AuthService");
 
 class AuthController {
   /**
@@ -8,9 +6,12 @@ class AuthController {
    * @route GET /api/auth/setup-status
    */
   static async getSetupStatus(req, res) {
-    const { rows } = await pool.query("SELECT COUNT(*) FROM users");
-    const userCount = parseInt(rows[0].count, 10);
-    res.json({ needsSetup: userCount === 0 });
+    try {
+      const hasUser = await AuthService.hasAnyUser();
+      res.json({ needsSetup: !hasUser });
+    } catch (error) {
+      res.status(500).json({ message: "Error checking setup status", error: error.message });
+    }
   }
 
   /**
@@ -20,19 +21,15 @@ class AuthController {
   static async registerFirstAdmin(req, res) {
     const { email, password, fullName } = req.body;
 
-    const { rows } = await pool.query("SELECT COUNT(*) FROM users");
-    if (parseInt(rows[0].count, 10) > 0) {
-      return res
-        .status(403)
-        .json({ message: "Admin already exists. Registration is closed." });
+    try {
+      const newUser = await AuthService.registerFirstAdmin({ email, password, fullName });
+      res.status(201).json(newUser);
+    } catch (error) {
+      if (error.message === "Admin already exists. Registration is closed.") {
+        return res.status(403).json({ message: error.message });
+      }
+      res.status(500).json({ message: "Registration failed", error: error.message });
     }
-
-    const password_hash = await bcrypt.hash(password, 10);
-    const newUser = await pool.query(
-      "INSERT INTO users (email, password_hash, full_name, role) VALUES ($1, $2, $3, $4) RETURNING id, email, full_name, role",
-      [email, password_hash, fullName, "ADMIN"]
-    );
-    res.status(201).json(newUser.rows[0]);
   }
 
   /**
@@ -42,33 +39,17 @@ class AuthController {
   static async login(req, res) {
     const { email, password } = req.body;
 
-    const { rows } = await pool.query("SELECT * FROM users WHERE email = $1", [
-      email,
-    ]);
-    if (rows.length === 0) {
-      return res.status(401).json({ message: "Incorrect email or password." });
-    }
+    try {
+      const result = await AuthService.login(email, password);
 
-    const user = rows[0];
-    const isMatch = await bcrypt.compare(password, user.password_hash);
-    if (!isMatch) {
-      return res.status(401).json({ message: "Incorrect email or password." });
-    }
+      if (!result) {
+        return res.status(401).json({ message: "Incorrect email or password." });
+      }
 
-    const token = jwt.sign(
-      { id: user.id, role: user.role },
-      process.env.JWT_SECRET,
-      { expiresIn: "24h" }
-    );
-    res.json({
-      token,
-      user: {
-        id: user.id,
-        email: user.email,
-        fullName: user.full_name,
-        role: user.role,
-      },
-    });
+      res.json(result);
+    } catch (error) {
+      res.status(500).json({ message: "Login failed", error: error.message });
+    }
   }
 
   /**
@@ -76,25 +57,17 @@ class AuthController {
    * @route GET /api/auth/me
    */
   static async getMe(req, res) {
-    const userId = req.user.id;
+    try {
+      const user = await AuthService.getUserById(req.user.id);
 
-    const { rows } = await pool.query(
-      "SELECT id, email, full_name, role FROM users WHERE id = $1",
-      [userId]
-    );
+      if (!user) {
+        return res.status(404).json({ message: "User not found." });
+      }
 
-    if (rows.length === 0) {
-      return res.status(404).json({ message: "User not found." });
+      res.json({ user });
+    } catch (error) {
+      res.status(500).json({ message: "Error fetching user data", error: error.message });
     }
-
-    res.json({
-      user: {
-        id: rows[0].id,
-        email: rows[0].email,
-        fullName: rows[0].full_name,
-        role: rows[0].role,
-      },
-    });
   }
 }
 

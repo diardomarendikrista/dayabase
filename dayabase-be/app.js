@@ -35,6 +35,10 @@ app.use("/api", router);
 // Global Error Handler
 app.use(errorHandler);
 
-app.listen(port, () => {
-  logger.info(`Example app listening on http://localhost:${port}`);
-});
+if (require.main === module) {
+  app.listen(port, () => {
+    logger.info(`Example app listening on http://localhost:${port}`);
+  });
+}
+
+module.exports = app;

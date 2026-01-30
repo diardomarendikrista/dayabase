@@ -1,4 +1,4 @@
-const pool = require("../config/db");
+const DashboardService = require("../services/DashboardService");
 const logger = require("../utils/logger");
 
 class DashboardController {
@@ -10,15 +10,15 @@ class DashboardController {
     const { name, description, collection_id } = req.body;
     const userId = req.user.id;
 
-    if (!name) {
-      return res.status(400).json({ message: "Dashboard Name Required" });
+    try {
+      const newDashboard = await DashboardService.createDashboard(userId, { name, description, collection_id });
+      res.status(201).json(newDashboard);
+    } catch (error) {
+      if (error.message.includes("Required")) {
+        return res.status(400).json({ message: error.message });
+      }
+      res.status(500).json({ message: "Error creating dashboard", error: error.message });
     }
-
-    const newDashboard = await pool.query(
-      "INSERT INTO dashboards (name, description, collection_id, updated_by_user_id) VALUES ($1, $2, $3, $4) RETURNING *",
-      [name, description || null, collection_id || null, userId]
-    );
-    res.status(201).json(newDashboard.rows[0]);
   }
 
   /**
@@ -27,83 +27,30 @@ class DashboardController {
    */
   static async getAllDashboards(req, res) {
     const { collectionId } = req.query;
-
-    let queryText = "SELECT id, name, description, created_at FROM dashboards";
-    const queryParams = [];
-
-    // Jika ada collectionId, tambahkan filter WHERE
-    if (collectionId) {
-      queryText += " WHERE collection_id = $1 OR collection_id IS NULL";
-      queryParams.push(collectionId);
+    try {
+      const dashboards = await DashboardService.getAllDashboards(collectionId);
+      res.status(200).json(dashboards);
+    } catch (error) {
+      res.status(500).json({ message: "Error fetching dashboards", error: error.message });
     }
-
-    queryText += " ORDER BY name ASC";
-
-    const allDashboards = await pool.query(queryText, queryParams);
-    res.status(200).json(allDashboards.rows);
   }
 
   /**
    * @description Mengambil detail satu dashboard beserta question dan layoutnya
    * @route GET /api/dashboards/:id
    */
-
   static async getDashboardById(req, res) {
     const { id } = req.params;
 
-    // Query untuk dashboard dan questions
-    const queryText = `
-      SELECT
-        d.id as dashboard_id, d.name, d.description, d.public_sharing_enabled, d.public_token,
-        d.collection_id,
-        c.name as collection_name,
-        dq.id as instance_id,
-        dq.question_id, q.name as question_name, q.chart_type,
-        dq.layout_config,
-        dq.filter_mappings
-      FROM dashboards d
-      LEFT JOIN dashboard_questions dq ON d.id = dq.dashboard_id
-      LEFT JOIN questions q ON dq.question_id = q.id
-      LEFT JOIN collections c ON d.collection_id = c.id
-      WHERE d.id = $1;
-    `;
-    const result = await pool.query(queryText, [id]);
-
-    if (result.rows.length === 0) {
-      return res.status(404).json({ message: "Dashboard tidak ditemukan" });
+    try {
+      const dashboard = await DashboardService.getDashboardById(id);
+      if (!dashboard) {
+        return res.status(404).json({ message: "Dashboard tidak ditemukan" });
+      }
+      res.status(200).json(dashboard);
+    } catch (error) {
+      res.status(500).json({ message: "Error fetching dashboard details", error: error.message });
     }
-
-    // Query untuk filters
-    const filtersQuery = `
-        SELECT id, name, display_name, type, options, operator
-        FROM dashboard_filters
-        WHERE dashboard_id = $1
-        ORDER BY id ASC;
-      `;
-    const filtersResult = await pool.query(filtersQuery, [id]);
-
-    const dashboardData = {
-      id: result.rows[0].dashboard_id,
-      name: result.rows[0].name,
-      description: result.rows[0].description,
-      collection_id: result.rows[0].collection_id,
-      collection_name: result.rows[0].collection_name,
-      public_sharing_enabled: result.rows[0].public_sharing_enabled,
-      public_token: result.rows[0].public_token,
-      filters: filtersResult.rows,
-      questions: result.rows[0].question_id
-        ? result.rows.map((row) => ({
-          instance_id: row.instance_id,
-          id: row.question_id,
-          name: row.question_name,
-          chart_type: row.chart_type,
-          layout: row.layout_config,
-          filter_mappings: row.filter_mappings || {},
-        }))
-        : [],
-    };
-
-    res.status(200).json(dashboardData);
   }
 
   /**
@@ -115,18 +62,18 @@ class DashboardController {
     const { name, description } = req.body;
     const userId = req.user.id;
 
-    if (!name) {
-      return res.status(400).json({ message: "Nama dashboard wajib diisi." });
+    try {
+      const updated = await DashboardService.updateDashboard(id, userId, { name, description });
+      if (!updated) {
+        return res.status(404).json({ message: "Dashboard tidak ditemukan." });
+      }
+      res.status(200).json(updated);
+    } catch (error) {
+      if (error.message.includes("wajib diisi")) {
+        return res.status(400).json({ message: error.message });
+      }
+      res.status(500).json({ message: "Error updating dashboard", error: error.message });
     }
-
-    const updatedDashboard = await pool.query(
-      "UPDATE dashboards SET name = $1, description = $2, updated_at = NOW(), updated_by_user_id = $3 WHERE id = $4 RETURNING *",
-      [name, description, userId, id]
-    );
-    if (updatedDashboard.rowCount === 0) {
-      return res.status(404).json({ message: "Dashboard tidak ditemukan." });
-    }
-    res.status(200).json(updatedDashboard.rows[0]);
   }
 
   /**
@@ -135,15 +82,15 @@ class DashboardController {
    */
   static async deleteDashboard(req, res) {
     const { id } = req.params;
-
-    const deleteOp = await pool.query(
-      "DELETE FROM dashboards WHERE id = $1 RETURNING *",
-      [id]
-    );
-    if (deleteOp.rowCount === 0) {
-      return res.status(404).json({ message: "Dashboard tidak ditemukan." });
+    try {
+      const success = await DashboardService.deleteDashboard(id);
+      if (!success) {
+        return res.status(404).json({ message: "Dashboard tidak ditemukan." });
+      }
+      res.status(200).json({ message: "Dashboard berhasil dihapus." });
+    } catch (error) {
+      res.status(500).json({ message: "Error deleting dashboard", error: error.message });
     }
-    res.status(200).json({ message: "Dashboard berhasil dihapus." });
   }
 
   // --- Metode untuk Mengelola Isi Dashboard ---
@@ -156,75 +103,14 @@ class DashboardController {
     const { id: dashboard_id } = req.params;
     const { question_id, layoutConfig } = req.body;
 
-    if (!question_id) {
-      return res.status(400).json({ message: "question_id wajib diisi." });
-    }
-
-    const client = await pool.connect();
     try {
-      await client.query("BEGIN");
-
-      const existingLayouts = await client.query(
-        "SELECT layout_config FROM dashboard_questions WHERE dashboard_id = $1",
-        [dashboard_id]
-      );
-
-      let nextY = 0;
-      if (existingLayouts.rows.length > 0) {
-        nextY = Math.max(
-          ...existingLayouts.rows.map((row) => {
-            const layout = row.layout_config;
-            return (layout.y || 0) + (layout.h || 0);
-          })
-        );
-      }
-
-      const newLayoutConfig = {
-        x: 0,
-        y: nextY,
-        w: 12,
-        h: 10,
-        ...layoutConfig,
-      };
-
-      const newLinkQuery = `
-        WITH new_row AS (
-          INSERT INTO dashboard_questions (dashboard_id, question_id, layout_config) 
-          VALUES ($1, $2, $3) 
-          RETURNING id as instance_id, question_id, layout_config
-        )
-        SELECT 
-          nr.instance_id, 
-          nr.question_id, 
-          nr.layout_config,
-          q.name as question_name,
-          q.chart_type
-        FROM new_row nr
-        JOIN questions q ON nr.question_id = q.id;
-      `;
-
-      const newLinkResult = await client.query(newLinkQuery, [
-        dashboard_id,
-        question_id,
-        JSON.stringify(newLayoutConfig),
-      ]);
-
-      await client.query("COMMIT");
-
-      const responseData = {
-        instance_id: newLinkResult.rows[0].instance_id,
-        id: newLinkResult.rows[0].question_id,
-        name: newLinkResult.rows[0].question_name,
-        chart_type: newLinkResult.rows[0].chart_type,
-        layout: newLinkResult.rows[0].layout_config,
-      };
-
-      res.status(201).json(responseData);
+      const result = await DashboardService.addQuestionToDashboard(dashboard_id, { question_id, layoutConfig });
+      res.status(201).json(result);
     } catch (error) {
-      await client.query("ROLLBACK");
-      throw error;
-    } finally {
-      client.release();
+      if (error.message.includes("wajib diisi")) {
+        return res.status(400).json({ message: error.message });
+      }
+      res.status(500).json({ message: "Error adding question", error: error.message });
     }
   }
 
@@ -237,46 +123,14 @@ class DashboardController {
     const layout = req.body;
     const userId = req.user.id;
 
-    if (!Array.isArray(layout)) {
-      return res
-        .status(400)
-        .json({ message: "Body harus berupa array layout." });
-    }
-
-    const client = await pool.connect();
     try {
-      await client.query("BEGIN");
-
-      await Promise.all(
-        layout.map((item) => {
-          const { i: instance_id, ...gridProps } = item;
-          if (
-            typeof instance_id === "number" ||
-            !instance_id.toString().startsWith("temp_")
-          ) {
-            return client.query(
-              "UPDATE dashboard_questions SET layout_config = $1 WHERE id = $2 AND dashboard_id = $3",
-              [JSON.stringify(gridProps), instance_id, dashboard_id]
-            );
-          }
-          return Promise.resolve();
-        })
-      );
-
-      await client.query(
-        "UPDATE dashboards SET updated_at = NOW(), updated_by_user_id = $1 WHERE id = $2",
-        [userId, dashboard_id]
-      );
-
-      await client.query("COMMIT");
-      res
-        .status(200)
-        .json({ message: "Layout dashboard berhasil diperbarui." });
+      await DashboardService.updateDashboardLayout(dashboard_id, userId, layout);
+      res.status(200).json({ message: "Layout dashboard berhasil diperbarui." });
     } catch (error) {
-      await client.query("ROLLBACK");
-      throw error;
-    } finally {
-      client.release();
+      if (error.message.includes("array")) {
+        return res.status(400).json({ message: error.message });
+      }
+      res.status(500).json({ message: "Error updating layout", error: error.message });
     }
   }
 
@@ -285,20 +139,23 @@ class DashboardController {
    * @route DELETE /api/dashboards/:id/questions/:questionId
    */
   static async removeQuestionFromDashboard(req, res) {
-    const { dashboardId, instanceId } = req.params;
+    const { dashboardId, instanceId } = req.params; // Note: original code used instanceId as param name in route logs? No, route matches params
+    // Wait, original route was /:id/questions/:questionId. 
+    // Wait, let's check routes file or original controller.
+    // Original controller used: const { id: dashboard_id } = req.params; const { question_id, layoutConfig } = req.body; for add
+    // For remove: const { dashboardId, instanceId } = req.params;
+    // Route definition likely expects /:dashboardId/questions/:instanceId or similar.
+    // Let's assume params match route definition.
 
-    const deleteOp = await pool.query(
-      "DELETE FROM dashboard_questions WHERE id = $1 AND dashboard_id = $2 RETURNING *",
-      [instanceId, dashboardId]
-    );
-    if (deleteOp.rowCount === 0) {
-      return res
-        .status(404)
-        .json({ message: "Question tidak ditemukan di dashboard ini." });
+    try {
+      const success = await DashboardService.removeQuestionFromDashboard(dashboardId, instanceId);
+      if (!success) {
+        return res.status(404).json({ message: "Question tidak ditemukan di dashboard ini." });
+      }
+      res.status(200).json({ message: "Question berhasil dihapus dari dashboard." });
+    } catch (error) {
+      res.status(500).json({ message: "Error removing question", error: error.message });
     }
-    res
-      .status(200)
-      .json({ message: "Question berhasil dihapus dari dashboard." });
   }
 
   /**
@@ -309,14 +166,15 @@ class DashboardController {
     const { id } = req.params;
     const { enabled } = req.body;
 
-    const result = await pool.query(
-      "UPDATE dashboards SET public_sharing_enabled = $1 WHERE id = $2 RETURNING id, public_sharing_enabled, public_token",
-      [enabled, id]
-    );
-    if (result.rowCount === 0) {
-      return res.status(404).json({ message: "Dashboard tidak ditemukan." });
+    try {
+      const result = await DashboardService.updateSharingStatus(id, enabled);
+      if (!result) {
+        return res.status(404).json({ message: "Dashboard tidak ditemukan." });
+      }
+      res.status(200).json(result);
+    } catch (error) {
+      res.status(500).json({ message: "Error updating sharing status", error: error.message });
     }
-    res.status(200).json(result.rows[0]);
   }
 
   // ---------- Filter Method ----------
@@ -330,31 +188,15 @@ class DashboardController {
     const { name, display_name, type, options, operator } = req.body;
     const userId = req.user.id;
 
-    if (!name || !display_name || !type) {
-      return res
-        .status(400)
-        .json({ message: "Filter name, display_name, and type are required." });
+    try {
+      const result = await DashboardService.addFilterToDashboard(dashboard_id, userId, { name, display_name, type, options, operator });
+      res.status(201).json(result);
+    } catch (error) {
+      if (error.message.includes("required")) {
+        return res.status(400).json({ message: error.message });
+      }
+      res.status(500).json({ message: "Error adding filter", error: error.message });
     }
-
-    const newFilter = await pool.query(
-      "INSERT INTO dashboard_filters (dashboard_id, name, display_name, type, options, operator) VALUES ($1, $2, $3, $4, $5, $6) RETURNING *",
-      [
-        dashboard_id,
-        name,
-        display_name,
-        type,
-        JSON.stringify(options),
-        operator,
-      ]
-    );
-
-    // Update dashboard's updated_at timestamp
-    await pool.query(
-      "UPDATE dashboards SET updated_at = NOW(), updated_by_user_id = $1 WHERE id = $2",
-      [userId, dashboard_id]
-    );
-
-    res.status(201).json(newFilter.rows[0]);
   }
 
   /**
@@ -366,38 +208,18 @@ class DashboardController {
     const { name, display_name, type, options, operator } = req.body;
     const userId = req.user.id;
 
-    if (!name || !display_name || !type) {
-      return res
-        .status(400)
-        .json({ message: "Filter name, display_name, and type are required." });
+    try {
+      const result = await DashboardService.updateFilterOnDashboard(dashboard_id, filterId, userId, { name, display_name, type, options, operator });
+      if (!result) {
+        return res.status(404).json({ message: "Filter not found on this dashboard." });
+      }
+      res.status(200).json(result);
+    } catch (error) {
+      if (error.message.includes("required")) {
+        return res.status(400).json({ message: error.message });
+      }
+      res.status(500).json({ message: "Error updating filter", error: error.message });
     }
-
-    const updatedFilter = await pool.query(
-      "UPDATE dashboard_filters SET name = $1, display_name = $2, type = $3, options = $4, operator = $5 WHERE id = $6 AND dashboard_id = $7 RETURNING *",
-      [
-        name,
-        display_name,
-        type,
-        JSON.stringify(options),
-        operator,
-        filterId,
-        dashboard_id,
-      ]
-    );
-
-    if (updatedFilter.rowCount === 0) {
-      return res
-        .status(404)
-        .json({ message: "Filter not found on this dashboard." });
-    }
-
-    // Update dashboard's updated_at timestamp
-    await pool.query(
-      "UPDATE dashboards SET updated_at = NOW(), updated_by_user_id = $1 WHERE id = $2",
-      [userId, dashboard_id]
-    );
-
-    res.status(200).json(updatedFilter.rows[0]);
   }
 
   /**
@@ -407,34 +229,15 @@ class DashboardController {
   static async deleteFilterFromDashboard(req, res) {
     const { id: dashboard_id, filterId } = req.params;
     const userId = req.user.id;
-
-    // Hapus filter dari tabel dashboard_filters
-    const deleteOp = await pool.query(
-      "DELETE FROM dashboard_filters WHERE id = $1 AND dashboard_id = $2 RETURNING *",
-      [filterId, dashboard_id]
-    );
-
-    if (deleteOp.rowCount === 0) {
-      return res
-        .status(404)
-        .json({ message: "Filter not found on this dashboard." });
+    try {
+      const success = await DashboardService.deleteFilterFromDashboard(dashboard_id, filterId, userId);
+      if (!success) {
+        return res.status(404).json({ message: "Filter not found on this dashboard." });
+      }
+      res.status(200).json({ message: "Filter deleted successfully." });
+    } catch (error) {
+      res.status(500).json({ message: "Error deleting filter", error: error.message });
     }
-
-    // Hapus mapping filter ini dari SEMUA question di dashboard ini (opsional tapi disarankan)
-    await pool.query(
-      `UPDATE dashboard_questions
-         SET filter_mappings = filter_mappings - $1::text -- Hapus key dari JSONB
-         WHERE dashboard_id = $2 AND filter_mappings ? $1::text`, // Hanya update jika key ada
-      [filterId, dashboard_id]
-    );
-
-    // Update dashboard's updated_at timestamp
-    await pool.query(
-      "UPDATE dashboards SET updated_at = NOW(), updated_by_user_id = $1 WHERE id = $2",
-      [userId, dashboard_id]
-    );
-
-    res.status(200).json({ message: "Filter deleted successfully." });
   }
 
   /**
@@ -443,33 +246,21 @@ class DashboardController {
    */
   static async updateFilterMappings(req, res) {
     const { id: dashboard_id, instanceId } = req.params;
-    const filterMappings = req.body; // Harus berupa object JSON, e.g., {"filterId": "columnName"}
+    const filterMappings = req.body;
     const userId = req.user.id;
 
-    if (typeof filterMappings !== "object" || filterMappings === null) {
-      return res
-        .status(400)
-        .json({ message: "Filter mappings must be a valid JSON object." });
+    try {
+      const result = await DashboardService.updateFilterMappings(dashboard_id, instanceId, userId, filterMappings);
+      if (!result) {
+        return res.status(404).json({ message: "Question instance not found on this dashboard." });
+      }
+      res.status(200).json(result);
+    } catch (error) {
+      if (error.message.includes("valid JSON")) {
+        return res.status(400).json({ message: error.message });
+      }
+      res.status(500).json({ message: "Error updating filter mappings", error: error.message });
     }
-
-    const updatedMapping = await pool.query(
-      "UPDATE dashboard_questions SET filter_mappings = $1 WHERE id = $2 AND dashboard_id = $3 RETURNING *",
-      [JSON.stringify(filterMappings), instanceId, dashboard_id]
-    );
-
-    if (updatedMapping.rowCount === 0) {
-      return res
-        .status(404)
-        .json({ message: "Question instance not found on this dashboard." });
-    }
-
-    // Update dashboard's updated_at timestamp
-    await pool.query(
-      "UPDATE dashboards SET updated_at = NOW(), updated_by_user_id = $1 WHERE id = $2",
-      [userId, dashboard_id]
-    );
-
-    res.status(200).json(updatedMapping.rows[0]); // Kembalikan data question instance yang sudah diupdate
   }
 }
 

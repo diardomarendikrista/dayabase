@@ -1,7 +1,4 @@
-// controllers/connectionController.js
-const { encrypt } = require("../utils/crypto");
-const pool = require("../config/db"); // Koneksi ke DB dayabase_app
-const logger = require("../utils/logger");
+const ConnectionService = require("../services/ConnectionService");
 
 class ConnectionController {
   /**
@@ -19,39 +16,15 @@ class ConnectionController {
       database_name,
     } = req.body;
 
-    // Validasi
-    if (
-      !connection_name ||
-      !db_type ||
-      !host ||
-      !port ||
-      !db_user ||
-      !password ||
-      !database_name
-    ) {
-      return res
-        .status(400)
-        .json({ message: "All connection fields are required." });
+    try {
+      const newConnection = await ConnectionService.createConnection({ connection_name, db_type, host, port, db_user, password, database_name });
+      res.status(201).json(newConnection);
+    } catch (error) {
+      if (error.message.includes("required")) {
+        return res.status(400).json({ message: error.message });
+      }
+      res.status(500).json({ message: "Error creating connection", error: error.message });
     }
-
-    const password_encrypted = encrypt(password);
-
-    const newConnection = await pool.query(
-      `INSERT INTO database_connections 
-         (connection_name, db_type, host, port, db_user, password_encrypted, database_name) 
-         VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING id, connection_name, db_type, host, port, db_user, database_name`,
-      [
-        connection_name,
-        db_type,
-        host,
-        port,
-        db_user,
-        password_encrypted,
-        database_name,
-      ]
-    );
-
-    res.status(201).json(newConnection.rows[0]);
   }
 
   /**
@@ -59,10 +32,12 @@ class ConnectionController {
    * @route GET /api/connections
    */
   static async getAllConnections(req, res) {
-    const allConnections = await pool.query(
-      "SELECT id, connection_name, db_type, host, port, db_user, database_name, created_at FROM database_connections ORDER BY created_at DESC"
-    );
-    res.status(200).json(allConnections.rows);
+    try {
+      const connections = await ConnectionService.getAllConnections();
+      res.status(200).json(connections);
+    } catch (error) {
+      res.status(500).json({ message: "Error fetching connections", error: error.message });
+    }
   }
 
   /**
@@ -72,16 +47,15 @@ class ConnectionController {
   static async getConnectionById(req, res) {
     const { id } = req.params;
 
-    const connection = await pool.query(
-      "SELECT id, connection_name, db_type, host, port, db_user, database_name, created_at FROM database_connections WHERE id = $1",
-      [id]
-    );
-
-    if (connection.rows.length === 0) {
-      return res.status(404).json({ message: "Connection not found." });
+    try {
+      const connection = await ConnectionService.getConnectionById(id);
+      if (!connection) {
+        return res.status(404).json({ message: "Connection not found." });
+      }
+      res.status(200).json(connection);
+    } catch (error) {
+      res.status(500).json({ message: "Error fetching connection", error: error.message });
     }
-
-    res.status(200).json(connection.rows[0]);
   }
 
   /**
@@ -91,32 +65,16 @@ class ConnectionController {
   static async deleteConnection(req, res) {
     const { id } = req.params;
     try {
-      // nanti mungkin perlu cek apakah koneksi ini masih dipakai oleh 'questions'
-      // Untuk sekarang, kita langsung hapus.
-      const deleteOp = await pool.query(
-        "DELETE FROM database_connections WHERE id = $1 RETURNING *",
-        [id]
-      );
-
-      if (deleteOp.rowCount === 0) {
-        return res
-          .status(404)
-          .json({ message: "Connection not found, nothing to delete." });
+      const success = await ConnectionService.deleteConnection(id);
+      if (!success) {
+        return res.status(404).json({ message: "Connection not found, nothing to delete." });
       }
-
-      res
-        .status(200)
-        .json({ message: `Connection with id ${id} deleted successfully.` });
+      res.status(200).json({ message: `Connection with id ${id} deleted successfully.` });
     } catch (error) {
-      // Handle error jika koneksi masih dipakai oleh foreign key
-      if (error.code === "23503") {
-        // Kode error foreign key violation di PostgreSQL
-        return res.status(400).json({
-          message:
-            "Cannot delete this connection because it is still being used by one or more questions.",
-        });
+      if (error.message.includes("still being used")) {
+        return res.status(400).json({ message: error.message });
       }
-      throw error;
+      res.status(500).json({ message: "Error deleting connection", error: error.message });
     }
   }
 
@@ -136,65 +94,18 @@ class ConnectionController {
       database_name,
     } = req.body;
 
-    if (
-      !connection_name ||
-      !db_type ||
-      !host ||
-      !port ||
-      !db_user ||
-      !database_name
-    ) {
-      return res
-        .status(400)
-        .json({ message: "All fields except password are required." });
+    try {
+      const updated = await ConnectionService.updateConnection(id, { connection_name, db_type, host, port, db_user, password, database_name });
+      if (!updated) {
+        return res.status(404).json({ message: "Connection not found, nothing to update." });
+      }
+      res.status(200).json(updated);
+    } catch (error) {
+      if (error.message.includes("required")) {
+        return res.status(400).json({ message: error.message });
+      }
+      res.status(500).json({ message: "Error updating connection", error: error.message });
     }
-
-    let query;
-    let values;
-
-    if (password) {
-      // Jika ada password baru, enkripsi dan update semuanya
-      const password_encrypted = encrypt(password);
-      query = `
-          UPDATE database_connections 
-          SET connection_name = $1, db_type = $2, host = $3, port = $4, db_user = $5, password_encrypted = $6, database_name = $7
-          WHERE id = $8 RETURNING id, connection_name, db_type, host, port, db_user, database_name`;
-      values = [
-        connection_name,
-        db_type,
-        host,
-        port,
-        db_user,
-        password_encrypted,
-        database_name,
-        id,
-      ];
-    } else {
-      // Jika tidak ada password baru, jangan update kolom password
-      query = `
-          UPDATE database_connections 
-          SET connection_name = $1, db_type = $2, host = $3, port = $4, db_user = $5, database_name = $6
-          WHERE id = $7 RETURNING id, connection_name, db_type, host, port, db_user, database_name`;
-      values = [
-        connection_name,
-        db_type,
-        host,
-        port,
-        db_user,
-        database_name,
-        id,
-      ];
-    }
-
-    const updatedConnection = await pool.query(query, values);
-
-    if (updatedConnection.rows.length === 0) {
-      return res
-        .status(404)
-        .json({ message: "Connection not found, nothing to update." });
-    }
-
-    res.status(200).json(updatedConnection.rows[0]);
   }
 }
 

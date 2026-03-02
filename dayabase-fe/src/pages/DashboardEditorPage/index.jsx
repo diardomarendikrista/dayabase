@@ -3,7 +3,7 @@ import { useState, useEffect, useCallback } from "react";
 import { useLocation, useParams, useNavigate } from "react-router-dom";
 import { useDispatch } from "react-redux";
 import { API } from "axios/axios";
-import { Responsive, WidthProvider } from "react-grid-layout";
+import { Responsive, WidthProvider } from "react-grid-layout/legacy";
 import ChartWidget from "./ChartWidget";
 import FilterPanel from "./FilterPanel";
 import ModalDashboardShare from "./ModalDashboardShare";
@@ -142,7 +142,7 @@ export default function DashboardViewPage() {
     let nextY = 0;
     if (currentState.layout.length > 0) {
       nextY = Math.max(
-        ...currentState.layout.map((l) => (l.y || 0) + (l.h || 0))
+        ...currentState.layout.map((l) => (l.y || 0) + (l.h || 0)),
       );
     }
 
@@ -167,10 +167,10 @@ export default function DashboardViewPage() {
     const newState = {
       ...currentState,
       questions: currentState.questions.filter(
-        (q) => q.instance_id.toString() !== instanceIdToRemove
+        (q) => q.instance_id.toString() !== instanceIdToRemove,
       ),
       layout: currentState.layout.filter(
-        (item) => item.i !== instanceIdToRemove
+        (item) => item.i !== instanceIdToRemove,
       ),
     };
     pushStateToHistory(newState);
@@ -200,7 +200,7 @@ export default function DashboardViewPage() {
     const updatedQuestions = currentState.questions.map((q) =>
       q.instance_id === selectedQuestionForMapping.instance_id
         ? { ...q, filter_mappings: newMappings }
-        : q
+        : q,
     );
 
     pushStateToHistory({
@@ -212,7 +212,7 @@ export default function DashboardViewPage() {
       addToast({
         message: "Filter mappings updated in dashboard state",
         type: "success",
-      })
+      }),
     );
   };
 
@@ -231,22 +231,22 @@ export default function DashboardViewPage() {
       }
 
       const currentInstanceIds = new Set(
-        currentState.questions.map((q) => q.instance_id.toString())
+        currentState.questions.map((q) => q.instance_id.toString()),
       );
       const removedInstances = lastSavedState.questions.filter(
-        (q) => !currentInstanceIds.has(q.instance_id.toString())
+        (q) => !currentInstanceIds.has(q.instance_id.toString()),
       );
       const addedInstances = currentState.questions.filter((q) =>
-        q.instance_id.toString().startsWith("temp_")
+        q.instance_id.toString().startsWith("temp_"),
       );
 
       const deletePromises = removedInstances.map((q) =>
-        API.delete(`/api/dashboards/${id}/questions/${q.instance_id}`)
+        API.delete(`/api/dashboards/${id}/questions/${q.instance_id}`),
       );
       await Promise.all(deletePromises);
 
       const addPromises = addedInstances.map((q) =>
-        API.post(`/api/dashboards/${id}/questions`, { question_id: q.id })
+        API.post(`/api/dashboards/${id}/questions`, { question_id: q.id }),
       );
       const newItemsFromBackend = await Promise.all(addPromises);
 
@@ -268,7 +268,7 @@ export default function DashboardViewPage() {
       await API.put(`/api/dashboards/${id}/layout`, currentState.layout);
 
       dispatch(
-        addToast({ message: "Dashboard saved successfully!", type: "success" })
+        addToast({ message: "Dashboard saved successfully!", type: "success" }),
       );
 
       let finalHistory = history.slice(0, currentIndex + 1);

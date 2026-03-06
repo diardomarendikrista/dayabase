@@ -1,4 +1,4 @@
-import { Routes, Route, Navigate } from "react-router-dom";
+import { createBrowserRouter, Navigate } from "react-router-dom";
 
 import MainLayout from "./layouts/MainLayout";
 import ProtectedRoute from "./components/atoms/ProtectedRoute";
@@ -14,96 +14,67 @@ import CollectionPage from "pages/CollectionsPage";
 import Error404Page from "components/organisms/Errors/Error404Page";
 import QuestionViewPage from "./pages/QuestionViewPage";
 
-// AppRouter sekarang menerima `needsSetup` sebagai prop
-export default function AppRouter({ needsSetup }) {
-  return (
-    <Routes>
-      {needsSetup ? (
-        // Setup Mode
-        <>
-          <Route
-            path="/setup"
-            element={<RegisterAdminPage />}
+export const createAppRouter = (needsSetup) => {
+  if (needsSetup) {
+    return createBrowserRouter([
+      {
+        path: "/setup",
+        element: <RegisterAdminPage />,
+      },
+      {
+        path: "*",
+        element: (
+          <Navigate
+            to="/setup"
+            replace
           />
-          <Route
-            path="*"
-            element={
-              <Navigate
-                to="/setup"
-                replace
-              />
-            }
-          />
-        </>
-      ) : (
-        // Normal App Mode
-        <>
-          {/* Public Routes */}
-          <Route
-            path="/login"
-            element={<LoginPage />}
-          />
-          <Route
-            path="/embed/dashboards/:token"
-            element={<DashboardViewPage />}
-          />
-          <Route
-            path="/embed/dashboards/:token/questions/:id/view"
-            element={<QuestionViewPage />}
-          />
-          <Route
-            path="*"
-            element={<Error404Page />}
-          />
+        ),
+      },
+    ]);
+  }
 
-          {/* Protected Routes */}
-          <Route element={<ProtectedRoute />}>
-            <Route element={<MainLayout />}>
-              <Route
-                path="/"
-                element={<HomePage />}
-              />
-              <Route
-                path="/collections/:id"
-                element={<CollectionPage />}
-              />
-              <Route
-                path="/dashboards/:id"
-                element={<DashboardViewPage />}
-              />
-              <Route
-                path="/questions/new"
-                element={<QuestionEditorPage />}
-              />
-              <Route
-                path="/questions/:id"
-                element={<QuestionEditorPage />}
-              />
-              <Route
-                path="/questions/:id/view"
-                element={<QuestionViewPage />}
-              />
-
-              <Route
-                path="/settings/connections"
-                element={<ConnectionsPage />}
-              />
-              <Route
-                path="/settings/connections/new"
-                element={<ConnectionFormPage />}
-              />
-              <Route
-                path="/settings/connections/:id/edit"
-                element={<ConnectionFormPage />}
-              />
-              <Route
-                path="/settings/users"
-                element={<UserManagementPage />}
-              />
-            </Route>
-          </Route>
-        </>
-      )}
-    </Routes>
-  );
-}
+  return createBrowserRouter([
+    {
+      path: "/login",
+      element: <LoginPage />,
+    },
+    {
+      path: "/embed/dashboards/:token",
+      element: <DashboardViewPage />,
+    },
+    {
+      path: "/embed/dashboards/:token/questions/:id/view",
+      element: <QuestionViewPage />,
+    },
+    {
+      element: <ProtectedRoute />,
+      children: [
+        {
+          element: <MainLayout />,
+          children: [
+            { path: "/", element: <HomePage /> },
+            { path: "/collections/:id", element: <CollectionPage /> },
+            { path: "/dashboards/:id", element: <DashboardViewPage /> },
+            { path: "/questions/new", element: <QuestionEditorPage /> },
+            { path: "/questions/:id", element: <QuestionEditorPage /> },
+            { path: "/questions/:id/view", element: <QuestionViewPage /> },
+            { path: "/settings/connections", element: <ConnectionsPage /> },
+            {
+              path: "/settings/connections/new",
+              element: <ConnectionFormPage />,
+            },
+            {
+              path: "/settings/connections/:id/edit",
+              element: <ConnectionFormPage />,
+            },
+            { path: "/settings/users", element: <UserManagementPage /> },
+          ],
+        },
+      ],
+    },
+    {
+      path: "*",
+      element: <Error404Page />,
+    },
+  ]);
+};

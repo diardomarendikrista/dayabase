@@ -1,8 +1,8 @@
-import { BrowserRouter } from "react-router-dom";
-import AppRouter from "./AppRouter";
+import { RouterProvider } from "react-router-dom";
+import { createAppRouter } from "./AppRouter";
 import ToastContainer from "./components/organisms/ToastContainer";
 import { useDispatch, useSelector } from "react-redux";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo } from "react";
 import { verifyToken } from "store/slices/authSlice";
 import { API } from "axios/axios";
 import LoadingSpinner from "components/atoms/LoadingSpinner";
@@ -41,6 +41,11 @@ function App() {
     initializeApp();
   }, [dispatch, token]);
 
+  const router = useMemo(() => {
+    if (isAppLoading || isAppError) return null;
+    return createAppRouter(needsSetup);
+  }, [needsSetup, isAppLoading, isAppError]);
+
   if (isAppLoading) {
     return (
       <div className="flex flex-col justify-center items-center h-full min-h-[100vh] bg-white rounded-xl shadow-lg p-6">
@@ -54,10 +59,10 @@ function App() {
   }
 
   return (
-    <BrowserRouter>
+    <>
       <ToastContainer />
-      <AppRouter needsSetup={needsSetup} />
-    </BrowserRouter>
+      {router && <RouterProvider router={router} />}
+    </>
   );
 }
 

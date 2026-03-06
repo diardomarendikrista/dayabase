@@ -15,7 +15,8 @@ import { addToast } from "store/slices/toastSlice";
 import Input from "components/atoms/Input";
 import Button from "components/atoms/Button";
 import BackButton from "components/molecules/BackButton";
-import Modal from "components/molecules/Modal";
+import { useUnsavedChangesWarning } from "hooks/useUnsavedChangesWarning";
+import UnsavedChangesModal from "components/molecules/UnsavedChangesModal";
 
 const ResponsiveGridLayout = WidthProvider(Responsive);
 
@@ -46,23 +47,12 @@ export default function DashboardViewPage() {
   const [selectedQuestionForMapping, setSelectedQuestionForMapping] =
     useState(null);
 
-  const [showLeaveWarning, setShowLeaveWarning] = useState(false);
-
   const previousLocation = location.state?.from;
   const backLabel = location.state?.label;
   const defaultBackUrl = `/collections/${dataDashboard?.collection_id}`;
   const targetBackUrl = previousLocation || defaultBackUrl;
 
   const handleBackClick = () => {
-    if (hasUnsavedChanges) {
-      setShowLeaveWarning(true);
-    } else {
-      navigate(targetBackUrl);
-    }
-  };
-
-  const handleConfirmLeave = () => {
-    setShowLeaveWarning(false);
     navigate(targetBackUrl);
   };
 
@@ -306,20 +296,7 @@ export default function DashboardViewPage() {
     ? currentIndex !== savedIndex || dashboardName !== currentState.name
     : false;
 
-  useEffect(() => {
-    const handleBeforeUnload = (event) => {
-      event.preventDefault();
-      event.returnValue = "";
-    };
-
-    if (hasUnsavedChanges) {
-      window.addEventListener("beforeunload", handleBeforeUnload);
-    }
-
-    return () => {
-      window.removeEventListener("beforeunload", handleBeforeUnload);
-    };
-  }, [hasUnsavedChanges]);
+  const blocker = useUnsavedChangesWarning(hasUnsavedChanges);
 
   if (isLoading) return <p>Loading dashboard...</p>;
   if (history.length === 0 || currentIndex === -1)
@@ -462,32 +439,7 @@ export default function DashboardViewPage() {
             onMappingsSaved={handleFilterMappingsSaved}
           />
 
-          <Modal
-            title="Peringatan"
-            showModal={showLeaveWarning}
-            setShowModal={setShowLeaveWarning}
-          >
-            <div className="space-y-4">
-              <p>
-                Anda memiliki perubahan yang belum disimpan. Apakah Anda yakin
-                ingin keluar?
-              </p>
-              <div className="flex justify-end gap-2">
-                <Button
-                  variant="outline"
-                  onClick={() => setShowLeaveWarning(false)}
-                >
-                  Batal
-                </Button>
-                <Button
-                  variant="danger"
-                  onClick={handleConfirmLeave}
-                >
-                  Keluar
-                </Button>
-              </div>
-            </div>
-          </Modal>
+          <UnsavedChangesModal blocker={blocker} />
         </>
       )}
     </div>

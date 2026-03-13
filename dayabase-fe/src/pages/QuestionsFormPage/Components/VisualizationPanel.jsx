@@ -41,8 +41,8 @@ export default function VisualizationPanel({
   };
 
   const handleValueChange = (value) => {
-    if (chartType === "pie") {
-      // Single value for pie
+    if (chartType === "pie" || chartType === "number") {
+      // Single value for pie and number
       onChartConfigChange((prev) => ({
         ...prev,
         value: value,
@@ -106,6 +106,16 @@ export default function VisualizationPanel({
             }`}
           >
             Pie
+          </button>
+          <button
+            onClick={() => onChartTypeChange("number")}
+            className={`whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm ${
+              chartType === "number"
+                ? "border-primary-light text-primary"
+                : "border-transparent text-gray-500 hover:text-gray-700"
+            }`}
+          >
+            Number
           </button>
         </nav>
       </div>

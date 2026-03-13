@@ -54,7 +54,7 @@ export function useQuestionEditor() {
         addToast({
           message: "Please select a database connection.",
           type: "error",
-        })
+        }),
       );
       return;
     }
@@ -79,7 +79,7 @@ export function useQuestionEditor() {
           };
 
           // Set value/values berdasarkan chartType
-          if (chartType === "pie") {
+          if (chartType === "pie" || chartType === "number") {
             newConfig.value = dataColumns[1] || "";
           } else if (chartType === "bar" || chartType === "line") {
             newConfig.values = [dataColumns[1] || ""];
@@ -112,8 +112,8 @@ export function useQuestionEditor() {
       }
 
       // Set value/values sesuai chartType
-      if (chartType === "pie") {
-        // Pie butuh single value
+      if (chartType === "pie" || chartType === "number") {
+        // Pie/Number butuh single value
         if (prev.values && !prev.value) {
           newConfig.value = Array.isArray(prev.values)
             ? prev.values[0]
@@ -178,7 +178,7 @@ export function useQuestionEditor() {
             ? "Question updated successfully."
             : "Question saved successfully.",
           type: "success",
-        })
+        }),
       );
     } catch (err) {
       console.error("Failed to save/update question:", err);
@@ -200,10 +200,10 @@ export function useQuestionEditor() {
       return null;
     }
 
-    // Untuk Pie Chart
-    if (chartType === "pie") {
+    // Untuk Pie dan Number Chart
+    if (chartType === "pie" || chartType === "number") {
       if (!chartConfig?.value) {
-        console.log("Return null: pie but no value");
+        // console.log("Return null: pie/number but no value");
         return null;
       }
       return {
@@ -269,7 +269,7 @@ export function useQuestionEditor() {
 
       // Cek apakah ID di storage valid (masih ada di list connections),
       const foundConnection = connections.find(
-        (c) => c.id.toString() === lastConnId
+        (c) => c.id.toString() === lastConnId,
       );
 
       if (foundConnection) {

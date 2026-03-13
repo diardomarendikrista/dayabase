@@ -3,6 +3,7 @@ import BarChart from "components/organisms/charts/BarChart";
 import LineChart from "components/organisms/charts/LineChart";
 import DonutChart from "components/organisms/charts/DonutChart";
 import TableWidget from "components/organisms/charts/TableWidget";
+import NumberChart from "components/organisms/charts/NumberChart";
 import EmptyState from "./EmptyState";
 
 const DATA_LIMIT_CHARTS = 2000; // Batas aman untuk grafik
@@ -38,7 +39,7 @@ const ChartRenderer = forwardRef(
       height,
       className = "",
     },
-    ref
+    ref,
   ) => {
     // SAFETY CHECK: DATA LIMIT
     const isTable = chartType === "table" || chartType === "pivot";
@@ -79,6 +80,15 @@ const ChartRenderer = forwardRef(
             name: row[category],
             value: row[value],
           })),
+        };
+      }
+
+      // Number chart - single aggregate value
+      if (chartType === "number") {
+        if (!value) return null;
+        return {
+          categoryName: category,
+          value: data[0]?.[value], // Take the first row's value
         };
       }
 
@@ -163,6 +173,23 @@ const ChartRenderer = forwardRef(
           </div>
         );
 
+      case "number":
+        if (!transformedData)
+          return <EmptyState message="Invalid chart configuration" />;
+        return (
+          <div
+            className={className}
+            style={{ width: "100%", height: "100%" }}
+          >
+            <NumberChart
+              title={transformedData.categoryName}
+              value={transformedData.value}
+              width={width}
+              height={height}
+            />
+          </div>
+        );
+
       case "pivot":
       case "table":
       default:
@@ -183,7 +210,7 @@ const ChartRenderer = forwardRef(
           </div>
         );
     }
-  }
+  },
 );
 
 ChartRenderer.displayName = "ChartRenderer";

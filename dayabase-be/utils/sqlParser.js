@@ -1,32 +1,32 @@
 // utils/sqlParser.js
 
 /**
- * Mem-parsing SQL string dengan variabel dan klausa opsional.
- * @param {string} sql - SQL mentah dengan sintaks {{variable}} dan [[...]].
- * @param {object} parameters - Objek berisi nilai filter, cth: { "kategori": "Elektronik" }.
- * @param {string} dbType - Tipe database ("postgres" atau "mysql") untuk sintaks placeholder.
+ * Parse SQL string with variables and optional clauses.
+ * @param {string} sql - Raw SQL containing {{variable}} and [[...]] syntax.
+ * @param {object} parameters - Object containing filter values, e.g., { "category": "Electronics" }.
+ * @param {string} dbType - Database type ("postgres" or "mysql") for placeholder syntax.
  * @returns {{finalSql: string, queryValues: any[]}}
  */
 function parseSqlWithParameters(sql, parameters = {}, dbType) {
   const queryValues = [];
   let pgParamIndex = 1;
 
-  // 1. Menangani klausa opsional [[...]]
-  // Regex ini mencari blok [[...]] dan mengecek variabel di dalamnya.
+  // 1. Handle optional clauses [[...]]
+  // Regex to find [[...]] blocks and check their inner variables.
   const sqlAfterOptional = sql.replace(
     /\[\[([\s\S]*?)\]\]/g,
     (match, innerContent) => {
-      // Temukan semua placeholder {{...}} DI DALAM blok opsional ini
+      // Find all {{...}} placeholders INSIDE this optional block
       const placeholders = innerContent.match(/\{\{([\w_]+)\}\}/g) || [];
 
       if (placeholders.length === 0) {
-        // Ini blok statis, misal [[AND 1=1]], pertahankan.
+        // Static block (e.g., [[AND 1=1]]), keep it.
         return innerContent;
       }
 
-      // Cek apakah SEMUA placeholder di dalam blok ini memiliki nilai (bukan null/undefined/'')
+      // Check if ALL placeholders in this block have a value (not null/undefined/'')
       const allValid = placeholders.every((placeholder) => {
-        const varName = placeholder.replace(/[{}]/g, ""); // Dapatkan "kategori" dari "{{kategori}}"
+        const varName = placeholder.replace(/[{}]/g, ""); // Extract "category" from "{{category}}"
         const value = parameters[varName];
         // Consider empty string as invalid, but allow boolean false and number 0
         if (
@@ -40,12 +40,12 @@ function parseSqlWithParameters(sql, parameters = {}, dbType) {
         return true;
       });
 
-      // Jika semua valid, kembalikan kontennya (tanpa [[...]]). Jika tidak, hapus seluruh blok.
+      // If all valid, return inner content (without [[...]]). Otherwise, remove the whole block.
       return allValid ? innerContent : "";
     }
   );
 
-  // 2. Menangani placeholder variabel {{...}} yang tersisa dan menggantinya dengan placeholder aman
+  // 2. Handle remaining {{...}} placeholders and replace them with safe placeholders
   const finalSql = sqlAfterOptional.replace(
     /\{\{([\w_]+)\}\}/g,
     (match, varName) => {
@@ -57,12 +57,12 @@ function parseSqlWithParameters(sql, parameters = {}, dbType) {
         value === "" ||
         (Array.isArray(value) && value.length === 0)
       ) {
-        // Variabel ini *dibutuhkan* (tidak di dalam blok opsional yang dihapus)
-        // tapi nilainya tidak ada di 'parameters'.
+        // This variable is *required* (not inside a removed optional block)
+        // but its value is missing from 'parameters'.
         throw new Error(`Missing required parameter value for: {{${varName}}}`);
       }
 
-      // Jika value adalah array maka buat placeholder IN ($1, $2, ...)
+      // If value is an array, create an IN ($1, $2, ...) placeholder
       if (Array.isArray(value)) {
         const placeholders = value.map(() => {
           if (dbType === "postgres") return `$${pgParamIndex++}`;
@@ -73,14 +73,14 @@ function parseSqlWithParameters(sql, parameters = {}, dbType) {
         return placeholders.join(", ");
       }
 
-      // Tambahkan nilai ke array values
+      // Add value to values array
       queryValues.push(value);
 
-      // Kembalikan sintaks placeholder yang benar untuk driver database
+      // Return the correct placeholder syntax for the database driver
       if (dbType === "postgres") {
         return `$${pgParamIndex++}`;
       }
-      return "?"; // Default ke '?' untuk MySQL dan lainnya
+      return "?"; // Default to '?' for MySQL and others
     }
   );
 

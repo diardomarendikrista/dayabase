@@ -3,7 +3,7 @@ const logger = require("../utils/logger");
 
 class DashboardController {
   /**
-   * @description Membuat dashboard baru
+   * @description Create a new dashboard
    * @route POST /api/dashboards
    */
   static async createDashboard(req, res) {
@@ -22,7 +22,7 @@ class DashboardController {
   }
 
   /**
-   * @description Mengambil daftar semua dashboard
+   * @description Retrieve a list of all dashboards
    * @route GET /api/dashboards
    */
   static async getAllDashboards(req, res) {
@@ -36,7 +36,7 @@ class DashboardController {
   }
 
   /**
-   * @description Mengambil detail satu dashboard beserta question dan layoutnya
+   * @description Retrieve details of a dashboard, including its questions and layout
    * @route GET /api/dashboards/:id
    */
   static async getDashboardById(req, res) {
@@ -54,7 +54,7 @@ class DashboardController {
   }
 
   /**
-   * @description Memperbarui nama/deskripsi dashboard
+   * @description Update dashboard name or description
    * @route PUT /api/dashboards/:id
    */
   static async updateDashboard(req, res) {
@@ -77,7 +77,7 @@ class DashboardController {
   }
 
   /**
-   * @description Menghapus dashboard
+   * @description Delete a dashboard
    * @route DELETE /api/dashboards/:id
    */
   static async deleteDashboard(req, res) {
@@ -93,10 +93,10 @@ class DashboardController {
     }
   }
 
-  // --- Metode untuk Mengelola Isi Dashboard ---
+  // --- Methods for Managing Dashboard Content ---
 
   /**
-   * @description Menambahkan question ke dashboard
+   * @description Add a question to the dashboard
    * @route POST /api/dashboards/:id/questions
    */
   static async addQuestionToDashboard(req, res) {
@@ -115,7 +115,7 @@ class DashboardController {
   }
 
   /**
-   * @description Memperbarui layout dari semua question di dashboard
+   * @description Update the layout of all questions on the dashboard
    * @route PUT /api/dashboards/:id/layout
    */
   static async updateDashboardLayout(req, res) {
@@ -135,7 +135,7 @@ class DashboardController {
   }
 
   /**
-   * @description Menghapus question dari dashboard
+   * @description Remove a question from the dashboard
    * @route DELETE /api/dashboards/:id/questions/:questionId
    */
   static async removeQuestionFromDashboard(req, res) {
@@ -159,7 +159,7 @@ class DashboardController {
   }
 
   /**
-   * @description Mengubah status sharing dashboard
+   * @description Update dashboard sharing status
    * @route PUT /api/dashboards/:id/sharing
    */
   static async updateSharingStatus(req, res) {
@@ -177,10 +177,10 @@ class DashboardController {
     }
   }
 
-  // ---------- Filter Method ----------
+  // ---------- Filter Methods ----------
 
   /**
-   * @description Menambahkan filter baru ke dashboard
+   * @description Add a new filter to the dashboard
    * @route POST /api/dashboards/:id/filters
    */
   static async addFilterToDashboard(req, res) {
@@ -200,7 +200,7 @@ class DashboardController {
   }
 
   /**
-   * @description Memperbarui filter yang ada di dashboard
+   * @description Update an existing filter on the dashboard
    * @route PUT /api/dashboards/:id/filters/:filterId
    */
   static async updateFilterOnDashboard(req, res) {
@@ -223,7 +223,7 @@ class DashboardController {
   }
 
   /**
-   * @description Menghapus filter dari dashboard
+   * @description Delete a filter from the dashboard
    * @route DELETE /api/dashboards/:id/filters/:filterId
    */
   static async deleteFilterFromDashboard(req, res) {
@@ -241,7 +241,7 @@ class DashboardController {
   }
 
   /**
-   * @description Memperbarui mapping filter untuk satu question di dashboard
+   * @description Update filter mappings for a single question on the dashboard
    * @route PUT /api/dashboards/:id/questions/:instanceId/mappings
    */
   static async updateFilterMappings(req, res) {

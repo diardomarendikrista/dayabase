@@ -2,7 +2,7 @@ const ConnectionService = require("../services/ConnectionService");
 
 class ConnectionController {
   /**
-   * @description Membuat koneksi database baru dan menyimpan ke DB
+   * @description Create a new database connection and save to DB
    * @route POST /api/connections
    */
   static async createConnection(req, res) {
@@ -28,7 +28,7 @@ class ConnectionController {
   }
 
   /**
-   * @description Mengambil semua koneksi yang tersimpan (tanpa password)
+   * @description Retrieve all saved connections (without password)
    * @route GET /api/connections
    */
   static async getAllConnections(req, res) {
@@ -41,7 +41,7 @@ class ConnectionController {
   }
 
   /**
-   * @description Mengambil satu koneksi berdasarkan ID (tanpa password)
+   * @description Retrieve a single connection by ID (without password)
    * @route GET /api/connections/:id
    */
   static async getConnectionById(req, res) {
@@ -59,7 +59,7 @@ class ConnectionController {
   }
 
   /**
-   * @description Menghapus sebuah koneksi database
+   * @description Delete a database connection
    * @route DELETE /api/connections/:id
    */
   static async deleteConnection(req, res) {
@@ -79,7 +79,7 @@ class ConnectionController {
   }
 
   /**
-   * @description Memperbarui sebuah koneksi yang ada
+   * @description Update an existing connection
    * @route PUT /api/connections/:id
    */
   static async updateConnection(req, res) {

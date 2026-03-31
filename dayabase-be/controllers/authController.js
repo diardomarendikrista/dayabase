@@ -2,7 +2,7 @@ const AuthService = require("../services/AuthService");
 
 class AuthController {
   /**
-   * @description Cek apakah sudah ada user di sistem (untuk setup admin pertama)
+   * @description Check if a user exists in the system (for initial admin setup)
    * @route GET /api/auth/setup-status
    */
   static async getSetupStatus(req, res) {
@@ -15,7 +15,7 @@ class AuthController {
   }
 
   /**
-   * @description  Registrasi admin pertama
+   * @description Register the first admin
    * @route POST /api/auth/register-first-admin
    */
   static async registerFirstAdmin(req, res) {
@@ -33,7 +33,7 @@ class AuthController {
   }
 
   /**
-   * @description Login untuk semua user
+   * @description Login for all users
    * @route POST /api/auth/login
    */
   static async login(req, res) {

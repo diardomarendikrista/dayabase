@@ -1,12 +1,12 @@
 // utils/crypto.js
-// ini untuk enkripsi dan dekripsi password yang ada di conenction, yang di auth/login pakai bcrypt.
+// For encrypting and decrypting database connection passwords. (auth/login uses bcrypt)
 
 const crypto = require("crypto");
 
 const ALGORITHM = "aes-256-cbc";
-// Kunci rahasia, HARUS 32 karakter. Simpan di .env
+// Secret encryption key. MUST be 32 characters. Store in .env
 const ENCRYPTION_KEY = process.env.ENCRYPTION_KEY;
-// Initialization Vector, HARUS 16 karakter. Simpan di .env
+// Initialization Vector. MUST be 16 characters. Store in .env
 const IV = process.env.IV;
 
 if (
@@ -20,7 +20,7 @@ if (
   );
 }
 
-// Fungsi untuk mengenkripsi teks
+// Function to encrypt text
 function encrypt(text) {
   const cipher = crypto.createCipheriv(
     ALGORITHM,
@@ -32,7 +32,7 @@ function encrypt(text) {
   return encrypted.toString("hex");
 }
 
-// Fungsi untuk mendekripsi teks
+// Function to decrypt text
 function decrypt(text) {
   const encryptedText = Buffer.from(text, "hex");
   const decipher = crypto.createDecipheriv(

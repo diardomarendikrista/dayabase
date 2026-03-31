@@ -2,7 +2,7 @@ const QuestionService = require("../services/QuestionService");
 
 class QuestionController {
   /**
-   * @description Menyimpan pertanyaan baru ke database
+   * @description Save a new question to the database
    * @route POST /api/questions
    */
   static async createQuestion(req, res) {
@@ -31,7 +31,7 @@ class QuestionController {
   }
 
   /**
-   * @description Mengambil semua pertanyaan (hanya info dasar)
+   * @description Retrieve all questions (basic info only)
    * @route GET /api/questions
    */
   static async getAllQuestions(req, res) {
@@ -58,7 +58,7 @@ class QuestionController {
         return res.status(404).json({ message: "Question not found" });
       }
 
-      // 1. Compatibility Logic untuk parameter mappings
+      // 1. Compatibility logic for parameter mappings
       let mappings = row.click_parameter_mappings;
       if (
         (!mappings || mappings.length === 0) &&
@@ -73,7 +73,7 @@ class QuestionController {
         ];
       }
 
-      // 2. Susun Object Response
+      // 2. Construct response object
       const response = {
         id: row.id,
         name: row.name,
@@ -82,7 +82,7 @@ class QuestionController {
         chart_config: row.chart_config,
         updated_at: row.updated_at,
 
-        // Info Connection
+        // Connection Info
         connection_id: row.connection_id,
         connection_name: row.connection_name,
         db_type: row.db_type,
@@ -91,11 +91,11 @@ class QuestionController {
         db_user: row.db_user,
         database_name: row.database_name,
 
-        // Info Collection
+        // Collection Info
         collection_id: row.collection_id,
         collection_name: row.collection_name,
 
-        // Info Click Behavior
+        // Click Behavior Info
         click_behavior: row.click_enabled
           ? {
             enabled: row.click_enabled,
@@ -118,7 +118,7 @@ class QuestionController {
   }
 
   /**
-   * @description Hapus
+   * @description Delete a question
    * @route DELETE /api/questions/:id
    */
   static async deleteQuestion(req, res) {
@@ -136,7 +136,7 @@ class QuestionController {
   }
 
   /**
-   * @description Memperbarui sebuah pertanyaan yang ada
+   * @description Update an existing question
    * @route PUT /api/questions/:id
    */
   static async updateQuestion(req, res) {

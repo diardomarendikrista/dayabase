@@ -36,11 +36,11 @@ class PublicController {
       });
     } catch (error) {
       logger.error(
-        `[PUBLIC_CONTROLLER_ERROR] Gagal mengambil dashboard publik dengan token ${token}: `,
+        `[PUBLIC_CONTROLLER_ERROR] Failed to fetch public dashboard with token ${token}: `,
         error
       );
       res.status(500).json({
-        message: "Gagal mengambil data dashboard publik.",
+        message: "Failed to fetch public dashboard data.",
         error:
           process.env.NODE_ENV === "development" ? error.message : undefined,
       });
